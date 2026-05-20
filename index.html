@@ -8,6 +8,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
     <style>
         /* --- 1. ANA DEĞİŞKENLER VE KURULUM --- */
         :root {
@@ -30,7 +34,7 @@
         .slide-subtitle { text-align: center; color: var(--text-muted); font-weight: 500; font-size: 16px; margin-bottom: 20px; position: relative; z-index: 1; }
         .content-area { flex-grow: 1; padding: 10px 60px 40px 60px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; overflow-y: auto; }
 
-        .login-card { width: 400px; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin: 0 auto; text-align: center; border: 1px solid #e2e8f0; }
+        .login-card { width: 400px; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin: 0 auto; text-align: center; border: 1px solid #e2e8f0; position: relative;}
         .profile-icon { width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary-red), var(--dark-red)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: white; font-size: 36px; box-shadow: 0 10px 20px rgba(220, 38, 38, 0.3); }
 
         .input-group { text-align: left; margin-bottom: 15px; }
@@ -108,11 +112,15 @@
         .cal-day.padding { background: #f8fafc; }
         .cal-day-num { font-size: 14px; font-weight: 600; color: var(--bg-dark); margin-bottom: 10px; text-align: right; }
         .cal-day-num.today { color: white; background: var(--primary-red); width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; float: right;}
-        
         .cal-event { background: #6366f1; color: white; font-size: 11px; padding: 4px 8px; border-radius: 6px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
         .cal-event.orange { background: #f59e0b; }
         .cal-event.red { background: var(--primary-red); }
         .clear { clear: both; }
+
+        /* Yükleniyor Ekranı İçin Siyah Perde */
+        .full-loader { position: absolute; top:0; left:0; width:100%; height:100%; background: white; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 20px;}
+        .spinner { width: 50px; height: 50px; border: 5px solid #f1f5f9; border-top: 5px solid var(--primary-red); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -120,10 +128,8 @@
 <div class="modal-overlay" id="release-notes-modal">
     <div class="modal-content">
         <i class="fa-solid fa-xmark modal-close" onclick="closeModal('release-notes-modal')"></i>
-        <h3 class="modal-title" id="display-version-title">RDGRUP V.1.1 - Eklenen Özellikler</h3>
-        <div id="display-version-notes" style="color: var(--text-main); font-size: 14px; line-height: 1.8; white-space: pre-wrap;">- Firma seçim ekranı yenilendi.
-- Türkiye Mezuniyeti eklendi.
-- Anasayfa ve Takvim modülleri geliştirildi.</div>
+        <h3 class="modal-title" id="display-version-title">Sürüm Notları</h3>
+        <div id="display-version-notes" style="color: var(--text-main); font-size: 14px; line-height: 1.8; white-space: pre-wrap;">Yükleniyor...</div>
     </div>
 </div>
 
@@ -132,7 +138,7 @@
         <i class="fa-solid fa-xmark modal-close" onclick="closeModal('user-modal')"></i>
         <h3 class="modal-title" id="user-modal-title">Yeni Kullanıcı Ekle</h3>
         
-        <input type="hidden" id="edit-index" value="-1">
+        <input type="hidden" id="edit-doc-id" value="">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
             <div class="input-group"><label>İSİM</label><input type="text" id="u-name" placeholder="İsim"></div>
             <div class="input-group"><label>SOYİSİM</label><input type="text" id="u-surname" placeholder="Soyisim"></div>
@@ -152,13 +158,19 @@
         </div>
         
         <div style="display: flex; gap: 15px; margin-top: 10px;">
-            <button class="login-btn" style="flex: 1;" onclick="saveUser()">Kaydet</button>
+            <button class="login-btn" id="save-user-btn" style="flex: 1;" onclick="saveUser()">Kaydet</button>
             <button class="login-btn" id="delete-user-btn" style="flex: 1; background: var(--primary-red); display: none;" onclick="deleteUser()">Sil</button>
         </div>
     </div>
 </div>
 
 <div class="slide-container bg-shape" id="login-screen">
+    
+    <div class="full-loader" id="init-loader">
+        <div class="spinner"></div>
+        <p style="margin-top: 20px; font-weight: 600; color: var(--text-muted);">Sistem Hazırlanıyor...</p>
+    </div>
+
     <div class="content-area">
         <h1 style="text-align: center; font-size: 24px; color: var(--primary-red); margin-bottom: 5px; font-weight: 700; letter-spacing: 1px;">RDGRUP İŞ TAKİP PANELİ</h1>
         <h2 class="slide-title" style="margin-top: 0;">Sisteme Giriş</h2>
@@ -252,29 +264,79 @@
 </div>
 
 <script>
-    // --- YEREL HAFIZA (LOCAL STORAGE) ENTEGRASYONU ---
-    const defaultUsers = [
-        { id: 'alperen', name: 'Alperen', surname: 'Yılmaz', role: 'Admin', pass: '123' },
-        { id: 'personel', name: 'Test', surname: 'Personel', role: 'Yönetici', pass: '123' }
-    ];
-    // Kullanıcıları hafızadan çek, yoksa varsayılanları kullan
-    let dbUsers = JSON.parse(localStorage.getItem('rdgrup_users')) || defaultUsers;
+    // --- 1. FIREBASE BAĞLANTISI ---
+    const firebaseConfig = {
+        apiKey: "AIzaSyCrPd3BNDJiEK2wXOOmm1CTh9GofipnYNI",
+        authDomain: "is-takip-paneli-8523a.firebaseapp.com",
+        projectId: "is-takip-paneli-8523a",
+        storageBucket: "is-takip-paneli-8523a.firebasestorage.app",
+        messagingSenderId: "391985906793",
+        appId: "1:391985906793:web:a546e24623c8a6c2e10ef8"
+    };
 
-    const defaultVersion = { version: "RDGRUP V.1.1", notes: "- Firma seçim ekranı yenilendi.\n- Türkiye Mezuniyeti eklendi.\n- Anasayfa ve Takvim geliştirildi." };
-    // Versiyon notlarını hafızadan çek
-    let dbVersionInfo = JSON.parse(localStorage.getItem('rdgrup_version')) || defaultVersion;
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-    // Sayfa Yüklendiğinde Versiyon Notlarını HTML'e bas
-    document.getElementById('main-version-text').innerText = dbVersionInfo.version;
-    document.getElementById('display-version-title').innerText = dbVersionInfo.version + " - Eklenen Özellikler";
-    document.getElementById('display-version-notes').innerText = dbVersionInfo.notes;
-
+    // --- GLOBAL DEĞİŞKENLER ---
+    let dbUsers = [];
+    let dbVersionInfo = { version: "RDGRUP V.1.1", notes: "Sistem güncelleniyor..." };
     let currentUser = null;
     let currentCompany = "";
     
     // Takvim Değişkenleri
     let calDate = new Date();
-    let currentCalView = 'month'; // 'month', 'week', 'day'
+    let currentCalView = 'month'; 
+
+    // --- SİSTEM BAŞLATICI (Firebase'den Veri Çekme) ---
+    async function initializeSystem() {
+        try {
+            // 1. Sistem ayarlarını (Sürüm Notları) çek
+            const settingsRef = db.collection('settings').doc('system');
+            const doc = await settingsRef.get();
+            if (doc.exists) {
+                dbVersionInfo = doc.data();
+            } else {
+                // Eğer veritabanı boşsa varsayılanı yaz
+                await settingsRef.set(dbVersionInfo);
+            }
+            updateVersionUI();
+
+            // 2. Kullanıcıları çek
+            await fetchUsersFromFirebase();
+
+        } catch (error) {
+            console.error("Firebase'e bağlanırken hata oluştu: ", error);
+            alert("Veritabanı bağlantı hatası! Lütfen sayfayı yenileyin.");
+        } finally {
+            // Veriler yüklendikten sonra yükleme ekranını kaldır
+            document.getElementById('init-loader').style.display = 'none';
+        }
+    }
+
+    async function fetchUsersFromFirebase() {
+        const snapshot = await db.collection('users').get();
+        dbUsers = [];
+        snapshot.forEach(doc => {
+            // ID'yi de dahil ederek diziye ekle (Düzenleme ve Silme için doc.id gerekli)
+            dbUsers.push({ docId: doc.id, ...doc.data() });
+        });
+
+        // Veritabanı tamamen boşsa ilk Admin hesabını otomatik oluştur
+        if (dbUsers.length === 0) {
+            const firstAdmin = { id: 'alperen', name: 'Alperen', surname: 'Yılmaz', role: 'Admin', pass: '123' };
+            await db.collection('users').add(firstAdmin);
+            await fetchUsersFromFirebase(); // Tekrar çek
+        }
+    }
+
+    function updateVersionUI() {
+        document.getElementById('main-version-text').innerText = dbVersionInfo.version;
+        document.getElementById('display-version-title').innerText = dbVersionInfo.version + " - Eklenen Özellikler";
+        document.getElementById('display-version-notes').innerText = dbVersionInfo.notes;
+    }
+
+    // Sayfa yüklendiğinde sistemi başlat
+    window.onload = initializeSystem;
 
     // -- ELEMENTLER --
     const loginScreen = document.getElementById('login-screen');
@@ -293,6 +355,8 @@
     document.getElementById('login-btn').addEventListener('click', () => {
         const userId = document.getElementById('username').value.trim().toLowerCase();
         const userPass = document.getElementById('password').value.trim();
+        
+        // Doğrulamayı Firebase'den çektiğimiz canlı veri üzerinden yapıyoruz
         const foundUser = dbUsers.find(u => u.id === userId && u.pass === userPass);
 
         if (foundUser) {
@@ -376,7 +440,6 @@
         loadPageView(items[0].name);
     }
 
-    // --- SAYFA YÜKLEYİCİ ---
     function loadPageView(pageName) {
         if(pageName === 'Ayarlar') {
             loadAdminSettings();
@@ -395,7 +458,7 @@
         }
     }
 
-    // --- 1. ANASAYFA / KENDİ İŞLERİM TASARIMI ---
+    // --- ANASAYFA / KENDİ İŞLERİM TASARIMI ---
     function renderDashboardHome(pageName) {
         return `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
@@ -433,34 +496,30 @@
             <div class="dash-card">
                 <div class="dash-card-header"><i class="fa-solid fa-note-sticky" style="color: #6366f1;"></i> Aktif Ajanda Notları</div>
                 <div style="color: var(--text-muted); font-size: 13px; line-height: 1.6; background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #6366f1;">
-                    <strong>Hatırlatma:</strong> Mehmet Bey ile Cuma günkü görüşmeden önce revize edilen 3D animasyon dosyalarını buluta yüklemeyi unutma.
+                    <strong>Hatırlatma:</strong> Mehmet Bey ile Cuma günkü görüşmeden önce revize edilen dosyaları buluta yüklemeyi unutma.
                 </div>
             </div>
         `;
     }
 
-    // --- 2. GERÇEK ZAMANLI VE AKTİF BUTONLU TAKVİM ---
+    // --- TAKVİM ARAYÜZÜ ---
     function renderCalendarView(pageName) {
         return `
             <div class="content-card" style="padding: 25px;">
                 <h2 class="content-title">${currentCompany} - ${pageName}</h2>
-                
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <button class="action-btn" onclick="changeCalNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
                         <button class="action-btn" onclick="changeCalNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
                         <button class="login-btn" style="width: auto; padding: 6px 15px; font-size: 12px; margin:0;" onclick="resetToToday()">Bugün</button>
                     </div>
-                    
                     <h3 id="calendar-month-year" style="font-size: 22px; color: var(--bg-dark); font-weight: 700; margin: 0;">Yükleniyor...</h3>
-                    
                     <div style="display: flex; gap: 15px;">
                         <button class="action-btn active" id="btn-view-month" onclick="changeCalView('month')">Aylık</button>
                         <button class="action-btn" id="btn-view-week" onclick="changeCalView('week')">Haftalık</button>
                         <button class="action-btn" id="btn-view-day" onclick="changeCalView('day')">Günlük</button>
                     </div>
                 </div>
-
                 <div class="cal-grid" id="calendar-wrapper"></div>
             </div>
         `;
@@ -491,11 +550,9 @@
         const grid = document.getElementById('calendar-wrapper');
         const monthYearText = document.getElementById('calendar-month-year');
         grid.innerHTML = '';
-        
         let y = calDate.getFullYear();
         let m = calDate.getMonth();
         
-        // Ortadaki Ay/Yıl başlığını güncelle
         if(currentCalView === 'day') {
             monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
         } else {
@@ -514,13 +571,8 @@
             for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day padding"></div>`;
             for(let i=1; i<=daysInMonth; i++) {
                 let isToday = (i === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear());
-                let events = getDemoEvents(i, 'month'); 
-                grid.innerHTML += `<div class="cal-day">
-                    <div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div><div class="clear"></div>
-                    ${events}
-                </div>`;
+                grid.innerHTML += `<div class="cal-day"><div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div><div class="clear"></div></div>`;
             }
-
         } else if (currentCalView === 'week') {
             grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
             grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div>
@@ -534,52 +586,18 @@
             for(let i=0; i<7; i++) {
                 let currentDay = new Date(startOfWeek);
                 currentDay.setDate(startOfWeek.getDate() + i);
-                
                 let isToday = (currentDay.getDate() === new Date().getDate() && currentDay.getMonth() === new Date().getMonth() && currentDay.getFullYear() === new Date().getFullYear());
-                let events = getDemoEvents(currentDay.getDate(), 'week');
-                
-                grid.innerHTML += `<div class="cal-day">
-                    <div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div><div class="clear"></div>
-                    ${events}
-                </div>`;
+                grid.innerHTML += `<div class="cal-day"><div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div><div class="clear"></div></div>`;
             }
-
         } else if (currentCalView === 'day') {
             grid.style.gridTemplateColumns = '1fr';
             grid.innerHTML = `<div class="cal-header-day">${calDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>`;
-            
             let isToday = (calDate.getDate() === new Date().getDate() && calDate.getMonth() === new Date().getMonth() && calDate.getFullYear() === new Date().getFullYear());
-            let events = getDemoEvents(calDate.getDate(), 'day');
-            
             grid.innerHTML += `<div class="cal-day" style="min-height: 400px; padding: 30px;">
                 <div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 20px; font-size: 24px; width: 40px; height: 40px;">${calDate.getDate()}</div>
-                <div class="clear"></div>
-                <div style="margin-top: 10px;">${events ? events : '<div style="color:var(--text-muted); font-size:16px;">Bugün için planlanmış bir iş bulunmuyor.</div>'}</div>
+                <div class="clear"></div><div style="margin-top: 10px;"><div style="color:var(--text-muted); font-size:16px;">Bugün için planlanmış bir iş bulunmuyor.</div></div>
             </div>`;
         }
-    }
-    
-    function getDemoEvents(dayNumber, viewType) {
-        let evs = [];
-        // Demo veriler
-        if (dayNumber === 5) evs.push({t: '📽️ Ankara Mezuniyet Çekimi', c: ''});
-        if (dayNumber === 12) evs.push({t: '🔥 Gülçimen Aspava Paylaşım', c: 'orange'});
-        if (dayNumber === 20) { 
-            evs.push({t: '🚨 Vercel Limit Kontrolü', c: 'red'});
-            evs.push({t: 'Toplantı: Mehmet Bey', c: ''});
-        }
-        
-        if(evs.length === 0) return '';
-        
-        let html = '';
-        evs.forEach(e => {
-            if(viewType === 'day') {
-                html += `<div class="cal-event ${e.c}" style="padding: 15px; font-size: 15px; margin-bottom: 12px; border-radius: 10px;">${e.t}</div>`;
-            } else {
-                html += `<div class="cal-event ${e.c}">${e.t}</div>`;
-            }
-        });
-        return html;
     }
 
     // --- PROFIL ---
@@ -599,24 +617,23 @@
         `;
     }
 
-    function updateOwnPassword() {
+    async function updateOwnPassword() {
         const newPass = document.getElementById('new-profile-pass').value;
         if(newPass) { 
             currentUser.pass = newPass; 
             
-            // Local Storage'ı da güncelle
-            const uIndex = dbUsers.findIndex(u => u.id === currentUser.id);
-            if(uIndex > -1) dbUsers[uIndex].pass = newPass;
-            localStorage.setItem('rdgrup_users', JSON.stringify(dbUsers));
+            // Doğrudan Firebase'i güncelliyoruz
+            await db.collection('users').doc(currentUser.docId).update({ pass: newPass });
+            await fetchUsersFromFirebase();
 
-            alert('Şifreniz başarıyla güncellendi!'); 
+            alert('Şifreniz Firebase üzerinde başarıyla güncellendi!'); 
         }
     }
 
-    // --- ADMİN PANELİ ---
+    // --- ADMİN PANELİ VE FİREBASE ENTEGRASYONU ---
     function loadAdminSettings() {
         let usersHtml = '';
-        dbUsers.forEach((u, index) => {
+        dbUsers.forEach((u) => {
             const roleColor = u.role === 'Admin' ? 'background: #fee2e2; color: var(--primary-red);' : 'background: #e2e8f0; color: var(--bg-dark);';
             usersHtml += `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">
@@ -629,7 +646,7 @@
                     </div>
                     <div style="display: flex; align-items: center; gap: 15px;">
                         <span style="${roleColor} padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;">${u.role}</span>
-                        <button class="action-btn" onclick="openEditUser(${index})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="action-btn" onclick="openEditUser('${u.docId}')"><i class="fa-solid fa-pen"></i></button>
                     </div>
                 </div>
             `;
@@ -644,7 +661,7 @@
                         <h3 style="color: var(--bg-dark);"><i class="fa-solid fa-users" style="color: var(--primary-red);"></i> Kullanıcılar</h3>
                         <button class="login-btn" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddUser()">+ Yeni Ekle</button>
                     </div>
-                    <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden;">
+                    <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; max-height: 300px; overflow-y: auto;">
                         ${usersHtml}
                     </div>
                 </div>
@@ -655,27 +672,29 @@
                     </h3>
                     <div class="input-group"><label>SÜRÜM BİLGİSİ</label><input type="text" id="admin-version" value="${dbVersionInfo.version}"></div>
                     <div class="input-group"><label>EKLENEN ÖZELLİKLER</label><textarea id="admin-notes" rows="4">${dbVersionInfo.notes}</textarea></div>
-                    <button class="login-btn" style="padding: 10px;" onclick="updateVersionTexts()">Uygula & Kaydet</button>
+                    <button class="login-btn" style="padding: 10px;" id="save-version-btn" onclick="updateVersionTexts()">Uygula & Kaydet</button>
                 </div>
             </div>
         `;
     }
 
-    function updateVersionTexts() {
+    async function updateVersionTexts() {
+        const btn = document.getElementById('save-version-btn');
+        btn.innerText = "Kaydediliyor...";
+
         dbVersionInfo.version = document.getElementById('admin-version').value;
         dbVersionInfo.notes = document.getElementById('admin-notes').value;
         
-        // Local Storage'a Kaydet
-        localStorage.setItem('rdgrup_version', JSON.stringify(dbVersionInfo));
-
-        document.getElementById('main-version-text').innerText = dbVersionInfo.version;
-        document.getElementById('display-version-title').innerText = dbVersionInfo.version + " - Eklenen Özellikler";
-        document.getElementById('display-version-notes').innerText = dbVersionInfo.notes;
-        alert("Sürüm notları başarıyla güncellendi.");
+        // Veriyi Firebase'e gönder
+        await db.collection('settings').doc('system').set(dbVersionInfo);
+        
+        updateVersionUI();
+        btn.innerText = "Uygula & Kaydet";
+        alert("Sürüm notları Firebase veritabanına kaydedildi!");
     }
 
     function openAddUser() {
-        document.getElementById('edit-index').value = "-1";
+        document.getElementById('edit-doc-id').value = "new";
         document.getElementById('user-modal-title').innerText = "Yeni Kullanıcı Ekle";
         document.getElementById('u-name').value = ""; document.getElementById('u-surname').value = "";
         document.getElementById('u-id').value = ""; document.getElementById('u-pass').value = "";
@@ -684,9 +703,9 @@
         openModal('user-modal');
     }
 
-    function openEditUser(index) {
-        const user = dbUsers[index];
-        document.getElementById('edit-index').value = index;
+    function openEditUser(docId) {
+        const user = dbUsers.find(u => u.docId === docId);
+        document.getElementById('edit-doc-id').value = docId;
         document.getElementById('user-modal-title').innerText = "Kullanıcıyı Düzenle";
         document.getElementById('u-name').value = user.name; document.getElementById('u-surname').value = user.surname;
         document.getElementById('u-id').value = user.id; document.getElementById('u-pass').value = user.pass;
@@ -696,8 +715,11 @@
         openModal('user-modal');
     }
 
-    function saveUser() {
-        const index = parseInt(document.getElementById('edit-index').value);
+    async function saveUser() {
+        const docId = document.getElementById('edit-doc-id').value;
+        const btn = document.getElementById('save-user-btn');
+        btn.innerText = "Kaydediliyor...";
+
         const userData = {
             id: document.getElementById('u-id').value.trim().toLowerCase(),
             name: document.getElementById('u-name').value.trim(),
@@ -706,28 +728,42 @@
             role: document.getElementById('u-role').value
         };
 
-        if(index === -1) { dbUsers.push(userData); } else { dbUsers[index] = userData; }
+        if(docId === "new") { 
+            // Firebase'e Yeni Ekle
+            await db.collection('users').add(userData);
+        } else { 
+            // Firebase'de Güncelle
+            await db.collection('users').doc(docId).update(userData);
+        }
         
-        // Local Storage'a Kaydet
-        localStorage.setItem('rdgrup_users', JSON.stringify(dbUsers));
-
-        closeModal('user-modal'); loadAdminSettings();
+        btn.innerText = "Kaydet";
+        closeModal('user-modal'); 
+        
+        // Tabloyu güncellemek için verileri tekrar çek
+        await fetchUsersFromFirebase();
+        loadAdminSettings();
     }
 
-    function deleteUser() {
-        const index = parseInt(document.getElementById('edit-index').value);
-        if(index > -1) {
-            if(dbUsers[index].id === currentUser.id) {
+    async function deleteUser() {
+        const docId = document.getElementById('edit-doc-id').value;
+        if(docId !== "new") {
+            const userToDelete = dbUsers.find(u => u.docId === docId);
+            
+            if(userToDelete.id === currentUser.id) {
                 alert("Kendi hesabınızı silemezsiniz!");
                 return;
             }
-            if(confirm("Bu kullanıcıyı silmek istediğinize emin misiniz?")) {
-                dbUsers.splice(index, 1);
-                
-                // Local Storage'a Kaydet
-                localStorage.setItem('rdgrup_users', JSON.stringify(dbUsers));
 
+            if(confirm("Bu kullanıcıyı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+                document.getElementById('delete-user-btn').innerText = "Siliniyor...";
+                
+                // Firebase'den Sil
+                await db.collection('users').doc(docId).delete();
+                
                 closeModal('user-modal');
+                document.getElementById('delete-user-btn').innerText = "Sil";
+                
+                await fetchUsersFromFirebase();
                 loadAdminSettings();
             }
         }
