@@ -3,144 +3,282 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>İş Takip Paneli - Hoş Geldiniz</title>
+    <title>Holding İş Takip Paneli - Tasarım Prototipi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* 1. KURULUM VE ANA DEĞİŞKENLER */
+        :root {
+            --primary-red: #dc2626; /* Canlı Kurumsal Kırmızı */
+            --dark-red: #7f1d1d;
+            --bg-dark: #0f172a;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f9fafb;
-            color: #111827;
+            background-color: #f1f5f9;
+            display: grid;
+            gap: 40px;
+            grid-template-columns: 1fr;
+            place-items: center;
+            padding: 40px 0;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .slide-container {
+            width: 1280px;
+            height: 720px;
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
+            flex-direction: column;
+            position: relative;
         }
-        .card {
-            text-align: center;
-            background: white;
-            padding: 3rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-            max-width: 450px;
-            border: 1px solid #e5e7eb;
-        }
-        h1 {
-            color: #0070f3;
-            font-size: 1.75rem;
-            margin-top: 0;
-            margin-bottom: 0.5rem;
-        }
-        p {
-            color: #4b5563;
-            font-size: 1rem;
-            line-height: 1.5;
-            margin-bottom: 1.5rem;
-        }
-        .status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background-color: #ecfdf5;
-            color: #065f46;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-        }
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            background-color: #10b981;
+
+        /* 2. ARKA PLAN TASARIMI (Kırmızı Gradyan ve Soyut Şekiller) */
+        .slide-container::before {
+            content: '';
+            position: absolute;
+            top: -200px;
+            right: -200px;
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(220, 38, 38, 0.1) 0%, transparent 70%);
             border-radius: 50%;
+            z-index: 0;
         }
-        .btn {
-            margin-top: 1.5rem;
-            padding: 10px 20px;
-            background-color: #0070f3;
+
+        /* 3. BAŞLIK STİLLERİ */
+        .slide-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--bg-dark);
+            margin: 40px 60px 20px 60px;
+            position: relative;
+            z-index: 1;
+            border-left: 6px solid var(--primary-red);
+            padding-left: 20px;
+        }
+
+        .content-area {
+            flex-grow: 1;
+            padding: 20px 60px 60px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 4. GİRİŞ EKRANI TASARIMI */
+        .login-card {
+            width: 400px;
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin: 0 auto;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .profile-icon {
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, var(--primary-red), var(--dark-red));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 30px;
+            color: white;
+            font-size: 48px;
+            box-shadow: 0 10px 20px rgba(220, 38, 38, 0.3);
+        }
+
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #f1f5f9;
+            border-radius: 12px;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary-red);
+            outline: none;
+            background: white;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary-red);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1rem;
+            border-radius: 12px;
+            font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.2s;
+            font-family: 'Poppins', sans-serif;
+            letter-spacing: 1px;
         }
-        .btn:hover {
-            background-color: #005bb5;
+
+        /* 5. FİRMA SEÇİMİ TASARIMI */
+        .company-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            width: 100%;
         }
-        #dbStatus {
-            margin-top: 1rem;
-            font-weight: 500;
-            font-size: 0.9rem;
+
+        .company-card {
+            background: #ffffff;
+            border: 2px solid #f1f5f9;
+            border-radius: 24px;
+            padding: 50px;
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .company-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary-red);
+            box-shadow: 0 20px 40px rgba(220, 38, 38, 0.1);
+        }
+
+        .company-card i {
+            font-size: 64px;
+            color: var(--primary-red);
+            margin-bottom: 25px;
+        }
+
+        .company-card h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 28px;
+            color: var(--bg-dark);
+            margin-bottom: 15px;
+        }
+
+        .company-card p {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        /* 6. HAZIRLANIYOR EKRANI */
+        .loading-state {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            width: 80px;
+            height: 80px;
+            border: 8px solid #f1f5f9;
+            border-top: 8px solid var(--primary-red);
+            border-radius: 50%;
+            margin: 0 auto 30px;
         }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>İş Takip Paneli</h1>
-        <p>GitHub ve Vercel bağlantısı tamamlandı. Şimdi Firebase yapılandırmasını test etme zamanı.</p>
-        <div class="status-badge">
-            <span class="status-dot"></span>
-            Sistem Canlıda
-        </div>
-
-        <div>
-            <button class="btn" id="testDbButton">Veritabanına Test Görevi Ekle</button>
-            <p id="dbStatus"></p>
+<div class="slide-container" id="login-screen">
+    <h2 class="slide-title">Sisteme Giriş</h2>
+    <div class="content-area">
+        <div class="login-card">
+            <div class="profile-icon">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div class="input-group">
+                <label>KULLANICI ADI</label>
+                <input type="text" value="alperen" readonly>
+            </div>
+            <div class="input-group">
+                <label>ŞİFRE</label>
+                <input type="password" value="123" readonly>
+            </div>
+            <button class="login-btn">GİRİŞ YAP</button>
+            <p style="font-size: 12px; margin-top: 15px; color: var(--text-muted);">Admin Yetkisiyle Giriş Yapılıyor...</p>
         </div>
     </div>
+</div>
 
-    <script type="module">
-        // Tarayıcı için CDN linkleri kullanıyoruz
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+<div class="slide-container" id="company-selection" style="display: none;">
+    <h2 class="slide-title">Lütfen Çalışmak İstediğiniz Firmayı Seçin</h2>
+    <div class="content-area">
+        <div class="company-grid">
+            <div class="company-card" onclick="showLoading('RDGRUP MEDYA')">
+                <i class="fa-solid fa-clapperboard"></i>
+                <h3>RDGRUP MEDYA</h3>
+                <p>Medya Planlama, Prodüksiyon ve İçerik Yönetimi</p>
+            </div>
+            <div class="company-card" onclick="showLoading('ANKARA MEZUNİYET')">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <h3>ANKARA MEZUNİYET</h3>
+                <p>Etkinlik Yönetimi, Mezuniyet Organizasyonları</p>
+            </div>
+        </div>
+    </div>
+</div>
 
-        // Senin Firebase yapılandırman
-        const firebaseConfig = {
-            apiKey: "AIzaSyCrPd3BNDJiEK2wXOOmm1CTh9GofipnYNI",
-            authDomain: "is-takip-paneli-8523a.firebaseapp.com",
-            projectId: "is-takip-paneli-8523a",
-            storageBucket: "is-takip-paneli-8523a.firebasestorage.app",
-            messagingSenderId: "391985906793",
-            appId: "1:391985906793:web:a546e24623c8a6c2e10ef8",
-            measurementId: "G-SL00KF1GFW"
-        };
+<div class="slide-container" id="loading-screen" style="display: none;">
+    <h2 class="slide-title" id="loading-title">Panel Hazırlanıyor</h2>
+    <div class="content-area">
+        <div class="loading-state">
+            <div class="loading-spinner"></div>
+            <h3 style="font-family: 'Poppins'; font-size: 36px; color: var(--bg-dark);">Modül Hazırlanıyor...</h3>
+            <p style="font-size: 18px; color: var(--text-muted); margin-top: 10px;">Veritabanı senkronizasyonu yapılıyor.</p>
+            <div style="margin-top: 40px; background: #f1f5f9; height: 8px; border-radius: 4px; width: 400px; margin-left: auto; margin-right: auto;">
+                <div style="background: var(--primary-red); height: 100%; width: 65%; border-radius: 4px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
 
-        // Firebase'i Başlat
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const analytics = getAnalytics(app);
+<script>
+    // Basit ekran geçişleri için JavaScript
+    const loginBtn = document.querySelector('.login-btn');
+    const loginScreen = document.getElementById('login-screen');
+    const companyScreen = document.getElementById('company-selection');
+    const loadingScreen = document.getElementById('loading-screen');
+    const loadingTitle = document.getElementById('loading-title');
 
-        // Butona tıklayınca Firestore'a veri yazma işlemi
-        document.getElementById('testDbButton').addEventListener('click', async () => {
-            const statusText = document.getElementById('dbStatus');
-            const button = document.getElementById('testDbButton');
-            
-            button.disabled = true;
-            statusText.innerText = "Görev ekleniyor...";
-            statusText.style.color = "#4b5563";
+    loginBtn.addEventListener('click', () => {
+        loginScreen.style.display = 'none';
+        companyScreen.style.display = 'flex';
+    });
 
-            try {
-                // 'tasks' adında bir koleksiyon oluşturup içine doküman ekliyoruz
-                const docRef = await addDoc(collection(db, "tasks"), {
-                    title: "İlk Test Görevi",
-                    status: "Tamamlandı",
-                    assignedUsers: ["Alp", "Tasarımcı", "Yazılımcı"], // Çoklu kişi seçimi testi
-                    createdAt: new Date()
-                });
-                statusText.innerText = "Başarılı! Görev eklendi. ID: " + docRef.id;
-                statusText.style.color = "#10b981";
-                button.disabled = false;
-            } catch (e) {
-                console.error("Hata: ", e);
-                // Eğer hata çıkarsa ekrana yazdır
-                statusText.innerText = "Hata oluştu: " + e.message;
-                statusText.style.color = "red";
-                button.disabled = false;
-            }
-        });
-    </script>
+    function showLoading(companyName) {
+        companyScreen.style.display = 'none';
+        loadingScreen.style.display = 'flex';
+        loadingTitle.innerText = companyName + ' - Panel';
+    }
+</script>
 
 </body>
 </html>
