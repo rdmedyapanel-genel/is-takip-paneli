@@ -21,7 +21,7 @@
             padding: 3rem;
             border-radius: 16px;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
-            max-width: 400px;
+            max-width: 450px;
             border: 1px solid #e5e7eb;
         }
         h1 {
@@ -53,18 +53,94 @@
             background-color: #10b981;
             border-radius: 50%;
         }
+        .btn {
+            margin-top: 1.5rem;
+            padding: 10px 20px;
+            background-color: #0070f3;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: #005bb5;
+        }
+        #dbStatus {
+            margin-top: 1rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h1>İş Takip Paneli</h1>
-        <p>GitHub ve Vercel bağlantısı başarıyla tamamlandı. Sıfırdan panel kurulumu için ilk adım atıldı!</p>
+        <p>GitHub ve Vercel bağlantısı tamamlandı. Şimdi Firebase yapılandırmasını test etme zamanı.</p>
         <div class="status-badge">
             <span class="status-dot"></span>
             Sistem Canlıda
         </div>
+
+        <div>
+            <button class="btn" id="testDbButton">Veritabanına Test Görevi Ekle</button>
+            <p id="dbStatus"></p>
+        </div>
     </div>
+
+    <script type="module">
+        // Tarayıcı için CDN linkleri kullanıyoruz
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
+
+        // Senin Firebase yapılandırman
+        const firebaseConfig = {
+            apiKey: "AIzaSyCrPd3BNDJiEK2wXOOmm1CTh9GofipnYNI",
+            authDomain: "is-takip-paneli-8523a.firebaseapp.com",
+            projectId: "is-takip-paneli-8523a",
+            storageBucket: "is-takip-paneli-8523a.firebasestorage.app",
+            messagingSenderId: "391985906793",
+            appId: "1:391985906793:web:a546e24623c8a6c2e10ef8",
+            measurementId: "G-SL00KF1GFW"
+        };
+
+        // Firebase'i Başlat
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const analytics = getAnalytics(app);
+
+        // Butona tıklayınca Firestore'a veri yazma işlemi
+        document.getElementById('testDbButton').addEventListener('click', async () => {
+            const statusText = document.getElementById('dbStatus');
+            const button = document.getElementById('testDbButton');
+            
+            button.disabled = true;
+            statusText.innerText = "Görev ekleniyor...";
+            statusText.style.color = "#4b5563";
+
+            try {
+                // 'tasks' adında bir koleksiyon oluşturup içine doküman ekliyoruz
+                const docRef = await addDoc(collection(db, "tasks"), {
+                    title: "İlk Test Görevi",
+                    status: "Tamamlandı",
+                    assignedUsers: ["Alp", "Tasarımcı", "Yazılımcı"], // Çoklu kişi seçimi testi
+                    createdAt: new Date()
+                });
+                statusText.innerText = "Başarılı! Görev eklendi. ID: " + docRef.id;
+                statusText.style.color = "#10b981";
+                button.disabled = false;
+            } catch (e) {
+                console.error("Hata: ", e);
+                // Eğer hata çıkarsa ekrana yazdır
+                statusText.innerText = "Hata oluştu: " + e.message;
+                statusText.style.color = "red";
+                button.disabled = false;
+            }
+        });
+    </script>
 
 </body>
 </html>
