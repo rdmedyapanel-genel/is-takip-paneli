@@ -6,7 +6,7 @@
     <title>Holding İş Takip Paneli - Tasarım Prototipi</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         /* 1. KURULUM VE ANA DEĞİŞKENLER */
@@ -21,6 +21,7 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
+        /* Tüm sistem fontu Poppins yapıldı */
         body {
             background-color: #f1f5f9;
             display: grid;
@@ -28,7 +29,7 @@
             grid-template-columns: 1fr;
             place-items: center;
             padding: 40px 0;
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif; 
         }
 
         .slide-container {
@@ -43,7 +44,6 @@
             position: relative;
         }
 
-        /* 2. ARKA PLAN TASARIMI (Kırmızı Gradyan ve Soyut Şekiller) */
         .slide-container::before {
             content: '';
             position: absolute;
@@ -56,17 +56,15 @@
             z-index: 0;
         }
 
-        /* 3. BAŞLIK STİLLERİ */
+        /* Başlıklar ortalandı ve sol çizgi kaldırıldı */
         .slide-title {
-            font-family: 'Poppins', sans-serif;
             font-size: 36px;
             font-weight: 700;
             color: var(--bg-dark);
-            margin: 40px 60px 20px 60px;
+            text-align: center;
+            margin: 50px 60px 10px 60px;
             position: relative;
             z-index: 1;
-            border-left: 6px solid var(--primary-red);
-            padding-left: 20px;
         }
 
         .content-area {
@@ -125,6 +123,7 @@
             border-radius: 12px;
             background: #f8fafc;
             transition: all 0.3s;
+            font-family: 'Poppins', sans-serif;
         }
 
         .input-group input:focus {
@@ -144,6 +143,15 @@
             cursor: pointer;
             font-family: 'Poppins', sans-serif;
             letter-spacing: 1px;
+            margin-top: 10px;
+        }
+        
+        .error-message {
+            color: var(--primary-red);
+            font-size: 14px;
+            margin-top: 15px;
+            display: none;
+            font-weight: 600;
         }
 
         /* 5. FİRMA SEÇİMİ TASARIMI */
@@ -179,7 +187,6 @@
         }
 
         .company-card h3 {
-            font-family: 'Poppins', sans-serif;
             font-size: 28px;
             color: var(--bg-dark);
             margin-bottom: 15px;
@@ -202,6 +209,12 @@
             border-top: 8px solid var(--primary-red);
             border-radius: 50%;
             margin: 0 auto 30px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -216,14 +229,14 @@
             </div>
             <div class="input-group">
                 <label>KULLANICI ADI</label>
-                <input type="text" value="alperen" readonly>
+                <input type="text" id="username" placeholder="Kullanıcı adınızı girin">
             </div>
             <div class="input-group">
                 <label>ŞİFRE</label>
-                <input type="password" value="123" readonly>
+                <input type="password" id="password" placeholder="Şifrenizi girin">
             </div>
-            <button class="login-btn">GİRİŞ YAP</button>
-            <p style="font-size: 12px; margin-top: 15px; color: var(--text-muted);">Admin Yetkisiyle Giriş Yapılıyor...</p>
+            <button class="login-btn" id="login-btn">GİRİŞ YAP</button>
+            <p class="error-message" id="error-msg">Hatalı kullanıcı adı veya şifre!</p>
         </div>
     </div>
 </div>
@@ -251,7 +264,7 @@
     <div class="content-area">
         <div class="loading-state">
             <div class="loading-spinner"></div>
-            <h3 style="font-family: 'Poppins'; font-size: 36px; color: var(--bg-dark);">Modül Hazırlanıyor...</h3>
+            <h3 style="font-size: 36px; color: var(--bg-dark);">Modül Hazırlanıyor...</h3>
             <p style="font-size: 18px; color: var(--text-muted); margin-top: 10px;">Veritabanı senkronizasyonu yapılıyor.</p>
             <div style="margin-top: 40px; background: #f1f5f9; height: 8px; border-radius: 4px; width: 400px; margin-left: auto; margin-right: auto;">
                 <div style="background: var(--primary-red); height: 100%; width: 65%; border-radius: 4px;"></div>
@@ -261,16 +274,36 @@
 </div>
 
 <script>
-    // Basit ekran geçişleri için JavaScript
-    const loginBtn = document.querySelector('.login-btn');
+    const loginBtn = document.getElementById('login-btn');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
+    const errorMsg = document.getElementById('error-msg');
+    
     const loginScreen = document.getElementById('login-screen');
     const companyScreen = document.getElementById('company-selection');
     const loadingScreen = document.getElementById('loading-screen');
     const loadingTitle = document.getElementById('loading-title');
 
+    // Giriş Kontrol Mantığı
     loginBtn.addEventListener('click', () => {
-        loginScreen.style.display = 'none';
-        companyScreen.style.display = 'flex';
+        const user = usernameInput.value.trim();
+        const pass = passwordInput.value.trim();
+
+        // Şifre ve kullanıcı adı doğrulaması
+        if (user === 'alperen' && pass === '123') {
+            errorMsg.style.display = 'none';
+            loginScreen.style.display = 'none';
+            companyScreen.style.display = 'flex';
+        } else {
+            errorMsg.style.display = 'block';
+        }
+    });
+
+    // Enter tuşu ile giriş yapabilme özelliği eklendi
+    passwordInput.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            loginBtn.click();
+        }
     });
 
     function showLoading(companyName) {
