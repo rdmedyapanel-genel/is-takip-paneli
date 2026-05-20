@@ -102,7 +102,7 @@
         .dash-item.green { border-left-color: #10b981; }
 
         /* --- TAKVİM ARAYÜZÜ CSS --- */
-        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        .cal-grid { display: grid; gap: 1px; background: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
         .cal-header-day { background: #f8fafc; text-align: center; padding: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;}
         .cal-day { background: white; min-height: 120px; padding: 10px; }
         .cal-day.padding { background: #f8fafc; }
@@ -180,7 +180,7 @@
         </div>
 
         <div class="version-info">
-            <h4 id="main-version-text">RDGRUP V.1.1</h4>
+            <h4 id="main-version-text">Yükleniyor...</h4>
             <a onclick="openModal('release-notes-modal')">Eklenen Özellikleri Gör</a>
         </div>
     </div>
@@ -188,14 +188,14 @@
 
 <div class="slide-container bg-shape" id="company-selection" style="display: none;">
     <div class="content-area" style="padding-top: 30px;">
-        <div style="text-align: center; margin-bottom: 40px;">
+        <h2 class="slide-title" style="margin-top: 0;">FİRMA SEÇME SAYFASI</h2>
+        <p class="slide-subtitle">Planlı çalışmak başarıyı getirir! Kolay gelsin :)</p>
+
+        <div style="text-align: center; margin-bottom: 40px; margin-top: 20px;">
             <button class="login-btn" style="width: auto; padding: 15px 50px; background: var(--bg-dark); font-size: 16px; border-radius: 16px;" onclick="openDashboard('TÜM İŞLER', 'tum_isler')">
                 <i class="fa-solid fa-layer-group" style="margin-right: 10px;"></i> TÜM İŞLER (Genel Bakış)
             </button>
         </div>
-
-        <h2 class="slide-title" style="margin-top: 0;">FİRMA SEÇİNİZ</h2>
-        <p class="slide-subtitle">Planlı çalışmak başarıyı getirir! Kolay gelsin :)</p>
         
         <div class="company-grid">
             <div class="company-card" onclick="openDashboard('RDGRUP MEDYA', 'rdgrup')">
@@ -229,8 +229,8 @@
             <div class="sidebar-profile" onclick="loadProfileView()">
                 <div class="avatar" id="logged-avatar">A</div>
                 <div>
-                    <div style="font-weight: 700; color: var(--bg-dark); font-size: 15px;" id="logged-user-name">Alperen</div>
-                    <div style="font-size: 12px; color: var(--text-muted);" id="logged-user-role">Admin</div>
+                    <div style="font-weight: 700; color: var(--bg-dark); font-size: 15px;" id="logged-user-name">Kullanıcı</div>
+                    <div style="font-size: 12px; color: var(--text-muted);" id="logged-user-role">Rol</div>
                 </div>
             </div>
 
@@ -252,18 +252,29 @@
 </div>
 
 <script>
-    // --- VERİTABANI SİMÜLASYONU ---
-    let dbUsers = [
+    // --- YEREL HAFIZA (LOCAL STORAGE) ENTEGRASYONU ---
+    const defaultUsers = [
         { id: 'alperen', name: 'Alperen', surname: 'Yılmaz', role: 'Admin', pass: '123' },
         { id: 'personel', name: 'Test', surname: 'Personel', role: 'Yönetici', pass: '123' }
     ];
+    // Kullanıcıları hafızadan çek, yoksa varsayılanları kullan
+    let dbUsers = JSON.parse(localStorage.getItem('rdgrup_users')) || defaultUsers;
 
-    let dbVersionInfo = { version: "RDGRUP V.1.1", notes: "- Firma seçim ekranı yenilendi.\n- Türkiye Mezuniyeti eklendi.\n- Anasayfa ve Takvim geliştirildi." };
+    const defaultVersion = { version: "RDGRUP V.1.1", notes: "- Firma seçim ekranı yenilendi.\n- Türkiye Mezuniyeti eklendi.\n- Anasayfa ve Takvim geliştirildi." };
+    // Versiyon notlarını hafızadan çek
+    let dbVersionInfo = JSON.parse(localStorage.getItem('rdgrup_version')) || defaultVersion;
+
+    // Sayfa Yüklendiğinde Versiyon Notlarını HTML'e bas
+    document.getElementById('main-version-text').innerText = dbVersionInfo.version;
+    document.getElementById('display-version-title').innerText = dbVersionInfo.version + " - Eklenen Özellikler";
+    document.getElementById('display-version-notes').innerText = dbVersionInfo.notes;
+
     let currentUser = null;
     let currentCompany = "";
     
     // Takvim Değişkenleri
-    let nav = 0; // Ay ileri/geri takibi için
+    let calDate = new Date();
+    let currentCalView = 'month'; // 'month', 'week', 'day'
 
     // -- ELEMENTLER --
     const loginScreen = document.getElementById('login-screen');
@@ -315,7 +326,7 @@
         companyScreen.style.display = 'flex';
     }
 
-    // -- MENÜ VERİLERİ (Tüm İşler Eklendi) --
+    // -- MENÜ VERİLERİ --
     const menuData = {
         'tum_isler': [
             { icon: 'fa-calendar-days', name: 'Genel Takvim' }, 
@@ -343,7 +354,9 @@
         companyScreen.style.display = 'none';
         dashboardScreen.style.display = 'flex';
         sidebarMenu.innerHTML = ''; 
-        nav = 0; // Takvimi sıfırla
+        
+        calDate = new Date();
+        currentCalView = 'month';
 
         const items = menuData[type] || menuData['rdgrup'];
 
@@ -363,7 +376,7 @@
         loadPageView(items[0].name);
     }
 
-    // --- SAYFA YÜKLEYİCİ (Dashboard, Takvim, Profil, Admin) ---
+    // --- SAYFA YÜKLEYİCİ ---
     function loadPageView(pageName) {
         if(pageName === 'Ayarlar') {
             loadAdminSettings();
@@ -376,7 +389,7 @@
             mainContent.innerHTML = `
                 <div class="content-card">
                     <h2 class="content-title">${currentCompany} - ${pageName}</h2>
-                    <p style="color: var(--text-muted);">Bu alan ${pageName} sayfası için ayrılmıştır. (Veritabanı bağlandığında dolacak)</p>
+                    <p style="color: var(--text-muted);">Bu alan ${pageName} sayfası için ayrılmıştır.</p>
                 </div>
             `;
         }
@@ -420,13 +433,13 @@
             <div class="dash-card">
                 <div class="dash-card-header"><i class="fa-solid fa-note-sticky" style="color: #6366f1;"></i> Aktif Ajanda Notları</div>
                 <div style="color: var(--text-muted); font-size: 13px; line-height: 1.6; background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #6366f1;">
-                    <strong>Hatırlatma:</strong> Mehmet Bey ile Cuma günkü görüşmeden önce revize edilen 3D animasyon dosyalarını buluta yüklemeyi unutma. Ayrıca Vercel üzerindeki Firestore limitlerini kontrol et.
+                    <strong>Hatırlatma:</strong> Mehmet Bey ile Cuma günkü görüşmeden önce revize edilen 3D animasyon dosyalarını buluta yüklemeyi unutma.
                 </div>
             </div>
         `;
     }
 
-    // --- 2. GERÇEK ZAMANLI TAKVİM TASARIMI VE JS MANTIĞI ---
+    // --- 2. GERÇEK ZAMANLI VE AKTİF BUTONLU TAKVİM ---
     function renderCalendarView(pageName) {
         return `
             <div class="content-card" style="padding: 25px;">
@@ -434,102 +447,139 @@
                 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <div style="display: flex; gap: 10px; align-items: center;">
-                        <button class="action-btn" onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
-                        <button class="action-btn" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button class="action-btn" onclick="changeCalNav(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button class="action-btn" onclick="changeCalNav(1)"><i class="fa-solid fa-chevron-right"></i></button>
                         <button class="login-btn" style="width: auto; padding: 6px 15px; font-size: 12px; margin:0;" onclick="resetToToday()">Bugün</button>
                     </div>
                     
                     <h3 id="calendar-month-year" style="font-size: 22px; color: var(--bg-dark); font-weight: 700; margin: 0;">Yükleniyor...</h3>
                     
                     <div style="display: flex; gap: 15px;">
-                        <button class="action-btn active" style="font-size: 14px;">Aylık</button>
-                        <button class="action-btn" style="font-size: 14px;">Haftalık</button>
-                        <button class="action-btn" style="font-size: 14px;">Günlük</button>
+                        <button class="action-btn active" id="btn-view-month" onclick="changeCalView('month')">Aylık</button>
+                        <button class="action-btn" id="btn-view-week" onclick="changeCalView('week')">Haftalık</button>
+                        <button class="action-btn" id="btn-view-day" onclick="changeCalView('day')">Günlük</button>
                     </div>
                 </div>
 
-                <div class="cal-grid" id="calendar-wrapper">
-                    <div class="cal-header-day">Pzt</div>
-                    <div class="cal-header-day">Sal</div>
-                    <div class="cal-header-day">Çar</div>
-                    <div class="cal-header-day">Per</div>
-                    <div class="cal-header-day">Cum</div>
-                    <div class="cal-header-day">Cmt</div>
-                    <div class="cal-header-day">Paz</div>
-                    </div>
+                <div class="cal-grid" id="calendar-wrapper"></div>
             </div>
         `;
     }
 
-    function initCalendar() {
-        const dt = new Date();
-        
-        // nav değişkenine göre ayı ayarla
-        dt.setMonth(new Date().getMonth() + nav);
-        
-        const month = dt.getMonth();
-        const year = dt.getFullYear();
-
-        const firstDayOfMonth = new Date(year, month, 1);
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        
-        // Ay Yıl Yazısını Güncelle
-        document.getElementById('calendar-month-year').innerText = dt.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-
-        // JS'te haftanın ilk günü Pazar(0)'dır. Biz Pazartesi(0) yapmak için kaydırıyoruz.
-        let paddingDays = firstDayOfMonth.getDay() - 1;
-        if(paddingDays === -1) paddingDays = 6; // Eğer ilk gün Pazar ise, 6 boşluk bırak
-
-        const calendarGrid = document.getElementById('calendar-wrapper');
-        
-        // Önceki günleri temizle (Sadece Header kalsın diye tüm div'leri silip header'ı geri ekliyoruz)
-        calendarGrid.innerHTML = `
-            <div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div>
-            <div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>
-        `;
-
-        // Boşlukları ve Günleri oluştur
-        for(let i = 1; i <= paddingDays + daysInMonth; i++) {
-            const daySquare = document.createElement('div');
-            daySquare.classList.add('cal-day');
-
-            if (i > paddingDays) {
-                const dayNumber = i - paddingDays;
-                
-                // Bugün işaretlemesi
-                if (dayNumber === new Date().getDate() && nav === 0) {
-                    daySquare.innerHTML = `<div class="cal-day-num today">${dayNumber}</div><div class="clear"></div>`;
-                } else {
-                    daySquare.innerHTML = `<div class="cal-day-num">${dayNumber}</div><div class="clear"></div>`;
-                }
-
-                // Görsel test için rastgele etkinlik ekleme (Demo amaçlı)
-                if (dayNumber === 5) {
-                    daySquare.innerHTML += `<div class="cal-event">📽️ Ankara Mezuniyet Çekimi</div>`;
-                }
-                if (dayNumber === 12) {
-                    daySquare.innerHTML += `<div class="cal-event orange">🔥 Gülçimen Aspava Paylaşım</div>`;
-                }
-                if (dayNumber === 20 && nav === 0) { // Sadece bu ayda görünsün
-                    daySquare.innerHTML += `<div class="cal-event red">🚨 Vercel Limit Kontrolü</div>`;
-                    daySquare.innerHTML += `<div class="cal-event">Toplantı: Mehmet Bey</div>`;
-                }
-
-            } else {
-                daySquare.classList.add('padding');
-            }
-            calendarGrid.appendChild(daySquare);
-        }
+    function changeCalView(view) {
+        currentCalView = view;
+        document.getElementById('btn-view-month').classList.remove('active');
+        document.getElementById('btn-view-week').classList.remove('active');
+        document.getElementById('btn-view-day').classList.remove('active');
+        document.getElementById('btn-view-' + view).classList.add('active');
+        initCalendar();
     }
 
-    function changeMonth(direction) {
-        nav += direction;
+    function changeCalNav(direction) {
+        if(currentCalView === 'month') calDate.setMonth(calDate.getMonth() + direction);
+        if(currentCalView === 'week') calDate.setDate(calDate.getDate() + (direction * 7));
+        if(currentCalView === 'day') calDate.setDate(calDate.getDate() + direction);
         initCalendar();
     }
 
     function resetToToday() {
-        nav = 0;
+        calDate = new Date();
         initCalendar();
+    }
+
+    function initCalendar() {
+        const grid = document.getElementById('calendar-wrapper');
+        const monthYearText = document.getElementById('calendar-month-year');
+        grid.innerHTML = '';
+        
+        let y = calDate.getFullYear();
+        let m = calDate.getMonth();
+        
+        // Ortadaki Ay/Yıl başlığını güncelle
+        if(currentCalView === 'day') {
+            monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+        } else {
+            monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+        }
+
+        if(currentCalView === 'month') {
+            grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div>
+                              <div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`;
+            
+            let firstDay = new Date(y, m, 1).getDay() - 1;
+            if(firstDay === -1) firstDay = 6;
+            let daysInMonth = new Date(y, m + 1, 0).getDate();
+            
+            for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day padding"></div>`;
+            for(let i=1; i<=daysInMonth; i++) {
+                let isToday = (i === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear());
+                let events = getDemoEvents(i, 'month'); 
+                grid.innerHTML += `<div class="cal-day">
+                    <div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div><div class="clear"></div>
+                    ${events}
+                </div>`;
+            }
+
+        } else if (currentCalView === 'week') {
+            grid.style.gridTemplateColumns = 'repeat(7, 1fr)';
+            grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div>
+                              <div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`;
+            
+            let dayOfWeek = calDate.getDay() - 1;
+            if(dayOfWeek === -1) dayOfWeek = 6;
+            let startOfWeek = new Date(calDate);
+            startOfWeek.setDate(calDate.getDate() - dayOfWeek);
+
+            for(let i=0; i<7; i++) {
+                let currentDay = new Date(startOfWeek);
+                currentDay.setDate(startOfWeek.getDate() + i);
+                
+                let isToday = (currentDay.getDate() === new Date().getDate() && currentDay.getMonth() === new Date().getMonth() && currentDay.getFullYear() === new Date().getFullYear());
+                let events = getDemoEvents(currentDay.getDate(), 'week');
+                
+                grid.innerHTML += `<div class="cal-day">
+                    <div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div><div class="clear"></div>
+                    ${events}
+                </div>`;
+            }
+
+        } else if (currentCalView === 'day') {
+            grid.style.gridTemplateColumns = '1fr';
+            grid.innerHTML = `<div class="cal-header-day">${calDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>`;
+            
+            let isToday = (calDate.getDate() === new Date().getDate() && calDate.getMonth() === new Date().getMonth() && calDate.getFullYear() === new Date().getFullYear());
+            let events = getDemoEvents(calDate.getDate(), 'day');
+            
+            grid.innerHTML += `<div class="cal-day" style="min-height: 400px; padding: 30px;">
+                <div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 20px; font-size: 24px; width: 40px; height: 40px;">${calDate.getDate()}</div>
+                <div class="clear"></div>
+                <div style="margin-top: 10px;">${events ? events : '<div style="color:var(--text-muted); font-size:16px;">Bugün için planlanmış bir iş bulunmuyor.</div>'}</div>
+            </div>`;
+        }
+    }
+    
+    function getDemoEvents(dayNumber, viewType) {
+        let evs = [];
+        // Demo veriler
+        if (dayNumber === 5) evs.push({t: '📽️ Ankara Mezuniyet Çekimi', c: ''});
+        if (dayNumber === 12) evs.push({t: '🔥 Gülçimen Aspava Paylaşım', c: 'orange'});
+        if (dayNumber === 20) { 
+            evs.push({t: '🚨 Vercel Limit Kontrolü', c: 'red'});
+            evs.push({t: 'Toplantı: Mehmet Bey', c: ''});
+        }
+        
+        if(evs.length === 0) return '';
+        
+        let html = '';
+        evs.forEach(e => {
+            if(viewType === 'day') {
+                html += `<div class="cal-event ${e.c}" style="padding: 15px; font-size: 15px; margin-bottom: 12px; border-radius: 10px;">${e.t}</div>`;
+            } else {
+                html += `<div class="cal-event ${e.c}">${e.t}</div>`;
+            }
+        });
+        return html;
     }
 
     // --- PROFIL ---
@@ -551,10 +601,19 @@
 
     function updateOwnPassword() {
         const newPass = document.getElementById('new-profile-pass').value;
-        if(newPass) { currentUser.pass = newPass; alert('Şifreniz başarıyla güncellendi!'); }
+        if(newPass) { 
+            currentUser.pass = newPass; 
+            
+            // Local Storage'ı da güncelle
+            const uIndex = dbUsers.findIndex(u => u.id === currentUser.id);
+            if(uIndex > -1) dbUsers[uIndex].pass = newPass;
+            localStorage.setItem('rdgrup_users', JSON.stringify(dbUsers));
+
+            alert('Şifreniz başarıyla güncellendi!'); 
+        }
     }
 
-    // --- ADMİN PANELİ (Kullanıcı Silme Eklendi) ---
+    // --- ADMİN PANELİ ---
     function loadAdminSettings() {
         let usersHtml = '';
         dbUsers.forEach((u, index) => {
@@ -605,6 +664,10 @@
     function updateVersionTexts() {
         dbVersionInfo.version = document.getElementById('admin-version').value;
         dbVersionInfo.notes = document.getElementById('admin-notes').value;
+        
+        // Local Storage'a Kaydet
+        localStorage.setItem('rdgrup_version', JSON.stringify(dbVersionInfo));
+
         document.getElementById('main-version-text').innerText = dbVersionInfo.version;
         document.getElementById('display-version-title').innerText = dbVersionInfo.version + " - Eklenen Özellikler";
         document.getElementById('display-version-notes').innerText = dbVersionInfo.notes;
@@ -617,7 +680,7 @@
         document.getElementById('u-name').value = ""; document.getElementById('u-surname').value = "";
         document.getElementById('u-id').value = ""; document.getElementById('u-pass').value = "";
         
-        document.getElementById('delete-user-btn').style.display = 'none'; // Ekleme yaparken Sil butonu gizli
+        document.getElementById('delete-user-btn').style.display = 'none';
         openModal('user-modal');
     }
 
@@ -629,7 +692,7 @@
         document.getElementById('u-id').value = user.id; document.getElementById('u-pass').value = user.pass;
         document.getElementById('u-role').value = user.role;
         
-        document.getElementById('delete-user-btn').style.display = 'block'; // Düzenlerken Sil butonu görünür
+        document.getElementById('delete-user-btn').style.display = 'block';
         openModal('user-modal');
     }
 
@@ -644,19 +707,26 @@
         };
 
         if(index === -1) { dbUsers.push(userData); } else { dbUsers[index] = userData; }
+        
+        // Local Storage'a Kaydet
+        localStorage.setItem('rdgrup_users', JSON.stringify(dbUsers));
+
         closeModal('user-modal'); loadAdminSettings();
     }
 
     function deleteUser() {
         const index = parseInt(document.getElementById('edit-index').value);
         if(index > -1) {
-            // Kendini silmeyi engellemek iyi bir pratiktir
             if(dbUsers[index].id === currentUser.id) {
                 alert("Kendi hesabınızı silemezsiniz!");
                 return;
             }
             if(confirm("Bu kullanıcıyı silmek istediğinize emin misiniz?")) {
                 dbUsers.splice(index, 1);
+                
+                // Local Storage'a Kaydet
+                localStorage.setItem('rdgrup_users', JSON.stringify(dbUsers));
+
                 closeModal('user-modal');
                 loadAdminSettings();
             }
