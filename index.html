@@ -9,6 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
@@ -22,7 +26,7 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --bg-light: #f8fafc;
-            --task-purple: #6c63ff; /* Görev kartı rengi */
+            --task-purple: #6c63ff; 
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -104,13 +108,11 @@
         .action-btn:hover { color: var(--primary-red); }
         .action-btn.active { color: var(--primary-red); font-weight: 700; border-bottom: 2px solid var(--primary-red); }
 
-        /* --- DASHBOARD ANASAYFA KARTLARI --- */
         .dash-card { background: white; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 20px; }
         .dash-card-header { font-size: 16px; font-weight: 600; color: var(--bg-dark); margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
         .dash-task-list { display: flex; flex-direction: column; gap: 8px; }
         .dash-empty-state { color: var(--text-muted); font-size: 13px; text-align: center; padding: 10px; }
 
-        /* --- TAKVİM ARAYÜZÜ VE GÖREV KARTLARI --- */
         .cal-grid { display: grid; gap: 1px; background: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
         .cal-header-day { background: #f8fafc; text-align: center; padding: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;}
         .cal-day { background: white; min-height: 120px; padding: 5px; position: relative;}
@@ -129,7 +131,6 @@
         
         .task-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* Yükleniyor Ekranı İçin Siyah Perde */
         .full-loader { position: absolute; top:0; left:0; width:100%; height:100%; background: white; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 20px;}
         .spinner { width: 50px; height: 50px; border: 5px solid #f1f5f9; border-top: 5px solid var(--primary-red); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -187,11 +188,7 @@
         <div class="input-group">
             <label>Firma:</label>
             <select id="t-firma">
-                <option value="Gülçimen Aspava Emek">Gülçimen Aspava Emek</option>
-                <option value="Gülçimen Aspava Eryaman">Gülçimen Aspava Eryaman</option>
-                <option value="Ateş Aspava">Ateş Aspava</option>
-                <option value="Cengiz Yıldırım Balgat">Cengiz Yıldırım Balgat</option>
-                <option value="Victoria Pastanesi">Victoria Pastanesi</option>
+                <option value="">Firmalar Yükleniyor...</option>
             </select>
         </div>
 
@@ -222,7 +219,7 @@
 
         <div class="input-group">
             <label>Tarih:</label>
-            <input type="date" id="t-tarih">
+            <input type="text" id="t-tarih" placeholder="Tarih(ler) seçin...">
         </div>
 
         <div class="input-group">
@@ -361,12 +358,14 @@
 
     // --- GLOBAL DEĞİŞKENLER ---
     let dbUsers = [];
-    let dbTasks = []; // Çekilen görevler burada tutulacak
+    let dbTasks = []; 
+    let dbCompanies = [];
     let dbVersionInfo = { version: "RDGRUP V.1.1", notes: "Sistem güncelleniyor..." };
     let currentUser = null;
     let currentCompany = "";
-    let currentCategoryContext = ""; // 'rdgrup', 'mezuniyet' vb. izolasyon için
+    let currentCategoryContext = ""; 
     let activePage = "";
+    let taskDatePicker = null;
     
     // Takvim Değişkenleri
     let calDate = new Date();
@@ -392,6 +391,7 @@
             }
             updateVersionUI();
             await fetchUsersFromFirebase();
+            await fetchCompaniesFromFirebase();
         } catch (error) {
             console.error("Bağlantı hatası: ", error);
             alert("Sunucuya bağlanılamadı. Lütfen sayfayı yenileyin.");
@@ -409,12 +409,19 @@
         populateUserDropdowns();
     }
 
+    async function fetchCompaniesFromFirebase() {
+        const snapshot = await db.collection('companies').get();
+        dbCompanies = [];
+        snapshot.forEach(doc => {
+            dbCompanies.push({ docId: doc.id, ...doc.data() });
+        });
+        populateCompanyDropdown();
+    }
+
     async function fetchTasksFromFirebase() {
-        // İzolasyon: Sadece bulunduğumuz şirket bağlamına ait görevleri çekiyoruz
         let query = db.collection('tasks');
         if (currentCategoryContext === 'rdgrup') {
             query = query.where('category', '==', 'rdgrup_paylasim'); 
-            // Çekim takvimi eklendiğinde orası için de in list kullanılabilir
         } else if (currentCategoryContext === 'mezuniyet') {
             query = query.where('category', '==', 'mezuniyet_gorev');
         }
@@ -429,15 +436,27 @@
     function populateUserDropdowns() {
         const hazirlayanSelect = document.getElementById('t-hazirlayan');
         const paylasanSelect = document.getElementById('t-paylasan');
-        hazirlayanSelect.innerHTML = '';
-        paylasanSelect.innerHTML = '';
+        hazirlayanSelect.innerHTML = ''; paylasanSelect.innerHTML = '';
         
         dbUsers.forEach(u => {
             let option1 = new Option(`${u.name} ${u.surname}`, u.name);
             let option2 = new Option(`${u.name} ${u.surname}`, u.name);
-            hazirlayanSelect.add(option1);
-            paylasanSelect.add(option2);
+            hazirlayanSelect.add(option1); paylasanSelect.add(option2);
         });
+    }
+
+    function populateCompanyDropdown() {
+        const firmaSelect = document.getElementById('t-firma');
+        if(firmaSelect) {
+            firmaSelect.innerHTML = '';
+            if(dbCompanies.length === 0) {
+                firmaSelect.add(new Option("Firma bulunamadı (Admin panelinden ekleyin)", ""));
+            } else {
+                dbCompanies.forEach(c => {
+                    firmaSelect.add(new Option(c.name, c.name));
+                });
+            }
+        }
     }
 
     function updateVersionUI() {
@@ -493,31 +512,25 @@
         dashboardScreen.style.display = 'none';
         companyScreen.style.display = 'none';
         loginScreen.style.display = 'flex';
-        document.getElementById('username').value = '';
-        document.getElementById('password').value = '';
+        document.getElementById('username').value = ''; document.getElementById('password').value = '';
     }
 
     function backToCompanySelection() {
-        dashboardScreen.style.display = 'none';
-        companyScreen.style.display = 'flex';
+        dashboardScreen.style.display = 'none'; companyScreen.style.display = 'flex';
     }
 
     // -- MENÜ VERİLERİ --
     const menuData = {
         'tum_isler': [
-            { icon: 'fa-calendar-days', name: 'Genel Takvim' }, 
-            { icon: 'fa-book', name: 'Genel Ajanda' }
+            { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-book', name: 'Genel Ajanda' }
         ],
-        'raporlar': [
-            { icon: 'fa-chart-pie', name: 'Raporlar' }
-        ],
+        'raporlar': [ { icon: 'fa-chart-pie', name: 'Raporlar' } ],
         'rdgrup': [
             { icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' },
             { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' },
             { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' },
             { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' },
-            { icon: 'fa-book-open', name: 'Kişisel Ajanda' },
-            { icon: 'fa-bullhorn', name: 'Reklamlar' }
+            { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, { icon: 'fa-bullhorn', name: 'Reklamlar' }
         ],
         'mezuniyet': [
             { icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-camera-retro', name: 'Çekimler' },
@@ -532,7 +545,7 @@
         currentCompany = companyName;
         currentCategoryContext = type;
         
-        await fetchTasksFromFirebase(); // Sayfaya girerken görevleri çek
+        await fetchTasksFromFirebase(); 
 
         companyScreen.style.display = 'none';
         dashboardScreen.style.display = 'flex';
@@ -563,6 +576,8 @@
         activePage = pageName;
         if(pageName === 'Ayarlar') {
             loadAdminSettings();
+        } else if (pageName === 'Firmalar') {
+            loadFirmalarPage();
         } else if (pageName === 'Anasayfa' || pageName === 'Kendi İşlerim') {
             mainContent.innerHTML = renderDashboardHome(pageName);
         } else if (pageName.includes('Takvim')) {
@@ -578,6 +593,31 @@
         }
     }
 
+    // --- FİRMALAR SAYFASI ---
+    function loadFirmalarPage() {
+        let html = '<div class="company-grid" style="margin-top:20px;">';
+        if(dbCompanies.length === 0) {
+            html += '<p style="color: var(--text-muted); width: 100%; text-align: center;">Henüz sisteme eklenmiş bir firma bulunmuyor.</p>';
+        } else {
+            dbCompanies.forEach(c => {
+                html += `
+                    <div class="company-card" style="padding: 30px 10px; cursor: default;">
+                        <i class="fa-solid fa-building" style="font-size: 30px;"></i>
+                        <h3 style="font-size: 16px;">${c.name}</h3>
+                    </div>
+                `;
+            });
+        }
+        html += '</div>';
+
+        mainContent.innerHTML = `
+            <div class="content-card">
+                <h2 class="content-title">${currentCompany} - Firmalar</h2>
+                ${html}
+            </div>
+        `;
+    }
+
     // --- ANASAYFA / KENDİ İŞLERİM ---
     function renderDashboardHome(pageName) {
         let todayStr = formatDate(new Date());
@@ -587,7 +627,6 @@
 
         let myTasksOnly = (pageName === 'Kendi İşlerim');
         
-        // Filtrelemeler
         let gecikenler = dbTasks.filter(t => t.tarih < todayStr && (!t.hazirlandi || !t.paylasildi));
         let bugun = dbTasks.filter(t => t.tarih === todayStr);
         let yarin = dbTasks.filter(t => t.tarih === tomorrowStr);
@@ -629,7 +668,7 @@
         `;
     }
 
-    // --- TAKVİM ARAYÜZÜ ---
+    // --- TAKVİM ARAYÜZÜ VE İNDEX HESAPLAMA ---
     function renderCalendarView(pageName) {
         let headerAction = '';
         if (pageName === 'Paylaşım Takvimi') {
@@ -679,17 +718,27 @@
         initCalendar();
     }
 
-    function resetToToday() {
-        calDate = new Date();
-        initCalendar();
+    function resetToToday() { calDate = new Date(); initCalendar(); }
+
+    function getTaskIndex(task) {
+        // İlgili ayın (örn: 2026-05) başını alıyoruz
+        const taskMonth = task.tarih.substring(0, 7); 
+        let monthlyTasks = dbTasks.filter(t => t.firma === task.firma && t.tarih.startsWith(taskMonth));
+        
+        monthlyTasks.sort((a, b) => {
+            if(a.tarih !== b.tarih) return a.tarih.localeCompare(b.tarih);
+            return a.docId.localeCompare(b.docId); // Aynı gün eklendiyse ID'ye göre stabil kalsın
+        });
+
+        const index = monthlyTasks.findIndex(t => t.docId === task.docId);
+        return index !== -1 ? index + 1 : '?';
     }
 
     function initCalendar() {
         const grid = document.getElementById('calendar-wrapper');
         const monthYearText = document.getElementById('calendar-month-year');
         grid.innerHTML = '';
-        let y = calDate.getFullYear();
-        let m = calDate.getMonth();
+        let y = calDate.getFullYear(); let m = calDate.getMonth();
         
         if(currentCalView === 'day') {
             monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -697,7 +746,6 @@
             monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
         }
 
-        // Görevleri filtrele (Eğer sadece Paylaşım Takvimindeysek o kategori, Genel Takvimdeysek hepsi)
         let visibleTasks = dbTasks;
         if (activePage === 'Paylaşım Takvimi') {
             visibleTasks = dbTasks.filter(t => t.category === 'rdgrup_paylasim');
@@ -710,14 +758,14 @@
             let html = '<div class="cal-tasks">';
             dayTasks.forEach(t => {
                 const isCompleted = t.hazirlandi && t.paylasildi;
-                // Genel takvimdeyse tıklama engellensin
                 const isReadOnly = (activePage === 'Genel Takvim');
+                const taskNum = getTaskIndex(t);
                 
                 html += `
                     <div class="task-card ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}">
                         <div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div>
                         <div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div>
-                        <div class="task-text">${t.firma} (${t.adet}) - H:${t.hazirlayan} P:${t.paylasan}</div>
+                        <div class="task-text">${t.firma} (${taskNum}) - H:${t.hazirlayan} P:${t.paylasan}</div>
                     </div>
                 `;
             });
@@ -790,12 +838,17 @@
         document.getElementById('task-modal-title').innerText = "Paylaşım Görevi Ekle";
         document.getElementById('task-doc-id').value = "new";
         
-        // Formu temizle
         document.getElementById('t-adet').value = "1";
-        document.getElementById('t-tarih').value = formatDate(new Date());
         document.getElementById('t-not').value = "";
         
-        // H/P Checkboxları gizle (yeni eklenirken default false)
+        if(taskDatePicker) taskDatePicker.destroy();
+        taskDatePicker = flatpickr("#t-tarih", {
+            mode: "multiple", // Çoklu seçim modu
+            dateFormat: "Y-m-d",
+            locale: "tr",
+            defaultDate: new Date()
+        });
+
         document.getElementById('t-status-group').style.display = 'none';
         document.getElementById('t-hazirlandi').checked = false;
         document.getElementById('t-paylasildi').checked = false;
@@ -821,17 +874,23 @@
         document.getElementById('t-adet').value = t.adet;
         document.getElementById('t-hazirlayan').value = t.hazirlayan;
         document.getElementById('t-paylasan').value = t.paylasan;
-        document.getElementById('t-tarih').value = t.tarih;
         document.getElementById('t-not').value = t.not || "";
 
-        // H/P Checkboxları göster
+        if(taskDatePicker) taskDatePicker.destroy();
+        taskDatePicker = flatpickr("#t-tarih", {
+            mode: "single", // Düzenlerken tekli tarih değiştirilebilir
+            dateFormat: "Y-m-d",
+            locale: "tr",
+            defaultDate: t.tarih
+        });
+
         document.getElementById('t-status-group').style.display = 'flex';
         document.getElementById('t-hazirlandi').checked = t.hazirlandi;
         document.getElementById('t-paylasildi').checked = t.paylasildi;
 
         const btnGroup = document.getElementById('task-buttons');
         btnGroup.innerHTML = `
-            <button class="login-btn btn-purple" id="save-task-btn" style="flex: 1;" onclick="saveTask()">Düzenle</button>
+            <button class="login-btn btn-purple" id="save-task-btn" style="flex: 1;" onclick="saveTask()">Kaydet</button>
             <button class="login-btn" style="flex: 1; background: var(--primary-red);" onclick="deleteTask('${docId}')">Sil</button>
             <button class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('task-modal')">Kapat</button>
         `;
@@ -851,23 +910,31 @@
             adet: parseInt(document.getElementById('t-adet').value) || 1,
             hazirlayan: document.getElementById('t-hazirlayan').value,
             paylasan: document.getElementById('t-paylasan').value,
-            tarih: document.getElementById('t-tarih').value,
             not: document.getElementById('t-not').value,
             hazirlandi: document.getElementById('t-hazirlandi').checked,
             paylasildi: document.getElementById('t-paylasildi').checked,
         };
 
+        const dates = document.getElementById('t-tarih').value.split(', ');
+
         if(docId === "new") {
             taskData.hazirlandi = false;
             taskData.paylasildi = false;
-            await db.collection('tasks').add(taskData);
+            
+            // Seçilen her gün için ayrı görev oluştur
+            for (let dateStr of dates) {
+                if(!dateStr) continue;
+                let singleTaskData = { ...taskData, tarih: dateStr };
+                await db.collection('tasks').add(singleTaskData);
+            }
         } else {
+            taskData.tarih = dates[0]; // Düzenlerken sadece ilk tarihi alır
             await db.collection('tasks').doc(docId).update(taskData);
         }
 
         closeModal('task-modal');
         await fetchTasksFromFirebase();
-        loadPageView(activePage); // Ekranı yenile
+        loadPageView(activePage); 
     }
 
     async function toggleTaskStatus(docId, type) {
@@ -875,13 +942,11 @@
         if(!t) return;
         
         let updateData = {};
-        updateData[type] = !t[type]; // true ise false, false ise true yap
+        updateData[type] = !t[type]; 
 
-        // Lokal veriyi anında güncelle ki görsel sekmesin
         t[type] = !t[type];
         initCalendar(); 
 
-        // Veritabanını arka planda güncelle
         await db.collection('tasks').doc(docId).update(updateData);
         await fetchTasksFromFirebase();
     }
@@ -895,7 +960,7 @@
         }
     }
 
-    // --- PROFIL VE ADMIN KODLARI (Aynı Bırakıldı) ---
+    // --- PROFIL VE ADMIN KODLARI ---
     function loadProfileView() {
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         mainContent.innerHTML = `
@@ -923,6 +988,7 @@
     }
 
     function loadAdminSettings() {
+        // Kullanıcılar Listesi HTML
         let usersHtml = '';
         dbUsers.forEach((u) => {
             const roleColor = u.role === 'Admin' ? 'background: #fee2e2; color: var(--primary-red);' : 'background: #e2e8f0; color: var(--bg-dark);';
@@ -943,11 +1009,22 @@
             `;
         });
 
+        // Firmalar Listesi HTML
+        let companiesHtml = '';
+        dbCompanies.forEach((c) => {
+            companiesHtml += `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid #e2e8f0; font-size: 13px;">
+                    <div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-building" style="margin-right:8px; color:var(--text-muted);"></i>${c.name}</div>
+                    <button class="action-btn" style="color: var(--primary-red);" onclick="deleteCompany('${c.docId}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `;
+        });
+
         mainContent.innerHTML = `
             <h2 class="content-title">Yönetim Paneli (Admin)</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: start;">
                 
-                <div class="content-card">
+                <div class="content-card" style="margin-bottom:0;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px;">
                         <h3 style="color: var(--bg-dark);"><i class="fa-solid fa-users" style="color: var(--primary-red);"></i> Kullanıcılar</h3>
                         <button class="login-btn" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddUser()">+ Yeni Ekle</button>
@@ -957,16 +1034,49 @@
                     </div>
                 </div>
 
-                <div class="content-card">
+                <div class="content-card" style="margin-bottom:0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px;">
+                        <h3 style="color: var(--bg-dark);"><i class="fa-solid fa-building" style="color: var(--primary-red);"></i> Firmalar</h3>
+                    </div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" id="admin-new-company" placeholder="Firma Adı" style="flex:1; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;">
+                        <button class="login-btn" style="width: auto; padding: 10px 20px;" onclick="addCompany()">Ekle</button>
+                    </div>
+
+                    <div style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; max-height: 250px; overflow-y: auto;">
+                        ${companiesHtml !== '' ? companiesHtml : '<div style="padding: 15px; text-align: center; color: var(--text-muted); font-size: 12px;">Henüz firma eklenmemiş.</div>'}
+                    </div>
+                </div>
+
+                <div class="content-card" style="grid-column: span 2;">
                     <h3 style="color: var(--bg-dark); border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px;">
                         <i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Giriş Ekranı Yazıları
                     </h3>
                     <div class="input-group"><label>SÜRÜM BİLGİSİ</label><input type="text" id="admin-version" value="${dbVersionInfo.version}"></div>
                     <div class="input-group"><label>EKLENEN ÖZELLİKLER</label><textarea id="admin-notes" rows="4">${dbVersionInfo.notes}</textarea></div>
-                    <button class="login-btn" style="padding: 10px;" id="save-version-btn" onclick="updateVersionTexts()">Uygula & Kaydet</button>
+                    <button class="login-btn" style="padding: 10px; width: 200px;" id="save-version-btn" onclick="updateVersionTexts()">Uygula & Kaydet</button>
                 </div>
             </div>
         `;
+    }
+
+    // --- FİRMA İŞLEMLERİ (ADMIN) ---
+    async function addCompany() {
+        const cName = document.getElementById('admin-new-company').value.trim();
+        if(!cName) return;
+
+        await db.collection('companies').add({ name: cName });
+        await fetchCompaniesFromFirebase();
+        loadAdminSettings();
+    }
+
+    async function deleteCompany(docId) {
+        if(confirm("Bu firmayı listeden kaldırmak istediğinize emin misiniz? (Önceki görevler silinmez)")) {
+            await db.collection('companies').doc(docId).delete();
+            await fetchCompaniesFromFirebase();
+            loadAdminSettings();
+        }
     }
 
     async function updateVersionTexts() {
