@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Holding İş Takip Paneli - Tasarım Prototipi</title>
+    <title>Holding İş Takip Paneli</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        /* 1. KURULUM VE ANA DEĞİŞKENLER */
         :root {
-            --primary-red: #dc2626; /* Canlı Kurumsal Kırmızı */
+            --primary-red: #dc2626;
             --dark-red: #7f1d1d;
             --bg-dark: #0f172a;
             --card-bg: #ffffff;
@@ -21,7 +20,6 @@
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* Tüm sistem fontu Poppins yapıldı */
         body {
             background-color: #f1f5f9;
             display: grid;
@@ -56,7 +54,6 @@
             z-index: 0;
         }
 
-        /* Başlıklar ortalandı ve sol çizgi kaldırıldı */
         .slide-title {
             font-size: 36px;
             font-weight: 700;
@@ -77,7 +74,6 @@
             z-index: 1;
         }
 
-        /* 4. GİRİŞ EKRANI TASARIMI */
         .login-card {
             width: 400px;
             background: white;
@@ -106,6 +102,7 @@
         .input-group {
             text-align: left;
             margin-bottom: 20px;
+            position: relative;
         }
 
         .input-group label {
@@ -132,6 +129,21 @@
             background: white;
         }
 
+        .forgot-pass {
+            display: inline-block;
+            float: right;
+            font-size: 12px;
+            color: var(--primary-red);
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+
+        .forgot-pass:hover {
+            text-decoration: underline;
+        }
+
         .login-btn {
             width: 100%;
             padding: 14px;
@@ -143,9 +155,14 @@
             cursor: pointer;
             font-family: 'Poppins', sans-serif;
             letter-spacing: 1px;
-            margin-top: 10px;
+            margin-top: 20px;
+            transition: background-color 0.2s;
         }
         
+        .login-btn:hover {
+            background-color: var(--dark-red);
+        }
+
         .error-message {
             color: var(--primary-red);
             font-size: 14px;
@@ -154,7 +171,6 @@
             font-weight: 600;
         }
 
-        /* 5. FİRMA SEÇİMİ TASARIMI */
         .company-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -189,15 +205,27 @@
         .company-card h3 {
             font-size: 28px;
             color: var(--bg-dark);
-            margin-bottom: 15px;
+            margin-bottom: 0; /* Açıklama olmadığı için boşluk sıfırlandı */
         }
 
-        .company-card p {
-            color: var(--text-muted);
-            font-size: 16px;
+        .admin-panel-card {
+            border-color: var(--bg-dark);
+            padding: 20px 40px;
+            display: inline-block;
+            margin-top: 30px;
+        }
+        
+        .admin-panel-card i {
+            color: var(--bg-dark);
+            font-size: 32px;
+            margin-bottom: 10px;
         }
 
-        /* 6. HAZIRLANIYOR EKRANI */
+        .admin-panel-card:hover {
+            border-color: var(--bg-dark);
+            box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15);
+        }
+
         .loading-state {
             text-align: center;
         }
@@ -234,6 +262,8 @@
             <div class="input-group">
                 <label>ŞİFRE</label>
                 <input type="password" id="password" placeholder="Şifrenizi girin">
+                <a class="forgot-pass" id="forgot-password">Şifremi Unuttum</a>
+                <div style="clear: both;"></div>
             </div>
             <button class="login-btn" id="login-btn">GİRİŞ YAP</button>
             <p class="error-message" id="error-msg">Hatalı kullanıcı adı veya şifre!</p>
@@ -242,18 +272,24 @@
 </div>
 
 <div class="slide-container" id="company-selection" style="display: none;">
-    <h2 class="slide-title">Lütfen Çalışmak İstediğiniz Firmayı Seçin</h2>
+    <h2 class="slide-title">FİRMA SEÇİNİZ</h2>
     <div class="content-area">
         <div class="company-grid">
             <div class="company-card" onclick="showLoading('RDGRUP MEDYA')">
                 <i class="fa-solid fa-clapperboard"></i>
                 <h3>RDGRUP MEDYA</h3>
-                <p>Medya Planlama, Prodüksiyon ve İçerik Yönetimi</p>
             </div>
             <div class="company-card" onclick="showLoading('ANKARA MEZUNİYET')">
                 <i class="fa-solid fa-graduation-cap"></i>
                 <h3>ANKARA MEZUNİYET</h3>
-                <p>Etkinlik Yönetimi, Mezuniyet Organizasyonları</p>
+            </div>
+        </div>
+
+        <div id="admin-section" style="display: none; text-align: center; margin-top: 20px;">
+            <hr style="border: 0; border-top: 2px dashed #e2e8f0; margin-bottom: 20px;">
+            <div class="company-card admin-panel-card" onclick="showLoading('YÖNETİM PANELİ')">
+                <i class="fa-solid fa-user-shield"></i>
+                <h3 style="font-size: 20px;">Yönetim Paneli (Admin)</h3>
             </div>
         </div>
     </div>
@@ -265,10 +301,7 @@
         <div class="loading-state">
             <div class="loading-spinner"></div>
             <h3 style="font-size: 36px; color: var(--bg-dark);">Modül Hazırlanıyor...</h3>
-            <p style="font-size: 18px; color: var(--text-muted); margin-top: 10px;">Veritabanı senkronizasyonu yapılıyor.</p>
-            <div style="margin-top: 40px; background: #f1f5f9; height: 8px; border-radius: 4px; width: 400px; margin-left: auto; margin-right: auto;">
-                <div style="background: var(--primary-red); height: 100%; width: 65%; border-radius: 4px;"></div>
-            </div>
+            <p style="font-size: 18px; color: var(--text-muted); margin-top: 10px;">Lütfen bekleyiniz, veriler yükleniyor.</p>
         </div>
     </div>
 </div>
@@ -278,28 +311,46 @@
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');
     const errorMsg = document.getElementById('error-msg');
+    const forgotPassBtn = document.getElementById('forgot-password');
     
     const loginScreen = document.getElementById('login-screen');
     const companyScreen = document.getElementById('company-selection');
+    const adminSection = document.getElementById('admin-section');
     const loadingScreen = document.getElementById('loading-screen');
     const loadingTitle = document.getElementById('loading-title');
 
+    // Şifremi Unuttum Tıklama Olayı
+    forgotPassBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        alert("Alperen ya da Mete'ye ulaşınız lütfen :)");
+    });
+
     // Giriş Kontrol Mantığı
     loginBtn.addEventListener('click', () => {
-        const user = usernameInput.value.trim();
+        const user = usernameInput.value.trim().toLowerCase(); // Küçük harfe çevirerek kolaylık sağladık
         const pass = passwordInput.value.trim();
 
-        // Şifre ve kullanıcı adı doğrulaması
         if (user === 'alperen' && pass === '123') {
+            // Admin Girişi -> Yönetim panelini göster
             errorMsg.style.display = 'none';
             loginScreen.style.display = 'none';
             companyScreen.style.display = 'flex';
-        } else {
+            adminSection.style.display = 'block'; 
+        } 
+        else if (user === 'personel' && pass === '123') {
+            // Normal Personel Girişi -> Yönetim paneli gizli
+            errorMsg.style.display = 'none';
+            loginScreen.style.display = 'none';
+            companyScreen.style.display = 'flex';
+            adminSection.style.display = 'none'; 
+        } 
+        else {
+            // Hatalı Giriş
             errorMsg.style.display = 'block';
         }
     });
 
-    // Enter tuşu ile giriş yapabilme özelliği eklendi
+    // Enter tuşu ile giriş
     passwordInput.addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             loginBtn.click();
@@ -309,7 +360,7 @@
     function showLoading(companyName) {
         companyScreen.style.display = 'none';
         loadingScreen.style.display = 'flex';
-        loadingTitle.innerText = companyName + ' - Panel';
+        loadingTitle.innerText = companyName;
     }
 </script>
 
