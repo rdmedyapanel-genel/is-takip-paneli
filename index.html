@@ -620,7 +620,7 @@
             currentUser.pass = newPass; 
             await db.collection('users').doc(currentUser.docId).update({ pass: newPass });
             await fetchUsersFromFirebase();
-            alert('Şifreniz Firebase üzerinde başarıyla güncellendi!'); 
+            alert('Şifreniz başarıyla güncellendi!'); 
         }
     }
 
@@ -683,7 +683,7 @@
         
         updateVersionUI();
         btn.innerText = "Uygula & Kaydet";
-        alert("Sürüm notları Firebase veritabanına kaydedildi!");
+        alert("Sürüm notları kaydedildi!");
     }
 
     function openAddUser() {
