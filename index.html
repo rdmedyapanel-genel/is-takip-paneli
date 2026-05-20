@@ -111,7 +111,14 @@
         .cal-day { background: white; min-height: 120px; padding: 10px; }
         .cal-day.padding { background: #f8fafc; }
         .cal-day-num { font-size: 14px; font-weight: 600; color: var(--bg-dark); margin-bottom: 10px; text-align: right; }
-        .cal-day-num.today { color: white; background: var(--primary-red); width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; float: right;}
+        
+        /* GÜNCELLENEN KISIM: Kırmızı yuvarlak kalktı, yazı kırmızı ve kalın oldu */
+        .cal-day-num.today { 
+            color: var(--primary-red) !important; 
+            font-weight: 800 !important; 
+            background: transparent !important;
+        }
+        
         .cal-event { background: #6366f1; color: white; font-size: 11px; padding: 4px 8px; border-radius: 6px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
         .cal-event.orange { background: #f59e0b; }
         .cal-event.red { background: var(--primary-red); }
@@ -200,7 +207,7 @@
 
 <div class="slide-container bg-shape" id="company-selection" style="display: none;">
     <div class="content-area" style="padding-top: 30px;">
-        <h2 class="slide-title" style="margin-top: 0;">FİRMA SEÇME SAYFASI</h2>
+        <h2 class="slide-title" style="margin-top: 0; font-size: 42px;">FİRMA SEÇME SAYFASI</h2>
         <p class="slide-subtitle">Planlı çalışmak başarıyı getirir! Kolay gelsin :)</p>
 
         <div style="text-align: center; margin-bottom: 40px; margin-top: 20px;">
@@ -287,28 +294,22 @@
     let calDate = new Date();
     let currentCalView = 'month'; 
 
-    // --- SİSTEM BAŞLATICI (Firebase'den Veri Çekme) ---
+    // --- SİSTEM BAŞLATICI ---
     async function initializeSystem() {
         try {
-            // 1. Sistem ayarlarını (Sürüm Notları) çek
             const settingsRef = db.collection('settings').doc('system');
             const doc = await settingsRef.get();
             if (doc.exists) {
                 dbVersionInfo = doc.data();
             } else {
-                // Eğer veritabanı boşsa varsayılanı yaz
                 await settingsRef.set(dbVersionInfo);
             }
             updateVersionUI();
-
-            // 2. Kullanıcıları çek
             await fetchUsersFromFirebase();
-
         } catch (error) {
             console.error("Firebase'e bağlanırken hata oluştu: ", error);
             alert("Veritabanı bağlantı hatası! Lütfen sayfayı yenileyin.");
         } finally {
-            // Veriler yüklendikten sonra yükleme ekranını kaldır
             document.getElementById('init-loader').style.display = 'none';
         }
     }
@@ -317,15 +318,13 @@
         const snapshot = await db.collection('users').get();
         dbUsers = [];
         snapshot.forEach(doc => {
-            // ID'yi de dahil ederek diziye ekle (Düzenleme ve Silme için doc.id gerekli)
             dbUsers.push({ docId: doc.id, ...doc.data() });
         });
 
-        // Veritabanı tamamen boşsa ilk Admin hesabını otomatik oluştur
         if (dbUsers.length === 0) {
             const firstAdmin = { id: 'alperen', name: 'Alperen', surname: 'Yılmaz', role: 'Admin', pass: '123' };
             await db.collection('users').add(firstAdmin);
-            await fetchUsersFromFirebase(); // Tekrar çek
+            await fetchUsersFromFirebase(); 
         }
     }
 
@@ -335,7 +334,6 @@
         document.getElementById('display-version-notes').innerText = dbVersionInfo.notes;
     }
 
-    // Sayfa yüklendiğinde sistemi başlat
     window.onload = initializeSystem;
 
     // -- ELEMENTLER --
@@ -356,7 +354,6 @@
         const userId = document.getElementById('username').value.trim().toLowerCase();
         const userPass = document.getElementById('password').value.trim();
         
-        // Doğrulamayı Firebase'den çektiğimiz canlı veri üzerinden yapıyoruz
         const foundUser = dbUsers.find(u => u.id === userId && u.pass === userPass);
 
         if (foundUser) {
@@ -594,7 +591,7 @@
             grid.innerHTML = `<div class="cal-header-day">${calDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>`;
             let isToday = (calDate.getDate() === new Date().getDate() && calDate.getMonth() === new Date().getMonth() && calDate.getFullYear() === new Date().getFullYear());
             grid.innerHTML += `<div class="cal-day" style="min-height: 400px; padding: 30px;">
-                <div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 20px; font-size: 24px; width: 40px; height: 40px;">${calDate.getDate()}</div>
+                <div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 20px; font-size: 28px;">${calDate.getDate()}</div>
                 <div class="clear"></div><div style="margin-top: 10px;"><div style="color:var(--text-muted); font-size:16px;">Bugün için planlanmış bir iş bulunmuyor.</div></div>
             </div>`;
         }
@@ -621,11 +618,8 @@
         const newPass = document.getElementById('new-profile-pass').value;
         if(newPass) { 
             currentUser.pass = newPass; 
-            
-            // Doğrudan Firebase'i güncelliyoruz
             await db.collection('users').doc(currentUser.docId).update({ pass: newPass });
             await fetchUsersFromFirebase();
-
             alert('Şifreniz Firebase üzerinde başarıyla güncellendi!'); 
         }
     }
@@ -685,7 +679,6 @@
         dbVersionInfo.version = document.getElementById('admin-version').value;
         dbVersionInfo.notes = document.getElementById('admin-notes').value;
         
-        // Veriyi Firebase'e gönder
         await db.collection('settings').doc('system').set(dbVersionInfo);
         
         updateVersionUI();
@@ -729,17 +722,14 @@
         };
 
         if(docId === "new") { 
-            // Firebase'e Yeni Ekle
             await db.collection('users').add(userData);
         } else { 
-            // Firebase'de Güncelle
             await db.collection('users').doc(docId).update(userData);
         }
         
         btn.innerText = "Kaydet";
         closeModal('user-modal'); 
         
-        // Tabloyu güncellemek için verileri tekrar çek
         await fetchUsersFromFirebase();
         loadAdminSettings();
     }
@@ -757,7 +747,6 @@
             if(confirm("Bu kullanıcıyı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
                 document.getElementById('delete-user-btn').innerText = "Siliniyor...";
                 
-                // Firebase'den Sil
                 await db.collection('users').doc(docId).delete();
                 
                 closeModal('user-modal');
