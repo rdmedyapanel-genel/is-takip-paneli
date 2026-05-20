@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        /* --- 1. ANA DEĞİŞKENLER VE KURULUM --- */
         :root {
             --primary-red: #dc2626;
             --dark-red: #7f1d1d;
@@ -27,7 +28,7 @@
         
         .slide-title { font-size: 32px; font-weight: 700; color: var(--bg-dark); text-align: center; margin: 40px 60px 5px 60px; position: relative; z-index: 1; }
         .slide-subtitle { text-align: center; color: var(--text-muted); font-weight: 500; font-size: 16px; margin-bottom: 20px; position: relative; z-index: 1; }
-        .content-area { flex-grow: 1; padding: 10px 60px 40px 60px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; }
+        .content-area { flex-grow: 1; padding: 10px 60px 40px 60px; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1; overflow-y: auto; }
 
         .login-card { width: 400px; background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin: 0 auto; text-align: center; border: 1px solid #e2e8f0; }
         .profile-icon { width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary-red), var(--dark-red)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; color: white; font-size: 36px; box-shadow: 0 10px 20px rgba(220, 38, 38, 0.3); }
@@ -89,6 +90,29 @@
         
         .action-btn { background: none; border: none; cursor: pointer; color: var(--text-muted); transition: 0.2s; font-size: 16px; padding: 5px; }
         .action-btn:hover { color: var(--primary-red); }
+        .action-btn.active { color: var(--primary-red); font-weight: 700; border-bottom: 2px solid var(--primary-red); }
+
+        /* --- DASHBOARD ANASAYFA KARTLARI --- */
+        .dash-card { background: white; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); margin-bottom: 20px; }
+        .dash-card-header { font-size: 16px; font-weight: 600; color: var(--bg-dark); margin-bottom: 15px; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+        .dash-item { padding: 12px 15px; border-radius: 8px; background: #f8fafc; font-size: 13px; color: var(--text-muted); margin-bottom: 8px; border-left: 4px solid #cbd5e1; display: flex; justify-content: space-between; align-items: center;}
+        .dash-item strong { color: var(--bg-dark); }
+        .dash-item.red { border-left-color: var(--primary-red); }
+        .dash-item.orange { border-left-color: #f59e0b; }
+        .dash-item.green { border-left-color: #10b981; }
+
+        /* --- TAKVİM ARAYÜZÜ CSS --- */
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        .cal-header-day { background: #f8fafc; text-align: center; padding: 12px; font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase;}
+        .cal-day { background: white; min-height: 120px; padding: 10px; }
+        .cal-day.padding { background: #f8fafc; }
+        .cal-day-num { font-size: 14px; font-weight: 600; color: var(--bg-dark); margin-bottom: 10px; text-align: right; }
+        .cal-day-num.today { color: white; background: var(--primary-red); width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; float: right;}
+        
+        .cal-event { background: #6366f1; color: white; font-size: 11px; padding: 4px 8px; border-radius: 6px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        .cal-event.orange { background: #f59e0b; }
+        .cal-event.red { background: var(--primary-red); }
+        .clear { clear: both; }
     </style>
 </head>
 <body>
@@ -98,7 +122,8 @@
         <i class="fa-solid fa-xmark modal-close" onclick="closeModal('release-notes-modal')"></i>
         <h3 class="modal-title" id="display-version-title">RDGRUP V.1.1 - Eklenen Özellikler</h3>
         <div id="display-version-notes" style="color: var(--text-main); font-size: 14px; line-height: 1.8; white-space: pre-wrap;">- Firma seçim ekranı yenilendi.
-- Türkiye Mezuniyeti eklendi.</div>
+- Türkiye Mezuniyeti eklendi.
+- Anasayfa ve Takvim modülleri geliştirildi.</div>
     </div>
 </div>
 
@@ -125,10 +150,13 @@
                 <option value="Stajyer">Stajyer</option>
             </select>
         </div>
-        <button class="login-btn" onclick="saveUser()">Kullanıcıyı Kaydet</button>
+        
+        <div style="display: flex; gap: 15px; margin-top: 10px;">
+            <button class="login-btn" style="flex: 1;" onclick="saveUser()">Kaydet</button>
+            <button class="login-btn" id="delete-user-btn" style="flex: 1; background: var(--primary-red); display: none;" onclick="deleteUser()">Sil</button>
+        </div>
     </div>
 </div>
-
 
 <div class="slide-container bg-shape" id="login-screen">
     <div class="content-area">
@@ -159,10 +187,16 @@
 </div>
 
 <div class="slide-container bg-shape" id="company-selection" style="display: none;">
-    <h2 class="slide-title">FİRMA SEÇİNİZ</h2>
-    <p class="slide-subtitle">Planlı çalışmak başarıyı getirir! Kolay gelsin :)</p>
-    
-    <div class="content-area" style="padding-top: 0;">
+    <div class="content-area" style="padding-top: 30px;">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <button class="login-btn" style="width: auto; padding: 15px 50px; background: var(--bg-dark); font-size: 16px; border-radius: 16px;" onclick="openDashboard('TÜM İŞLER', 'tum_isler')">
+                <i class="fa-solid fa-layer-group" style="margin-right: 10px;"></i> TÜM İŞLER (Genel Bakış)
+            </button>
+        </div>
+
+        <h2 class="slide-title" style="margin-top: 0;">FİRMA SEÇİNİZ</h2>
+        <p class="slide-subtitle">Planlı çalışmak başarıyı getirir! Kolay gelsin :)</p>
+        
         <div class="company-grid">
             <div class="company-card" onclick="openDashboard('RDGRUP MEDYA', 'rdgrup')">
                 <i class="fa-solid fa-clapperboard"></i>
@@ -218,20 +252,18 @@
 </div>
 
 <script>
-    // --- VERİTABANI SİMÜLASYONU (JavaScript Dizileri) ---
-    // Not: Bu kısım Firebase'e bağlandığında tamamen silinip sunucudan çekilecek.
+    // --- VERİTABANI SİMÜLASYONU ---
     let dbUsers = [
         { id: 'alperen', name: 'Alperen', surname: 'Yılmaz', role: 'Admin', pass: '123' },
         { id: 'personel', name: 'Test', surname: 'Personel', role: 'Yönetici', pass: '123' }
     ];
 
-    let dbVersionInfo = {
-        version: "RDGRUP V.1.1",
-        notes: "- Firma seçim ekranı yenilendi.\n- Türkiye Mezuniyeti eklendi."
-    };
-
+    let dbVersionInfo = { version: "RDGRUP V.1.1", notes: "- Firma seçim ekranı yenilendi.\n- Türkiye Mezuniyeti eklendi.\n- Anasayfa ve Takvim geliştirildi." };
     let currentUser = null;
     let currentCompany = "";
+    
+    // Takvim Değişkenleri
+    let nav = 0; // Ay ileri/geri takibi için
 
     // -- ELEMENTLER --
     const loginScreen = document.getElementById('login-screen');
@@ -241,7 +273,6 @@
     const mainContent = document.getElementById('main-content');
     const sidebarMenu = document.getElementById('sidebar-menu');
 
-    // -- MODAL İŞLEMLERİ --
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -251,23 +282,17 @@
     document.getElementById('login-btn').addEventListener('click', () => {
         const userId = document.getElementById('username').value.trim().toLowerCase();
         const userPass = document.getElementById('password').value.trim();
-        
-        // Kullanıcıyı simülasyon veritabanında ara
         const foundUser = dbUsers.find(u => u.id === userId && u.pass === userPass);
 
         if (foundUser) {
             currentUser = foundUser;
             document.getElementById('error-msg').style.display = 'none';
-            
-            // Profil bilgilerini güncelle
             document.getElementById('logged-user-name').innerText = foundUser.name;
             document.getElementById('logged-user-role').innerText = foundUser.role;
             document.getElementById('logged-avatar').innerText = foundUser.name.charAt(0);
 
             loginScreen.style.display = 'none';
             companyScreen.style.display = 'flex';
-            
-            // Adminse yönetim panelini göster
             adminSection.style.display = foundUser.role === 'Admin' ? 'block' : 'none'; 
         } else {
             document.getElementById('error-msg').style.display = 'block';
@@ -290,8 +315,12 @@
         companyScreen.style.display = 'flex';
     }
 
-    // -- MENÜ VERİLERİ --
+    // -- MENÜ VERİLERİ (Tüm İşler Eklendi) --
     const menuData = {
+        'tum_isler': [
+            { icon: 'fa-calendar-days', name: 'Genel Takvim' }, 
+            { icon: 'fa-book', name: 'Genel Ajanda' }
+        ],
         'rdgrup': [
             { icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' },
             { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' },
@@ -314,6 +343,7 @@
         companyScreen.style.display = 'none';
         dashboardScreen.style.display = 'flex';
         sidebarMenu.innerHTML = ''; 
+        nav = 0; // Takvimi sıfırla
 
         const items = menuData[type] || menuData['rdgrup'];
 
@@ -325,25 +355,184 @@
             li.onclick = () => {
                 document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
                 li.classList.add('active');
-                if(type === 'admin') loadAdminSettings();
-                else loadPageView(item.name);
+                loadPageView(item.name);
             };
             sidebarMenu.appendChild(li);
         });
 
-        if(type === 'admin') loadAdminSettings();
-        else loadPageView(items[0].name);
+        loadPageView(items[0].name);
     }
 
+    // --- SAYFA YÜKLEYİCİ (Dashboard, Takvim, Profil, Admin) ---
     function loadPageView(pageName) {
-        mainContent.innerHTML = `
-            <div class="content-card">
-                <h2 class="content-title">${currentCompany} - ${pageName}</h2>
-                <p style="color: var(--text-muted);">Bu alan ${pageName} sayfası için ayrılmıştır.</p>
+        if(pageName === 'Ayarlar') {
+            loadAdminSettings();
+        } else if (pageName === 'Anasayfa' || pageName === 'Kendi İşlerim') {
+            mainContent.innerHTML = renderDashboardHome(pageName);
+        } else if (pageName.includes('Takvim')) {
+            mainContent.innerHTML = renderCalendarView(pageName);
+            initCalendar();
+        } else {
+            mainContent.innerHTML = `
+                <div class="content-card">
+                    <h2 class="content-title">${currentCompany} - ${pageName}</h2>
+                    <p style="color: var(--text-muted);">Bu alan ${pageName} sayfası için ayrılmıştır. (Veritabanı bağlandığında dolacak)</p>
+                </div>
+            `;
+        }
+    }
+
+    // --- 1. ANASAYFA / KENDİ İŞLERİM TASARIMI ---
+    function renderDashboardHome(pageName) {
+        return `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="content-title" style="margin-bottom: 0; border: none;">${currentCompany} - ${pageName}</h2>
+                <div style="color: var(--text-muted); font-size: 14px;">${new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <div class="dash-card">
+                    <div class="dash-card-header"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary-red);"></i> Geciken İşler</div>
+                    <div class="dash-item red"><span>Katalog Tasarımı</span> <strong>Dün</strong></div>
+                    <div class="dash-item red"><span>Video Kurgu Revizesi</span> <strong>Dün</strong></div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-header"><i class="fa-solid fa-calendar-day" style="color: #f59e0b;"></i> Bugünün İşleri</div>
+                    <div class="dash-item orange"><span>Sosyal Medya Paylaşımı</span> <strong>14:00</strong></div>
+                    <div class="dash-item orange"><span>Müşteri Toplantısı</span> <strong>16:30</strong></div>
+                </div>
+                <div class="dash-card">
+                    <div class="dash-card-header"><i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Yarının İşleri</div>
+                    <div class="dash-item green"><span>Drone Çekimi (Emek)</span> <strong>Sabah</strong></div>
+                    <div class="dash-item green"><span>Fatura Kesimi</span> <strong>Tüm Gün</strong></div>
+                </div>
+            </div>
+
+            <div class="dash-card" style="margin-top: 20px;">
+                <div class="dash-card-header"><i class="fa-solid fa-list-check" style="color: var(--bg-dark);"></i> Bu Haftaki İşler</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="dash-item"><span>Victoria Pastanesi Yeni Menü Çekimi</span> <strong>Perşembe</strong></div>
+                    <div class="dash-item"><span>Mezuniyet Afişleri Baskıya Gidiş</span> <strong>Cuma</strong></div>
+                    <div class="dash-item"><span>Holding Aylık Rapor Sunumu</span> <strong>Cuma</strong></div>
+                </div>
+            </div>
+
+            <div class="dash-card">
+                <div class="dash-card-header"><i class="fa-solid fa-note-sticky" style="color: #6366f1;"></i> Aktif Ajanda Notları</div>
+                <div style="color: var(--text-muted); font-size: 13px; line-height: 1.6; background: #f8fafc; padding: 15px; border-radius: 8px; border-left: 4px solid #6366f1;">
+                    <strong>Hatırlatma:</strong> Mehmet Bey ile Cuma günkü görüşmeden önce revize edilen 3D animasyon dosyalarını buluta yüklemeyi unutma. Ayrıca Vercel üzerindeki Firestore limitlerini kontrol et.
+                </div>
             </div>
         `;
     }
 
+    // --- 2. GERÇEK ZAMANLI TAKVİM TASARIMI VE JS MANTIĞI ---
+    function renderCalendarView(pageName) {
+        return `
+            <div class="content-card" style="padding: 25px;">
+                <h2 class="content-title">${currentCompany} - ${pageName}</h2>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button class="action-btn" onclick="changeMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button class="action-btn" onclick="changeMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button class="login-btn" style="width: auto; padding: 6px 15px; font-size: 12px; margin:0;" onclick="resetToToday()">Bugün</button>
+                    </div>
+                    
+                    <h3 id="calendar-month-year" style="font-size: 22px; color: var(--bg-dark); font-weight: 700; margin: 0;">Yükleniyor...</h3>
+                    
+                    <div style="display: flex; gap: 15px;">
+                        <button class="action-btn active" style="font-size: 14px;">Aylık</button>
+                        <button class="action-btn" style="font-size: 14px;">Haftalık</button>
+                        <button class="action-btn" style="font-size: 14px;">Günlük</button>
+                    </div>
+                </div>
+
+                <div class="cal-grid" id="calendar-wrapper">
+                    <div class="cal-header-day">Pzt</div>
+                    <div class="cal-header-day">Sal</div>
+                    <div class="cal-header-day">Çar</div>
+                    <div class="cal-header-day">Per</div>
+                    <div class="cal-header-day">Cum</div>
+                    <div class="cal-header-day">Cmt</div>
+                    <div class="cal-header-day">Paz</div>
+                    </div>
+            </div>
+        `;
+    }
+
+    function initCalendar() {
+        const dt = new Date();
+        
+        // nav değişkenine göre ayı ayarla
+        dt.setMonth(new Date().getMonth() + nav);
+        
+        const month = dt.getMonth();
+        const year = dt.getFullYear();
+
+        const firstDayOfMonth = new Date(year, month, 1);
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        
+        // Ay Yıl Yazısını Güncelle
+        document.getElementById('calendar-month-year').innerText = dt.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+
+        // JS'te haftanın ilk günü Pazar(0)'dır. Biz Pazartesi(0) yapmak için kaydırıyoruz.
+        let paddingDays = firstDayOfMonth.getDay() - 1;
+        if(paddingDays === -1) paddingDays = 6; // Eğer ilk gün Pazar ise, 6 boşluk bırak
+
+        const calendarGrid = document.getElementById('calendar-wrapper');
+        
+        // Önceki günleri temizle (Sadece Header kalsın diye tüm div'leri silip header'ı geri ekliyoruz)
+        calendarGrid.innerHTML = `
+            <div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div>
+            <div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>
+        `;
+
+        // Boşlukları ve Günleri oluştur
+        for(let i = 1; i <= paddingDays + daysInMonth; i++) {
+            const daySquare = document.createElement('div');
+            daySquare.classList.add('cal-day');
+
+            if (i > paddingDays) {
+                const dayNumber = i - paddingDays;
+                
+                // Bugün işaretlemesi
+                if (dayNumber === new Date().getDate() && nav === 0) {
+                    daySquare.innerHTML = `<div class="cal-day-num today">${dayNumber}</div><div class="clear"></div>`;
+                } else {
+                    daySquare.innerHTML = `<div class="cal-day-num">${dayNumber}</div><div class="clear"></div>`;
+                }
+
+                // Görsel test için rastgele etkinlik ekleme (Demo amaçlı)
+                if (dayNumber === 5) {
+                    daySquare.innerHTML += `<div class="cal-event">📽️ Ankara Mezuniyet Çekimi</div>`;
+                }
+                if (dayNumber === 12) {
+                    daySquare.innerHTML += `<div class="cal-event orange">🔥 Gülçimen Aspava Paylaşım</div>`;
+                }
+                if (dayNumber === 20 && nav === 0) { // Sadece bu ayda görünsün
+                    daySquare.innerHTML += `<div class="cal-event red">🚨 Vercel Limit Kontrolü</div>`;
+                    daySquare.innerHTML += `<div class="cal-event">Toplantı: Mehmet Bey</div>`;
+                }
+
+            } else {
+                daySquare.classList.add('padding');
+            }
+            calendarGrid.appendChild(daySquare);
+        }
+    }
+
+    function changeMonth(direction) {
+        nav += direction;
+        initCalendar();
+    }
+
+    function resetToToday() {
+        nav = 0;
+        initCalendar();
+    }
+
+    // --- PROFIL ---
     function loadProfileView() {
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
         mainContent.innerHTML = `
@@ -362,16 +551,11 @@
 
     function updateOwnPassword() {
         const newPass = document.getElementById('new-profile-pass').value;
-        if(newPass) {
-            currentUser.pass = newPass;
-            alert('Şifreniz başarıyla güncellendi!');
-        }
+        if(newPass) { currentUser.pass = newPass; alert('Şifreniz başarıyla güncellendi!'); }
     }
 
-    // --- ADMİN PANELİ DİNAMİK İŞLEMLERİ ---
-    
+    // --- ADMİN PANELİ (Kullanıcı Silme Eklendi) ---
     function loadAdminSettings() {
-        // Kullanıcı Listesi HTML'ini oluştur
         let usersHtml = '';
         dbUsers.forEach((u, index) => {
             const roleColor = u.role === 'Admin' ? 'background: #fee2e2; color: var(--primary-red);' : 'background: #e2e8f0; color: var(--bg-dark);';
@@ -410,14 +594,8 @@
                     <h3 style="color: var(--bg-dark); border-bottom: 1px solid #e2e8f0; padding-bottom: 15px; margin-bottom: 15px;">
                         <i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Giriş Ekranı Yazıları
                     </h3>
-                    <div class="input-group">
-                        <label>SÜRÜM BİLGİSİ</label>
-                        <input type="text" id="admin-version" value="${dbVersionInfo.version}">
-                    </div>
-                    <div class="input-group">
-                        <label>EKLENEN ÖZELLİKLER</label>
-                        <textarea id="admin-notes" rows="4">${dbVersionInfo.notes}</textarea>
-                    </div>
+                    <div class="input-group"><label>SÜRÜM BİLGİSİ</label><input type="text" id="admin-version" value="${dbVersionInfo.version}"></div>
+                    <div class="input-group"><label>EKLENEN ÖZELLİKLER</label><textarea id="admin-notes" rows="4">${dbVersionInfo.notes}</textarea></div>
                     <button class="login-btn" style="padding: 10px;" onclick="updateVersionTexts()">Uygula & Kaydet</button>
                 </div>
             </div>
@@ -427,22 +605,19 @@
     function updateVersionTexts() {
         dbVersionInfo.version = document.getElementById('admin-version').value;
         dbVersionInfo.notes = document.getElementById('admin-notes').value;
-        
-        // Giriş ekranını anında güncelle
         document.getElementById('main-version-text').innerText = dbVersionInfo.version;
         document.getElementById('display-version-title').innerText = dbVersionInfo.version + " - Eklenen Özellikler";
         document.getElementById('display-version-notes').innerText = dbVersionInfo.notes;
-        
-        alert("Sürüm notları başarıyla güncellendi. Çıkış yaptığınızda görebilirsiniz.");
+        alert("Sürüm notları başarıyla güncellendi.");
     }
 
     function openAddUser() {
         document.getElementById('edit-index').value = "-1";
         document.getElementById('user-modal-title').innerText = "Yeni Kullanıcı Ekle";
-        document.getElementById('u-name').value = "";
-        document.getElementById('u-surname').value = "";
-        document.getElementById('u-id').value = "";
-        document.getElementById('u-pass').value = "";
+        document.getElementById('u-name').value = ""; document.getElementById('u-surname').value = "";
+        document.getElementById('u-id').value = ""; document.getElementById('u-pass').value = "";
+        
+        document.getElementById('delete-user-btn').style.display = 'none'; // Ekleme yaparken Sil butonu gizli
         openModal('user-modal');
     }
 
@@ -450,11 +625,11 @@
         const user = dbUsers[index];
         document.getElementById('edit-index').value = index;
         document.getElementById('user-modal-title').innerText = "Kullanıcıyı Düzenle";
-        document.getElementById('u-name').value = user.name;
-        document.getElementById('u-surname').value = user.surname;
-        document.getElementById('u-id').value = user.id;
-        document.getElementById('u-pass').value = user.pass;
+        document.getElementById('u-name').value = user.name; document.getElementById('u-surname').value = user.surname;
+        document.getElementById('u-id').value = user.id; document.getElementById('u-pass').value = user.pass;
         document.getElementById('u-role').value = user.role;
+        
+        document.getElementById('delete-user-btn').style.display = 'block'; // Düzenlerken Sil butonu görünür
         openModal('user-modal');
     }
 
@@ -468,14 +643,24 @@
             role: document.getElementById('u-role').value
         };
 
-        if(index === -1) {
-            dbUsers.push(userData); // Yeni ekle
-        } else {
-            dbUsers[index] = userData; // Güncelle
-        }
+        if(index === -1) { dbUsers.push(userData); } else { dbUsers[index] = userData; }
+        closeModal('user-modal'); loadAdminSettings();
+    }
 
-        closeModal('user-modal');
-        loadAdminSettings(); // Tabloyu anında yenile
+    function deleteUser() {
+        const index = parseInt(document.getElementById('edit-index').value);
+        if(index > -1) {
+            // Kendini silmeyi engellemek iyi bir pratiktir
+            if(dbUsers[index].id === currentUser.id) {
+                alert("Kendi hesabınızı silemezsiniz!");
+                return;
+            }
+            if(confirm("Bu kullanıcıyı silmek istediğinize emin misiniz?")) {
+                dbUsers.splice(index, 1);
+                closeModal('user-modal');
+                loadAdminSettings();
+            }
+        }
     }
 </script>
 
