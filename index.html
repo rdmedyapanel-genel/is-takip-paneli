@@ -169,7 +169,8 @@
         .ga-card.add-card:hover { border-color: var(--primary-red); color: var(--primary-red); background: rgba(220, 38, 38, 0.02); }
         .ga-card.add-card i { font-size: 40px; }
         
-        .ga-card.completed-ga { opacity: 0.55; filter: grayscale(40%); background-color: #f8fafc; }
+        /* Tamamlandı Efekti */
+        .ga-card.completed-ga { opacity: 0.55; filter: grayscale(40%); background-color: #f8fafc; border-color: #cbd5e1; }
         .ga-card.completed-ga .ga-title { text-decoration: line-through; color: var(--text-muted); }
         .ga-card.completed-ga .ga-preview { text-decoration: line-through; color: #94a3b8; }
         
@@ -205,7 +206,7 @@
         .rt-editor:focus { outline: none; border-color: var(--task-purple); }
         
         /* Editör içi Checkbox Hizalaması */
-        .rt-editor input[type="checkbox"] { vertical-align: text-bottom; margin-right: 6px; margin-bottom: 2px; width: 14px; height: 14px; cursor: pointer; }
+        .rt-editor input[type="checkbox"] { vertical-align: middle; margin-right: 6px; margin-bottom: 2px; width: 14px; height: 14px; cursor: pointer; }
 
         /* Personal Agenda */
         .pa-note-card { background: #fffdf5; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; }
@@ -428,6 +429,7 @@
     let dbCompanies = [];
     let dbGenelAgenda = [];
     let dbPersonalAgenda = [];
+    let dbVersionInfo = { version: "RDGRUP V.1.5", notes: "Admin paneli sorunu çözüldü ve şube izolasyonu yapıldı." };
     
     const holdingCompanies = ["RDGRUP MEDYA", "ANKARA MEZUNİYET", "TÜRKİYE MEZUNİYET"];
 
@@ -450,17 +452,32 @@
         return [year, month, day].join('-');
     }
 
-    // 21 Mayıs 2026 gibi formatlara dönüştürmek için fonksiyon
     function formatDateTR(dateString) {
         if(!dateString) return "";
         let d = new Date(dateString);
         return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
     }
 
+    function updateVersionUI() {
+        const vText = document.getElementById('main-version-text');
+        if(vText) vText.innerText = dbVersionInfo.version;
+        const vTitle = document.getElementById('display-version-title');
+        if(vTitle) vTitle.innerText = dbVersionInfo.version + " - Eklenen Özellikler";
+        const vNotes = document.getElementById('display-version-notes');
+        if(vNotes) vNotes.innerText = dbVersionInfo.notes;
+    }
+
     // --- SİSTEM BAŞLATICI ---
     async function initializeSystem() {
         try {
             document.getElementById('init-loader').style.display = 'flex';
+            
+            const settingsRef = db.collection('settings').doc('system');
+            const doc = await settingsRef.get();
+            if (doc.exists) dbVersionInfo = doc.data();
+            else await settingsRef.set(dbVersionInfo);
+            updateVersionUI();
+
             await fetchCompaniesFromFirebase(); 
             await fetchUsersFromFirebase();     
             await fetchShootsFromFirebase();
@@ -492,8 +509,6 @@
 
     async function fetchTasksFromFirebase() {
         let query = db.collection('tasks');
-        if (currentCategoryContext === 'rdgrup') query = query.where('category', '==', 'rdgrup_paylasim'); 
-        else if (currentCategoryContext === 'mezuniyet') query = query.where('category', '==', 'mezuniyet_gorev');
         const snapshot = await query.get();
         dbTasks = [];
         snapshot.forEach(doc => { dbTasks.push({ docId: doc.id, ...doc.data() }); });
@@ -568,6 +583,8 @@
         });
     }
 
+    window.onload = initializeSystem;
+
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -589,7 +606,6 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('company-selection').style.display = 'flex';
             
-            // Kurucu / Admin tam yetki garantisi
             const role = (foundUser.role || "").toLowerCase();
             const isAdmin = role === 'admin' || foundUser.id === 'alperen';
             document.getElementById('admin-section').style.display = isAdmin ? 'block' : 'none'; 
