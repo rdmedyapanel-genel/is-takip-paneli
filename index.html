@@ -164,10 +164,14 @@
 
         /* GENEL AJANDA KARTLARI */
         .ga-grid { display: flex; flex-wrap: wrap; gap: 20px; }
-        .ga-card { width: 280px; min-height: 250px; background: white; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; position: relative; }
+        .ga-card { width: 280px; min-height: 250px; background: white; border-radius: 16px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 4px 10px rgba(0,0,0,0.03); display: flex; flex-direction: column; position: relative; transition: all 0.3s;}
         .ga-card.add-card { border: 2px dashed #cbd5e1; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #94a3b8; transition: 0.2s; box-shadow: none; }
         .ga-card.add-card:hover { border-color: var(--primary-red); color: var(--primary-red); background: rgba(220, 38, 38, 0.02); }
         .ga-card.add-card i { font-size: 40px; }
+        
+        .ga-card.completed-ga { opacity: 0.55; filter: grayscale(40%); background-color: #f8fafc; }
+        .ga-card.completed-ga .ga-title { text-decoration: line-through; color: var(--text-muted); }
+        .ga-card.completed-ga .ga-preview { text-decoration: line-through; color: #94a3b8; }
         
         .ga-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .ga-title { font-size: 15px; font-weight: 700; color: var(--bg-dark); line-height: 1.3; }
@@ -200,8 +204,8 @@
         .rt-editor { width: 100%; min-height: 100px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 0 0 8px 8px; background: white; font-family: 'Poppins', sans-serif; font-size: 13px; color: var(--text-main); overflow-y: auto; }
         .rt-editor:focus { outline: none; border-color: var(--task-purple); }
         
-        /* Editör içi Checkbox Hizalaması için ekstra css */
-        .rt-editor input[type="checkbox"] { vertical-align: middle; margin-right: 6px; margin-bottom: 2px; width: 14px; height: 14px; cursor: pointer; }
+        /* Editör içi Checkbox Hizalaması */
+        .rt-editor input[type="checkbox"] { vertical-align: text-bottom; margin-right: 6px; margin-bottom: 2px; width: 14px; height: 14px; cursor: pointer; }
 
         /* Personal Agenda */
         .pa-note-card { background: #fffdf5; border-left: 4px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; }
@@ -464,7 +468,6 @@
             await fetchGenelAgendaFromFirebase();
         } catch (error) {
             console.error("Bağlantı hatası: ", error);
-            alert("Sunucuya bağlanılamadı.");
         } finally {
             document.getElementById('init-loader').style.display = 'none';
         }
@@ -529,11 +532,13 @@
         if(sSelect) sSelect.innerHTML = ''; if(gaSelect) gaSelect.innerHTML = '';
         
         dbUsers.forEach(u => {
-            let n = `${u.name} ${u.surname}`;
-            if(hSelect) hSelect.add(new Option(n, u.name)); 
-            if(pSelect) pSelect.add(new Option(n, u.name));
-            if(gaSelect) gaSelect.add(new Option(n, u.name));
-            if(sSelect) sSelect.innerHTML += `<label><input type="checkbox" value="${u.name}" class="sh-kisi-cb"> ${n}</label>`;
+            const safeName = u.name || "İsimsiz";
+            const safeSurname = u.surname || "";
+            let n = `${safeName} ${safeSurname}`.trim();
+            if(hSelect) hSelect.add(new Option(n, safeName)); 
+            if(pSelect) pSelect.add(new Option(n, safeName));
+            if(gaSelect) gaSelect.add(new Option(n, safeName));
+            if(sSelect) sSelect.innerHTML += `<label><input type="checkbox" value="${safeName}" class="sh-kisi-cb"> ${n}</label>`;
         });
     }
 
@@ -546,9 +551,10 @@
             if(fSelect) fSelect.add(opt); if(shSelect) shSelect.add(opt); if(gaSelect) gaSelect.add(opt);
         } else {
             dbCompanies.forEach(c => {
-                if(fSelect) fSelect.add(new Option(c.name, c.name));
-                if(shSelect) shSelect.add(new Option(c.name, c.name));
-                if(gaSelect) gaSelect.add(new Option(c.name, c.name));
+                const cName = c.name || "İsimsiz";
+                if(fSelect) fSelect.add(new Option(cName, cName));
+                if(shSelect) shSelect.add(new Option(cName, cName));
+                if(gaSelect) gaSelect.add(new Option(cName, cName));
             });
         }
     }
@@ -562,8 +568,6 @@
         });
     }
 
-    window.onload = initializeSystem;
-
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -573,21 +577,21 @@
     document.getElementById('login-btn').addEventListener('click', () => {
         const userId = document.getElementById('username').value.trim().toLowerCase();
         const userPass = document.getElementById('password').value.trim();
-        const foundUser = dbUsers.find(u => u.id === userId && u.pass === userPass);
+        const foundUser = dbUsers.find(u => (u.id || "").toLowerCase() === userId && u.pass === userPass);
 
         if (foundUser) {
             currentUser = foundUser;
             document.getElementById('error-msg').style.display = 'none';
-            document.getElementById('logged-user-name').innerText = foundUser.name;
-            document.getElementById('logged-user-role').innerText = foundUser.role;
-            document.getElementById('logged-avatar').innerText = foundUser.name.charAt(0);
+            document.getElementById('logged-user-name').innerText = foundUser.name || "Kullanıcı";
+            document.getElementById('logged-user-role').innerText = foundUser.role || "Bilinmiyor";
+            document.getElementById('logged-avatar').innerText = (foundUser.name || "?").charAt(0).toUpperCase();
 
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('company-selection').style.display = 'flex';
             
-            // Admin kontrolü düzeltildi (Büyük/küçük harf duyarlılığı kaldırıldı)
-            // 'alperen' kullanıcı adına her koşulda süper admin yetkisi.
-            const isAdmin = (foundUser.role && foundUser.role.toLowerCase() === 'admin') || (foundUser.id === 'alperen');
+            // Kurucu / Admin tam yetki garantisi
+            const role = (foundUser.role || "").toLowerCase();
+            const isAdmin = role === 'admin' || foundUser.id === 'alperen';
             document.getElementById('admin-section').style.display = isAdmin ? 'block' : 'none'; 
         } else {
             document.getElementById('error-msg').style.display = 'block';
@@ -680,31 +684,34 @@
             let badgeHtml = '';
             if(g.video > 0) badgeHtml += `<div class="ga-badge video">${g.video} Video</div>`;
             if(g.tasarim > 0) badgeHtml += `<div class="ga-badge tasarim">${g.tasarim} Tasarım</div>`;
-            let previewText = g.not.replace(/<[^>]*>?/gm, '');
+            let previewText = (g.not || "").replace(/<[^>]*>?/gm, '');
+
+            const isCompleted = g.status === 3;
+            const cardClass = isCompleted ? 'ga-card completed-ga' : 'ga-card';
 
             html += `
-                <div class="ga-card">
+                <div class="${cardClass}">
                     <div class="ga-header">
-                        <div class="ga-title">${g.title}</div>
+                        <div class="ga-title">${g.title || ""}</div>
                         <div class="ga-badges">${badgeHtml}</div>
                     </div>
                     
                     <div class="ga-date"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i> Teslim: ${formatDateTR(g.tarih)}</div>
-                    <div class="ga-company"><i class="fa-solid fa-building"></i> ${g.firma}</div>
+                    <div class="ga-company"><i class="fa-solid fa-building"></i> ${g.firma || ""}</div>
                     
                     <div class="ga-preview">"${previewText || 'Not eklenmemiş...'}"</div>
                     <button class="ga-view-btn" onclick="openEditGenelAgenda('${g.docId}')"><i class="fa-solid fa-magnifying-glass"></i> İçeriği ve Görevleri Gör</button>
                     
                     <div class="ga-footer-info">
-                        <span>Ekleyen: <b>${g.ekleyen}</b></span>
-                        <span>Sorumlu: <b>${g.sorumlu}</b></span>
+                        <span>Ekleyen: <b>${g.ekleyen || ""}</b></span>
+                        <span>Sorumlu: <b>${g.sorumlu || ""}</b></span>
                     </div>
 
                     ${!showArchivedGA ? `
                     <div class="ga-status-btns">
                         <button class="ga-s-btn ${g.status >= 1 ? 'active-1' : ''}" onclick="updateGAStatus('${g.docId}', 1)">Görüldü</button>
                         <button class="ga-s-btn ${g.status >= 2 ? 'active-2' : ''}" onclick="updateGAStatus('${g.docId}', 2)">Hazırlanıyor</button>
-                        <button class="ga-s-btn ${g.status === 3 ? 'active-3' : ''}" onclick="updateGAStatus('${g.docId}', 3)">Tamamlandı</button>
+                        <button class="ga-s-btn ${isCompleted ? 'active-3' : ''}" onclick="updateGAStatus('${g.docId}', 3)">Tamamlandı</button>
                     </div>
                     ` : ''}
 
@@ -728,10 +735,10 @@
         loadGenelAgenda();
     }
 
-    // Rich Text Editor Commands (Checkbox hizalaması dahil)
+    // Rich Text Editor Commands
     function execCmd(command) { document.execCommand(command, false, null); }
     function insertCheckbox() {
-        document.execCommand('insertHTML', false, '&#8203;<input type="checkbox" style="vertical-align: sub; margin-right: 6px; margin-bottom: 2px;">&#8203;');
+        document.execCommand('insertHTML', false, '&#8203;<input type="checkbox">&#8203; ');
     }
 
     function openAddGenelAgenda() {
@@ -752,9 +759,9 @@
         document.getElementById('ga-modal-title').innerText = "Genel Ajanda - Düzenle";
         document.getElementById('ga-doc-id').value = docId; document.getElementById('ga-status').value = g.status || 0;
         
-        document.getElementById('ga-title').value = g.title; document.getElementById('ga-firma').value = g.firma;
-        document.getElementById('ga-sorumlu').value = g.sorumlu; document.getElementById('ga-video').value = g.video || 0; document.getElementById('ga-tasarim').value = g.tasarim || 0;
-        document.getElementById('ga-ekleyen').value = g.ekleyen; document.getElementById('ga-not').innerHTML = g.not;
+        document.getElementById('ga-title').value = g.title || ""; document.getElementById('ga-firma').value = g.firma || "";
+        document.getElementById('ga-sorumlu').value = g.sorumlu || ""; document.getElementById('ga-video').value = g.video || 0; document.getElementById('ga-tasarim').value = g.tasarim || 0;
+        document.getElementById('ga-ekleyen').value = g.ekleyen || ""; document.getElementById('ga-not').innerHTML = g.not || "";
 
         if(gaDatePicker) gaDatePicker.destroy(); 
         gaDatePicker = flatpickr("#ga-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: g.tarih, altInput: true, altFormat: "j F Y" });
@@ -801,7 +808,7 @@
     function loadFirmalarPage() {
         let html = '<div class="company-grid" style="margin-top:15px;">';
         if(dbCompanies.length === 0) html += '<p style="color: var(--text-muted); width: 100%; text-align: center;">Henüz sisteme eklenmiş firma yok.</p>';
-        else { dbCompanies.forEach(c => { html += `<div class="company-card" style="padding: 20px 10px; cursor: default;"><i class="fa-solid fa-building" style="font-size: 28px;"></i><h3 style="font-size: 14px;">${c.name}</h3></div>`; }); }
+        else { dbCompanies.forEach(c => { html += `<div class="company-card" style="padding: 20px 10px; cursor: default;"><i class="fa-solid fa-building" style="font-size: 28px;"></i><h3 style="font-size: 14px;">${c.name || "İsimsiz"}</h3></div>`; }); }
         html += '</div>';
         document.getElementById('main-content').innerHTML = `<div class="content-card"><h2 class="content-title">${currentCompany} - Firmalar</h2>${html}</div>`;
     }
@@ -811,9 +818,18 @@
         let todayStr = formatDate(new Date()); let tomorrowStr = new Date(); tomorrowStr.setDate(tomorrowStr.getDate() + 1); tomorrowStr = formatDate(tomorrowStr);
         let myTasksOnly = (pageName === 'Kendi İşlerim');
 
+        let validTasks = dbTasks;
+        let validShoots = dbShoots;
+        
+        // Firma filtrelemesi
+        if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
+            validTasks = validTasks.filter(t => t.firma === currentCompany);
+            validShoots = validShoots.filter(s => s.firma === currentCompany);
+        }
+
         let allItems = [
-            ...dbTasks.map(t => ({...t, itemType: 'task', isDone: (t.hazirlandi && t.paylasildi)})),
-            ...dbShoots.map(s => { let kisiStr = Array.isArray(s.kisi) ? s.kisi.join(', ') : s.kisi; return {...s, itemType: 'shoot', tur: 'Çekim', hazirlayan: kisiStr, paylasan: '-', isDone: (s.cekildi && s.teslim && s.hdd && s.drive)}; })
+            ...validTasks.map(t => ({...t, itemType: 'task', isDone: (t.hazirlandi && t.paylasildi)})),
+            ...validShoots.map(s => { let kisiStr = Array.isArray(s.kisi) ? s.kisi.join(', ') : s.kisi; return {...s, itemType: 'shoot', tur: 'Çekim', hazirlayan: kisiStr, paylasan: '-', isDone: (s.cekildi && s.teslim && s.hdd && s.drive)}; })
         ];
 
         let gecikenler = allItems.filter(t => t.tarih < todayStr && !t.isDone);
@@ -821,18 +837,18 @@
         let yarin = allItems.filter(t => t.tarih === tomorrowStr);
 
         if (myTasksOnly) {
-            gecikenler = gecikenler.filter(t => t.hazirlayan.includes(currentUser.name) || t.paylasan === currentUser.name);
-            bugun = bugun.filter(t => t.hazirlayan.includes(currentUser.name) || t.paylasan === currentUser.name);
-            yarin = yarin.filter(t => t.hazirlayan.includes(currentUser.name) || t.paylasan === currentUser.name);
+            gecikenler = gecikenler.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name);
+            bugun = bugun.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name);
+            yarin = yarin.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name);
         }
 
         const renderMiniCard = (t) => {
             const extraClass = t.itemType === 'shoot' ? 'shoot' : ''; const clickFn = t.itemType === 'shoot' ? `openEditShoot('${t.docId}')` : `openEditTask('${t.docId}')`;
-            return `<div class="task-card ${extraClass} ${t.isDone ? 'completed' : ''}" onclick="${clickFn}" style="color:white; cursor:pointer;"><b>${t.firma}</b> - ${t.tur} (K:${t.hazirlayan})</div>`;
+            return `<div class="task-card ${extraClass} ${t.isDone ? 'completed' : ''}" onclick="${clickFn}" style="color:white; cursor:pointer;"><b>${t.firma || ""}</b> - ${t.tur || ""} (K:${t.hazirlayan || ""})</div>`;
         };
 
         let myAgenda = dbAgenda.filter(a => a.company === currentCompany || a.company === 'Tümü');
-        let agendaHtml = myAgenda.length > 0 ? myAgenda.map(a => `<div class="agenda-item"><span>${a.text}</span> <button class="action-btn" onclick="deleteAgenda('${a.docId}')"><i class="fa-solid fa-check"></i></button></div>`).join('') : `<div class="dash-empty-state">Aktif not bulunmuyor.</div>`;
+        let agendaHtml = myAgenda.length > 0 ? myAgenda.map(a => `<div class="agenda-item"><span>${a.text || ""}</span> <button class="action-btn" onclick="deleteAgenda('${a.docId}')"><i class="fa-solid fa-check"></i></button></div>`).join('') : `<div class="dash-empty-state">Aktif not bulunmuyor.</div>`;
 
         return `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h2 class="content-title" style="margin-bottom: 0; border: none;">${currentCompany} - ${pageName}</h2><div style="color: var(--text-muted); font-size: 13px;">${new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div></div>
@@ -873,7 +889,7 @@
     function changeCalView(view) { currentCalView = view; ['month', 'week', 'day'].forEach(v => document.getElementById('btn-view-'+v).classList.remove('active')); document.getElementById('btn-view-' + view).classList.add('active'); initCalendar(); }
     function changeCalNav(direction) { if(currentCalView === 'month') calDate.setMonth(calDate.getMonth() + direction); if(currentCalView === 'week') calDate.setDate(calDate.getDate() + (direction * 7)); if(currentCalView === 'day') calDate.setDate(calDate.getDate() + direction); initCalendar(); }
     function resetToToday() { calDate = new Date(); initCalendar(); }
-    function getTaskIndex(task) { const taskMonth = task.tarih.substring(0, 7); let monthlyTasks = dbTasks.filter(t => t.firma === task.firma && t.tarih.startsWith(taskMonth)); monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? a.tarih.localeCompare(b.tarih) : a.docId.localeCompare(b.docId)); const index = monthlyTasks.findIndex(t => t.docId === task.docId); return index !== -1 ? index + 1 : '?'; }
+    function getTaskIndex(task) { const taskMonth = (task.tarih || "").substring(0, 7); let monthlyTasks = dbTasks.filter(t => t.firma === task.firma && (t.tarih || "").startsWith(taskMonth)); monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); const index = monthlyTasks.findIndex(t => t.docId === task.docId); return index !== -1 ? index + 1 : '?'; }
 
     function initCalendar() {
         const grid = document.getElementById('calendar-wrapper'); const monthYearText = document.getElementById('calendar-month-year'); grid.innerHTML = '';
@@ -881,7 +897,18 @@
         if(currentCalView === 'day') monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }); else monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
 
         let visibleItems = [];
-        if (activePage === 'Paylaşım Takvimi') visibleItems = dbTasks.map(t => ({...t, itemType: 'task'})); else if (activePage === 'Çekim Takvimi') visibleItems = dbShoots.map(s => ({...s, itemType: 'shoot'})); else visibleItems = [...dbTasks.map(t => ({...t, itemType: 'task'})), ...dbShoots.map(s => ({...s, itemType: 'shoot'}))];
+        let validTasks = dbTasks;
+        let validShoots = dbShoots;
+
+        // Firma filtrelemesi
+        if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
+            validTasks = validTasks.filter(t => t.firma === currentCompany);
+            validShoots = validShoots.filter(s => s.firma === currentCompany);
+        }
+
+        if (activePage === 'Paylaşım Takvimi') visibleItems = validTasks.map(t => ({...t, itemType: 'task'})); 
+        else if (activePage === 'Çekim Takvimi') visibleItems = validShoots.map(s => ({...s, itemType: 'shoot'})); 
+        else visibleItems = [...validTasks.map(t => ({...t, itemType: 'task'})), ...validShoots.map(s => ({...s, itemType: 'shoot'}))];
 
         function getTasksForDateHTML(dateString) {
             const dayItems = visibleItems.filter(t => t.tarih === dateString); if(dayItems.length === 0) return '';
@@ -890,10 +917,10 @@
                 const isReadOnly = (activePage === 'Genel Takvim');
                 if(t.itemType === 'task') {
                     const isCompleted = t.hazirlandi && t.paylasildi; const taskNum = getTaskIndex(t);
-                    html += `<div class="task-card ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}"><div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div><div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div><div class="task-text">${t.firma} (${taskNum}) - ${t.hazirlayan}</div></div>`;
+                    html += `<div class="task-card ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}"><div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div><div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div><div class="task-text">${t.firma || ""} (${taskNum}) - ${t.hazirlayan || ""}</div></div>`;
                 } else {
                     const isCompleted = t.cekildi && t.teslim && t.hdd && t.drive; let kisiDisplay = Array.isArray(t.kisi) ? t.kisi.join(', ') : t.kisi;
-                    html += `<div class="task-card shoot ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditShoot('${t.docId}')`}"><i class="fa-solid fa-camera" style="margin-right:2px;"></i><div class="task-text">${t.saat ? t.saat+' ' : ''}${t.firma} - ${kisiDisplay}</div></div>`;
+                    html += `<div class="task-card shoot ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditShoot('${t.docId}')`}"><i class="fa-solid fa-camera" style="margin-right:2px;"></i><div class="task-text">${t.saat ? t.saat+' ' : ''}${t.firma || ""} - ${kisiDisplay}</div></div>`;
                 }
             }); html += '</div>'; return html;
         }
@@ -924,7 +951,9 @@
         let checklistData = doc.exists ? doc.data().notes : {};
 
         let targetUsers = dbUsers.filter(u => u.chkVisible === true && u.chkCompanies && u.chkCompanies.includes(currentCompany));
-        let todayStr = formatDate(new Date()); let isPast = currentChecklistDate < todayStr; let isAdmin = currentUser.role === 'Admin' || currentUser.id === 'alperen';
+        let todayStr = formatDate(new Date()); let isPast = currentChecklistDate < todayStr; 
+        let role = (currentUser.role || "").toLowerCase();
+        let isAdmin = role === 'admin' || currentUser.id === 'alperen';
 
         let html = `
             <div class="checklist-container">
@@ -949,7 +978,7 @@
 
         targetUsers.forEach(u => {
             let noteContent = checklistData[u.id] || ""; let canEdit = isAdmin || (!isPast && u.id === currentUser.id); let disabledAttr = canEdit ? "" : "disabled";
-            html += `<div class="chk-user-card"><span class="chk-user-title">${u.name}</span><textarea class="chk-textarea" id="chk-txt-${u.id}" placeholder="Buraya notlarınızı yazın... Kaydettiğinizde otomatik olarak numaralandırılacaktır." ${disabledAttr}>${noteContent}</textarea>${canEdit ? `<div style="text-align: right;"><button class="login-btn btn-green" style="width: auto; padding: 6px 15px;" onclick="saveChecklist('${u.id}')">Listeyi Kaydet / Sırala</button></div>` : ''}</div>`;
+            html += `<div class="chk-user-card"><span class="chk-user-title">${u.name || "İsimsiz"}</span><textarea class="chk-textarea" id="chk-txt-${u.id}" placeholder="Buraya notlarınızı yazın... Kaydettiğinizde otomatik olarak numaralandırılacaktır." ${disabledAttr}>${noteContent}</textarea>${canEdit ? `<div style="text-align: right;"><button class="login-btn btn-green" style="width: auto; padding: 6px 15px;" onclick="saveChecklist('${u.id}')">Listeyi Kaydet / Sırala</button></div>` : ''}</div>`;
         });
         html += `</div></div>`; document.getElementById('main-content').innerHTML = html;
 
@@ -995,23 +1024,30 @@
     // --- PROFIL VE ADMIN ---
     function loadProfileView() {
         document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('main-content').innerHTML = `<div class="content-card" style="max-width: 600px;"><h2 class="content-title">Profil Bilgileri</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;"><div class="input-group"><label>İSİM</label><input type="text" value="${currentUser.name}" disabled></div><div class="input-group"><label>SOYİSİM</label><input type="text" value="${currentUser.surname}" disabled></div></div><h3 style="font-size: 15px; margin-bottom: 15px; color: var(--bg-dark);">Şifre Değiştir</h3><div class="input-group"><label>YENİ ŞİFRE</label><input type="password" id="new-profile-pass"></div><button class="login-btn" onclick="updateOwnPassword()">Şifreyi Güncelle</button></div>`;
+        document.getElementById('main-content').innerHTML = `<div class="content-card" style="max-width: 600px;"><h2 class="content-title">Profil Bilgileri</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;"><div class="input-group"><label>İSİM</label><input type="text" value="${currentUser.name || ""}" disabled></div><div class="input-group"><label>SOYİSİM</label><input type="text" value="${currentUser.surname || ""}" disabled></div></div><h3 style="font-size: 15px; margin-bottom: 15px; color: var(--bg-dark);">Şifre Değiştir</h3><div class="input-group"><label>YENİ ŞİFRE</label><input type="password" id="new-profile-pass"></div><button class="login-btn" onclick="updateOwnPassword()">Şifreyi Güncelle</button></div>`;
     }
     async function updateOwnPassword() { const newPass = document.getElementById('new-profile-pass').value; if(newPass) { currentUser.pass = newPass; await db.collection('users').doc(currentUser.docId).update({ pass: newPass }); await fetchUsersFromFirebase(); alert('Şifreniz güncellendi!'); } }
 
     function loadAdminSettings() {
         let usersHtml = '';
         dbUsers.forEach((u, index) => {
-            const roleColor = u.role === 'Admin' ? 'background: #fee2e2; color: var(--primary-red);' : 'background: #e2e8f0; color: var(--bg-dark);';
-            usersHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><div style="width: 26px; height: 26px; background: var(--bg-dark); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">${u.name.charAt(0)}</div><div><div style="font-weight: 600; color: var(--bg-dark);">${u.name} ${u.surname}</div><div style="font-size: 10px; color: var(--text-muted);">@${u.id}</div></div></div><div style="display: flex; align-items: center; gap: 10px;"><span style="${roleColor} padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700;">${u.role}</span><button class="action-btn" onclick="openEditUser('${u.docId}')"><i class="fa-solid fa-pen"></i></button><div class="sort-btn-group"><button class="sort-btn" onclick="moveItem('users', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button class="sort-btn" onclick="moveItem('users', ${index}, 1)" ${index===dbUsers.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`;
+            const safeRole = (u.role || "").toLowerCase() === 'admin' || u.id === 'alperen' ? 'Admin' : (u.role || 'Bilinmiyor');
+            const roleColor = safeRole === 'Admin' ? 'background: #fee2e2; color: var(--primary-red);' : 'background: #e2e8f0; color: var(--bg-dark);';
+            const safeName = u.name || "İsimsiz";
+            const safeSurname = u.surname || "";
+            const safeId = u.id || "id_yok";
+            const firstChar = safeName.charAt(0).toUpperCase();
+
+            usersHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><div style="width: 26px; height: 26px; background: var(--bg-dark); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">${firstChar}</div><div><div style="font-weight: 600; color: var(--bg-dark);">${safeName} ${safeSurname}</div><div style="font-size: 10px; color: var(--text-muted);">@${safeId}</div></div></div><div style="display: flex; align-items: center; gap: 10px;"><span style="${roleColor} padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700;">${safeRole}</span><button class="action-btn" onclick="openEditUser('${u.docId}')"><i class="fa-solid fa-pen"></i></button><div class="sort-btn-group"><button class="sort-btn" onclick="moveItem('users', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button class="sort-btn" onclick="moveItem('users', ${index}, 1)" ${index===dbUsers.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`;
         });
         
         let companiesHtml = '';
         dbCompanies.forEach((c, index) => {
-            companiesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-building" style="margin-right:6px; color:var(--text-muted);"></i>${c.name}</div><div style="display: flex; align-items: center; gap: 10px;"><button class="action-btn" style="color: var(--primary-red);" onclick="deleteCompany('${c.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button class="sort-btn" onclick="moveItem('companies', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button class="sort-btn" onclick="moveItem('companies', ${index}, 1)" ${index===dbCompanies.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`;
+            const safeCName = c.name || "İsimsiz Firma";
+            companiesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-building" style="margin-right:6px; color:var(--text-muted);"></i>${safeCName}</div><div style="display: flex; align-items: center; gap: 10px;"><button class="action-btn" style="color: var(--primary-red);" onclick="deleteCompany('${c.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button class="sort-btn" onclick="moveItem('companies', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button class="sort-btn" onclick="moveItem('companies', ${index}, 1)" ${index===dbCompanies.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`;
         });
 
-        document.getElementById('main-content').innerHTML = `<h2 class="content-title">Yönetim Paneli (Admin)</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;"><div class="content-card" style="margin-bottom:0;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-users" style="color: var(--primary-red);"></i> Kullanıcılar</h3><button class="login-btn" style="width: auto; padding: 6px 12px; font-size: 11px; margin: 0;" onclick="openAddUser()">+ Yeni Ekle</button></div><div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 250px; overflow-y: auto;">${usersHtml}</div></div><div class="content-card" style="margin-bottom:0;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-building" style="color: var(--primary-red);"></i> Firmalar</h3></div><div style="display: flex; gap: 8px; margin-bottom: 12px;"><input type="text" id="admin-new-company" placeholder="Firma Adı" style="flex:1; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;"><button class="login-btn" style="width: auto; padding: 8px 15px;" onclick="addCompany()">Ekle</button></div><div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 200px; overflow-y: auto;">${companiesHtml !== '' ? companiesHtml : '<div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 11px;">Firma eklenmemiş.</div>'}</div></div><div class="content-card" style="grid-column: span 2;"><h3 style="color: var(--bg-dark); border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; font-size: 14px;"><i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Giriş Ekranı Yazıları</h3><div class="input-group"><label>SÜRÜM BİLGİSİ</label><input type="text" id="admin-version" value="${dbVersionInfo.version}"></div><div class="input-group"><label>EKLENEN ÖZELLİKLER</label><textarea id="admin-notes" rows="3">${dbVersionInfo.notes}</textarea></div><button class="login-btn" style="padding: 10px; width: 150px;" id="save-version-btn" onclick="updateVersionTexts()">Uygula & Kaydet</button></div></div>`;
+        document.getElementById('main-content').innerHTML = `<h2 class="content-title">Yönetim Paneli (Admin)</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;"><div class="content-card" style="margin-bottom:0;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-users" style="color: var(--primary-red);"></i> Kullanıcılar</h3><button class="login-btn" style="width: auto; padding: 6px 12px; font-size: 11px; margin: 0;" onclick="openAddUser()">+ Yeni Ekle</button></div><div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 250px; overflow-y: auto;">${usersHtml}</div></div><div class="content-card" style="margin-bottom:0;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-building" style="color: var(--primary-red);"></i> Firmalar</h3></div><div style="display: flex; gap: 8px; margin-bottom: 12px;"><input type="text" id="admin-new-company" placeholder="Firma Adı" style="flex:1; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;"><button class="login-btn" style="width: auto; padding: 8px 15px;" onclick="addCompany()">Ekle</button></div><div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 200px; overflow-y: auto;">${companiesHtml !== '' ? companiesHtml : '<div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 11px;">Firma eklenmemiş.</div>'}</div></div><div class="content-card" style="grid-column: span 2;"><h3 style="color: var(--bg-dark); border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; font-size: 14px;"><i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Giriş Ekranı Yazıları</h3><div class="input-group"><label>SÜRÜM BİLGİSİ</label><input type="text" id="admin-version" value="${dbVersionInfo.version || ''}"></div><div class="input-group"><label>EKLENEN ÖZELLİKLER</label><textarea id="admin-notes" rows="3">${dbVersionInfo.notes || ''}</textarea></div><button class="login-btn" style="padding: 10px; width: 150px;" id="save-version-btn" onclick="updateVersionTexts()">Uygula & Kaydet</button></div></div>`;
     }
 
     async function moveItem(type, index, direction) {
@@ -1054,9 +1090,9 @@
         const u = dbUsers.find(x => x.docId === docId); 
         document.getElementById('edit-doc-id').value = docId; 
         document.getElementById('user-modal-title').innerText = "Kullanıcıyı Düzenle"; 
-        document.getElementById('u-name').value = u.name; document.getElementById('u-surname').value = u.surname; 
-        document.getElementById('u-id').value = u.id; document.getElementById('u-pass').value = u.pass; 
-        document.getElementById('u-role').value = u.role; 
+        document.getElementById('u-name').value = u.name || ""; document.getElementById('u-surname').value = u.surname || ""; 
+        document.getElementById('u-id').value = u.id || ""; document.getElementById('u-pass').value = u.pass || ""; 
+        document.getElementById('u-role').value = u.role || ""; 
         document.getElementById('u-chk-visible').checked = u.chkVisible || false; 
         toggleUserCompanies(); 
         let chkComps = u.chkCompanies || []; 
@@ -1107,7 +1143,7 @@
     function openEditTask(docId) {
         const t = dbTasks.find(x => x.docId === docId); if(!t) return;
         document.getElementById('task-modal-title').innerText = "Paylaşım Görevi Düzenle";
-        document.getElementById('task-doc-id').value = docId; document.getElementById('t-firma').value = t.firma; document.getElementById('t-tur').value = t.tur; document.getElementById('t-adet').value = t.adet; document.getElementById('t-hazirlayan').value = t.hazirlayan; document.getElementById('t-paylasan').value = t.paylasan; document.getElementById('t-not').value = t.not || "";
+        document.getElementById('task-doc-id').value = docId; document.getElementById('t-firma').value = t.firma || ""; document.getElementById('t-tur').value = t.tur || ""; document.getElementById('t-adet').value = t.adet || 1; document.getElementById('t-hazirlayan').value = t.hazirlayan || ""; document.getElementById('t-paylasan').value = t.paylasan || ""; document.getElementById('t-not').value = t.not || "";
         
         if(taskDatePicker) taskDatePicker.destroy();
         taskDatePicker = flatpickr("#t-tarih", { mode: "single", dateFormat: "Y-m-d", locale: "tr", defaultDate: t.tarih, altInput: true, altFormat: "j F Y" });
@@ -1148,7 +1184,7 @@
     function openEditShoot(docId) {
         const s = dbShoots.find(x => x.docId === docId); if(!s) return;
         document.getElementById('shoot-modal-title').innerText = "Çekim Kartı (Düzenle)";
-        document.getElementById('sh-doc-id').value = docId; document.getElementById('sh-firma').value = s.firma; 
+        document.getElementById('sh-doc-id').value = docId; document.getElementById('sh-firma').value = s.firma || ""; 
         document.getElementById('sh-not').value = s.not || ""; document.getElementById('sh-link').value = s.link || ""; document.getElementById('sh-boyut').value = s.boyut || ""; document.getElementById('sh-foto').value = s.foto || 0; document.getElementById('sh-video').value = s.video || 0;
         document.getElementById('sh-cekildi').checked = s.cekildi; document.getElementById('sh-teslim').checked = s.teslim; document.getElementById('sh-hdd').checked = s.hdd; document.getElementById('sh-drive').checked = s.drive;
 
