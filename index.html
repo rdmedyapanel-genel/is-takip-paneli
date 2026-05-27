@@ -56,9 +56,20 @@
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;}
         .checkbox-group label { margin-bottom: 0; font-size: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; color: var(--bg-dark); font-weight: 500;}
         
-        .multi-checkbox-list { max-height: 120px; overflow-y: auto; border: 2px solid #f1f5f9; border-radius: 10px; padding: 8px; background: var(--bg-light); display: flex; flex-direction: column; gap: 5px; }
-        .multi-checkbox-list label { display: flex; align-items: center; gap: 8px; font-size: 12px; cursor: pointer; padding: 4px; border-radius: 6px;}
-        .multi-checkbox-list label:hover { background: #e2e8f0; }
+        /* Yenilenmiş Çoklu Seçim Kutuları */
+        .multi-checkbox-list {
+            max-height: 160px; overflow-y: auto;
+            border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+        }
+        .multi-checkbox-list label {
+            display: flex; align-items: center; justify-content: flex-start; gap: 10px;
+            font-size: 12px; cursor: pointer; padding: 8px 12px; border-radius: 6px;
+            background: white; border: 1px solid #cbd5e1; transition: all 0.2s;
+            margin: 0; color: var(--bg-dark); font-weight: 500;
+        }
+        .multi-checkbox-list label:hover { border-color: var(--task-purple); background: #f5f3ff; }
+        .multi-checkbox-list input[type="checkbox"] { width: 16px; height: 16px; margin: 0; cursor: pointer; accent-color: var(--task-purple); }
 
         .login-btn { width: 100%; padding: 12px; background: var(--primary-red); color: white; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; letter-spacing: 1px; transition: background-color 0.2s; font-size: 13px;}
         .login-btn:hover { background-color: var(--dark-red); }
@@ -89,10 +100,24 @@
         .admin-panel-card h3 { font-size: 14px; }
 
         .dashboard-layout { display: flex; width: 100%; height: 100%; background: var(--bg-light); }
-        .sidebar { width: 250px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 20px 15px; }
-        .sidebar-profile { display: flex; align-items: center; gap: 12px; padding: 12px; background: var(--bg-light); border-radius: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+        
+        /* SIDEBAR (Açılır-Kapanır Yenilik) */
+        .sidebar { width: 250px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 20px 15px; transition: width 0.3s ease; overflow-x: hidden; white-space: nowrap; }
+        .sidebar-profile { display: flex; align-items: center; gap: 12px; padding: 8px; background: var(--bg-light); border-radius: 12px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; flex: 1; }
         .sidebar-profile:hover { border-color: #cbd5e1; background: white; }
-        .sidebar-profile .avatar { width: 40px; height: 40px; background: var(--primary-red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; text-transform: uppercase; }
+        .sidebar-profile .avatar { width: 40px; height: 40px; background: var(--primary-red); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; text-transform: uppercase; flex-shrink: 0; }
+        
+        /* Daraltılmış Durum Sınıfları */
+        .sidebar.collapsed { width: 80px; padding: 20px 10px; }
+        .sidebar.collapsed .profile-texts { display: none; }
+        .sidebar.collapsed #sidebar-toggle-btn { margin: 0 auto; }
+        .sidebar.collapsed .menu-category { display: none; }
+        .sidebar.collapsed .menu-item span { display: none; }
+        .sidebar.collapsed .menu-item i { margin: 0; width: 100%; text-align: center; font-size: 18px; }
+        .sidebar.collapsed .back-to-company span { display: none; }
+        .sidebar.collapsed .back-to-company i { margin: 0; width: 100%; text-align: center; font-size: 18px; }
+        .sidebar.collapsed .logout-item span { display: none; }
+        .sidebar.collapsed .logout-item i { margin: 0; width: 100%; text-align: center; font-size: 18px; }
 
         .back-to-company { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; margin-top: 12px; margin-bottom: 20px; border-radius: 8px; color: var(--text-muted); font-size: 12px; font-weight: 600; background: white; border: 1px solid #e2e8f0; cursor: pointer; transition: 0.2s; }
         .back-to-company:hover { background: #f1f5f9; color: var(--primary-red); border-color: #cbd5e1; }
@@ -106,7 +131,7 @@
         .logout-item i { font-size: 16px; width: 20px; text-align: center; }
         .logout-item:hover { background: var(--primary-red); color: white; }
 
-        .main-panel { flex: 1; padding: 30px; overflow-y: auto; }
+        .main-panel { flex: 1; padding: 30px; overflow-y: auto; transition: 0.3s ease; }
         .content-card { background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; margin-bottom: 20px; }
         .content-title { font-size: 20px; color: var(--bg-dark); margin-bottom: 15px; padding-bottom: 12px; border-bottom: 1px solid #e2e8f0; }
 
@@ -245,8 +270,13 @@
         </div>
         
         <div class="input-group" id="u-chk-companies-wrapper" style="display:none;">
-            <label>Checklist Firmaları (Holding Branşları)</label>
+            <label>Checklist'te Görüneceği Firmalar</label>
             <div class="multi-checkbox-list" id="u-chk-companies-list"></div>
+        </div>
+
+        <div class="input-group" id="u-rep-companies-wrapper" style="margin-top: 15px;">
+            <label>Raporlarda Görüneceği Firmalar (Seçilmezse bu firmaların rapor sayfasında görünmez)</label>
+            <div class="multi-checkbox-list" id="u-rep-companies-list"></div>
         </div>
         
         <div style="display: flex; gap: 12px; margin-top: 15px;">
@@ -286,14 +316,15 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="input-group"><label>Firma Seç:</label><select id="sh-firma"><option value="">Firmalar Yükleniyor...</option></select></div>
             <div class="input-group"><label>Tarih:</label><input type="text" id="sh-tarih" placeholder="Tarih seçin..."></div>
-            <div class="input-group" style="grid-column: span 2;"><label>Saat:</label><input type="text" id="sh-saat" placeholder="Örn: 14:00"></div>
+            <div class="input-group" style="grid-column: span 2;"><label>Saat:</label><input type="time" id="sh-saat" style="font-family: 'Poppins';"></div>
         </div>
         <div class="input-group">
             <label>Çekimi Yapanlar (Birden fazla seçilebilir):</label>
             <div class="multi-checkbox-list" id="sh-kisi-list"></div>
         </div>
         <div class="input-group"><label>Çekim Notu:</label><textarea id="sh-not" rows="2" placeholder="Mekan, konsept vb. detaylar..."></textarea></div>
-        <div id="shoot-extra-fields">
+        
+        <div id="shoot-extra-fields" style="display: none;">
             <h4 style="font-size: 13px; color: var(--bg-dark); margin: 15px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Yedek ve Teslimat Süreci</h4>
             <div class="checkbox-group">
                 <label><input type="checkbox" id="sh-cekildi"> Çekim yapıldı</label><label><input type="checkbox" id="sh-teslim"> Yedek Teslim Edildi</label>
@@ -390,18 +421,21 @@
 
 <div class="slide-container" id="dashboard-screen" style="display: none;">
     <div class="dashboard-layout">
-        <div class="sidebar">
-            <div class="sidebar-profile" onclick="loadProfileView()">
-                <div class="avatar" id="logged-avatar">A</div>
-                <div>
-                    <div style="font-weight: 700; color: var(--bg-dark); font-size: 14px;" id="logged-user-name">Kullanıcı</div>
-                    <div style="font-size: 11px; color: var(--text-muted);" id="logged-user-role">Rol</div>
+        <div class="sidebar" id="app-sidebar">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="sidebar-profile" onclick="loadProfileView()">
+                    <div class="avatar" id="logged-avatar">A</div>
+                    <div class="profile-texts">
+                        <div style="font-weight: 700; color: var(--bg-dark); font-size: 14px;" id="logged-user-name">Kullanıcı</div>
+                        <div style="font-size: 11px; color: var(--text-muted);" id="logged-user-role">Rol</div>
+                    </div>
                 </div>
+                <button class="action-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" style="padding: 8px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-left: 5px;"><i class="fa-solid fa-bars"></i></button>
             </div>
-            <button class="back-to-company" onclick="backToCompanySelection()"><i class="fa-solid fa-arrow-left"></i> Firma Ekranına Dön</button>
-            <div style="font-size: 10px; font-weight: 700; color:#94a3b8; margin-bottom: 8px; letter-spacing: 1px;">MENÜ</div>
+            <button class="back-to-company" onclick="backToCompanySelection()"><i class="fa-solid fa-arrow-left"></i> <span>Firma Ekranına Dön</span></button>
+            <div class="menu-category" style="font-size: 10px; font-weight: 700; color:#94a3b8; margin-bottom: 8px; letter-spacing: 1px;">MENÜ</div>
             <ul class="menu-list" id="sidebar-menu"></ul>
-            <button class="logout-item" onclick="logout()"><i class="fa-solid fa-power-off"></i> Çıkış Yap</button>
+            <button class="logout-item" onclick="logout()"><i class="fa-solid fa-power-off"></i> <span>Çıkış Yap</span></button>
         </div>
         <div class="main-panel" id="main-content"></div>
     </div>
@@ -438,13 +472,21 @@
     let currentCategoryContext = ""; 
     let activePage = "";
     let showArchivedGA = false; 
-    let reportDate = new Date(); // Raporlar sayfası için seçili ay
+    let reportDate = new Date(); 
     
-    let taskDatePicker, shootDatePicker, shootTimePicker, chkDatePicker, gaDatePicker;
+    let taskDatePicker, shootDatePicker, chkDatePicker, gaDatePicker;
     
     let calDate = new Date();
     let currentCalView = 'month'; 
     let currentChecklistDate = formatDate(new Date());
+    let isSidebarCollapsed = false;
+
+    function toggleSidebar() {
+        isSidebarCollapsed = !isSidebarCollapsed;
+        const sb = document.getElementById('app-sidebar');
+        if (isSidebarCollapsed) { sb.classList.add('collapsed'); } 
+        else { sb.classList.remove('collapsed'); }
+    }
 
     function formatDate(dateObj) {
         let d = new Date(dateObj), month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
@@ -554,7 +596,7 @@
             if(hSelect) hSelect.add(new Option(n, safeName)); 
             if(pSelect) pSelect.add(new Option(n, safeName));
             if(gaSelect) gaSelect.add(new Option(n, safeName));
-            if(sSelect) sSelect.innerHTML += `<label><input type="checkbox" value="${safeName}" class="sh-kisi-cb"> ${n}</label>`;
+            if(sSelect) sSelect.innerHTML += `<label><input type="checkbox" value="${safeName}" class="sh-kisi-cb"> <span>${n}</span></label>`;
         });
     }
 
@@ -577,10 +619,13 @@
 
     function populateUserModalCompanies() {
         const cList = document.getElementById('u-chk-companies-list');
-        if(!cList) return;
-        cList.innerHTML = '';
+        const rList = document.getElementById('u-rep-companies-list');
+        if(cList) cList.innerHTML = '';
+        if(rList) rList.innerHTML = '';
+        
         holdingCompanies.forEach(c => {
-            cList.innerHTML += `<label><input type="checkbox" value="${c}" class="u-comp-cb"> ${c}</label>`;
+            if(cList) cList.innerHTML += `<label><input type="checkbox" value="${c}" class="u-comp-cb"> <span>${c}</span></label>`;
+            if(rList) rList.innerHTML += `<label><input type="checkbox" value="${c}" class="u-rep-cb"> <span>${c}</span></label>`;
         });
     }
 
@@ -631,6 +676,7 @@
             { icon: 'fa-book-open', name: 'Kişisel Ajanda' }
         ],
         'mezuniyet': [
+            { icon: 'fa-chart-bar', name: 'Raporlar' },
             { icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-camera-retro', name: 'Çekimler' },
             { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-camera', name: 'Çekim Takvimi' },
             { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' },
@@ -651,19 +697,17 @@
 
         let items = menuData[type] || menuData['rdgrup'];
         
-        // Raporlar Yetki Kontrolü
         const role = (currentUser.role || "").toLowerCase();
         const isAdminOrYonetici = role === 'admin' || role === 'yönetici' || currentUser.id === 'alperen';
 
         items.forEach((item, index) => {
-            if (item.name === 'Raporlar' && !isAdminOrYonetici) return; // Yetkisi yoksa menüye ekleme
+            if (item.name === 'Raporlar' && !isAdminOrYonetici) return; 
 
             const li = document.createElement('li');
             li.className = 'menu-item';
-            // İlk görünür menü elemanını aktif yap
             if (sidebarMenu.children.length === 0) li.classList.add('active'); 
             
-            li.innerHTML = `<i class="fa-solid ${item.icon}"></i> ${item.name}`;
+            li.innerHTML = `<i class="fa-solid ${item.icon}"></i> <span>${item.name}</span>`;
             li.onclick = () => {
                 document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
                 li.classList.add('active'); loadPageView(item.name);
@@ -671,8 +715,7 @@
             sidebarMenu.appendChild(li);
         });
         
-        // İlk sayfayı yükle (Raporlar görünüyorsa o, görünmüyorsa Anasayfa)
-        const firstVisiblePage = isAdminOrYonetici && type === 'rdgrup' ? 'Raporlar' : (items.find(i => i.name !== 'Raporlar').name);
+        const firstVisiblePage = isAdminOrYonetici && (type === 'rdgrup' || type === 'mezuniyet') ? 'Raporlar' : (items.find(i => i.name !== 'Raporlar').name);
         loadPageView(firstVisiblePage);
     }
 
@@ -697,10 +740,8 @@
         let y = reportDate.getFullYear();
         let m = reportDate.getMonth() + 1;
         let monthStr = `${y}-${m < 10 ? '0'+m : m}`;
-        // Özel tarih formatı: Mayıs 2026 
         let displayMonth = reportDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
 
-        // İlgili ayın Checklist verilerini çek
         const chkSnapshot = await db.collection('checklists').where('company', '==', currentCompany).get();
         let monthlyChecklists = [];
         chkSnapshot.forEach(doc => {
@@ -710,7 +751,6 @@
             }
         });
 
-        // O aya ait görevleri ve çekimleri filtrele
         let rTasks = dbTasks.filter(t => t.firma === currentCompany && (t.tarih || "").startsWith(monthStr));
         let rShoots = dbShoots.filter(s => s.firma === currentCompany && (s.tarih || "").startsWith(monthStr));
 
@@ -734,6 +774,10 @@
         `;
 
         dbUsers.forEach(u => {
+            // Kullanıcı bu şirketin raporlarında görünsün mü diye kontrol
+            let repComps = u.repCompanies || [];
+            if (!repComps.includes(currentCompany) && u.id !== 'alperen') return; 
+
             const safeName = u.name || "";
             
             // 1. Checklist Hesaplamaları
@@ -749,7 +793,7 @@
                 }
             });
 
-            // 2. Task (Video, Tasarım, Paylaşım) Hesaplamaları
+            // 2. Task (Video, Tasarım, Paylaşım) ve Genel Ajanda Hesaplamaları
             let videoCount = 0;
             let tasarimCount = 0;
             let paylasimCount = 0;
@@ -766,6 +810,20 @@
                 }
             });
 
+            // Genel Ajandadan Gelen Sayıları Ekleme
+            let gaVideo = 0;
+            let gaTasarim = 0;
+            dbGenelAgenda.forEach(g => {
+                if (g.firma === currentCompany && g.status === 3 && (g.tarih || "").startsWith(monthStr)) {
+                    if (g.sorumlu === safeName) {
+                        gaVideo += (parseInt(g.video) || 0);
+                        gaTasarim += (parseInt(g.tasarim) || 0);
+                    }
+                }
+            });
+            videoCount += gaVideo;
+            tasarimCount += gaTasarim;
+
             // 3. Çekim Hesaplamaları
             let cekimCount = 0;
             rShoots.forEach(s => {
@@ -777,7 +835,6 @@
                 }
             });
 
-            // Sadece o ay işlem yapmış kişileri (veya adminleri) listele
             let totalStats = chkDays + chkItems + videoCount + tasarimCount + paylasimCount + cekimCount;
             if(totalStats > 0 || (u.role && u.role.toLowerCase() === 'admin') || u.id === 'alperen') {
                 html += `
@@ -795,11 +852,11 @@
                                 <b style="color:var(--bg-dark);">${chkDays} Gün (${chkItems} Madde)</b>
                             </li>
                             <li style="display: flex; justify-content: space-between; align-items: center; background:#fff7ed; padding: 6px 10px; border-radius: 6px;">
-                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-video" style="color:var(--shoot-orange); font-size:14px;"></i> Yapılan Video</span> 
+                                <span style="display:flex; align-items:center; gap:8px;" title="Ajandadan Gelen: ${gaVideo}"><i class="fa-solid fa-video" style="color:var(--shoot-orange); font-size:14px;"></i> Yapılan Video</span> 
                                 <b style="color:var(--shoot-orange);">${videoCount}</b>
                             </li>
                             <li style="display: flex; justify-content: space-between; align-items: center; background:#fdf2f8; padding: 6px 10px; border-radius: 6px;">
-                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-pen-nib" style="color:#ec4899; font-size:14px;"></i> Yapılan Tasarım</span> 
+                                <span style="display:flex; align-items:center; gap:8px;" title="Ajandadan Gelen: ${gaTasarim}"><i class="fa-solid fa-pen-nib" style="color:#ec4899; font-size:14px;"></i> Yapılan Tasarım</span> 
                                 <b style="color:#ec4899;">${tasarimCount}</b>
                             </li>
                             <li style="display: flex; justify-content: space-between; align-items: center; background:#fef2f2; padding: 6px 10px; border-radius: 6px;">
@@ -834,7 +891,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">Genel Ajanda</h2>
                 <button class="login-btn btn-light" style="width: auto; padding: 6px 15px; font-size:12px; margin:0;" onclick="toggleArchiveGA()">
-                    <i class="fa-solid fa-box-archive"></i> ${showArchivedGA ? 'Aktif Görevleri Göster' : 'Arşivi Göster'}
+                    <i class="fa-solid fa-box-archive"></i> <span>${showArchivedGA ? 'Aktif Görevleri Göster' : 'Arşivi Göster'}</span>
                 </button>
             </div>
             <div class="checklist-info-bar" style="border-color:var(--task-purple); background:#f5f3ff; color:#5b21b6;">
@@ -903,7 +960,6 @@
         loadGenelAgenda();
     }
 
-    // Rich Text Editor Commands
     function execCmd(command) { document.execCommand(command, false, null); }
     function insertCheckbox() {
         document.execCommand('insertHTML', false, '&#8203;<input type="checkbox">&#8203; ');
@@ -989,7 +1045,6 @@
         let validTasks = dbTasks;
         let validShoots = dbShoots;
         
-        // Firma filtrelemesi
         if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
             validTasks = validTasks.filter(t => t.firma === currentCompany);
             validShoots = validShoots.filter(s => s.firma === currentCompany);
@@ -1038,8 +1093,8 @@
     // --- TAKVİM ARAYÜZÜ ---
     function renderCalendarView(pageName) {
         let headerAction = '';
-        if (pageName === 'Paylaşım Takvimi') headerAction = `<button class="login-btn btn-purple" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddTask()"><i class="fa-solid fa-plus"></i> Paylaşım Ekle</button>`;
-        else if (pageName === 'Çekim Takvimi') headerAction = `<button class="login-btn btn-orange" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddShoot()"><i class="fa-solid fa-plus"></i> Çekim Ekle</button>`;
+        if (pageName === 'Paylaşım Takvimi') headerAction = `<button class="login-btn btn-purple" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddTask()"><i class="fa-solid fa-plus"></i> <span>Paylaşım Ekle</span></button>`;
+        else if (pageName === 'Çekim Takvimi') headerAction = `<button class="login-btn btn-orange" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddShoot()"><i class="fa-solid fa-plus"></i> <span>Çekim Ekle</span></button>`;
         else if (pageName === 'Genel Takvim') headerAction = `<div style="font-size:11px; color:var(--text-muted); font-style:italic;">* Yalnızca Görüntüleme</div>`;
 
         return `
@@ -1068,7 +1123,6 @@
         let validTasks = dbTasks;
         let validShoots = dbShoots;
 
-        // Firma filtrelemesi
         if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
             validTasks = validTasks.filter(t => t.firma === currentCompany);
             validShoots = validShoots.filter(s => s.firma === currentCompany);
@@ -1250,6 +1304,7 @@
         document.getElementById('u-id').value = ""; document.getElementById('u-pass').value = ""; 
         document.getElementById('u-chk-visible').checked = false; toggleUserCompanies(); 
         document.querySelectorAll('.u-comp-cb').forEach(cb => cb.checked = false); 
+        document.querySelectorAll('.u-rep-cb').forEach(cb => cb.checked = false); 
         document.getElementById('delete-user-btn').style.display = 'none'; 
         openModal('user-modal'); 
     }
@@ -1263,16 +1318,37 @@
         document.getElementById('u-role').value = u.role || ""; 
         document.getElementById('u-chk-visible').checked = u.chkVisible || false; 
         toggleUserCompanies(); 
+        
         let chkComps = u.chkCompanies || []; 
         document.querySelectorAll('.u-comp-cb').forEach(cb => { cb.checked = chkComps.includes(cb.value); }); 
+
+        let repComps = u.repCompanies || []; 
+        document.querySelectorAll('.u-rep-cb').forEach(cb => { cb.checked = repComps.includes(cb.value); }); 
+        
         document.getElementById('delete-user-btn').style.display = 'block'; 
         openModal('user-modal'); 
     }
 
     async function saveUser() {
         const docId = document.getElementById('edit-doc-id').value; const btn = document.getElementById('save-user-btn'); btn.innerText = "Kaydediliyor...";
-        let selectedComps = []; if(document.getElementById('u-chk-visible').checked) { document.querySelectorAll('.u-comp-cb:checked').forEach(cb => selectedComps.push(cb.value)); }
-        const userData = { id: document.getElementById('u-id').value.trim().toLowerCase(), name: document.getElementById('u-name').value.trim(), surname: document.getElementById('u-surname').value.trim(), pass: document.getElementById('u-pass').value.trim(), role: document.getElementById('u-role').value, chkVisible: document.getElementById('u-chk-visible').checked, chkCompanies: selectedComps };
+        
+        let selectedComps = []; 
+        if(document.getElementById('u-chk-visible').checked) { document.querySelectorAll('.u-comp-cb:checked').forEach(cb => selectedComps.push(cb.value)); }
+        
+        let selectedRepComps = [];
+        document.querySelectorAll('.u-rep-cb:checked').forEach(cb => selectedRepComps.push(cb.value));
+
+        const userData = { 
+            id: document.getElementById('u-id').value.trim().toLowerCase(), 
+            name: document.getElementById('u-name').value.trim(), 
+            surname: document.getElementById('u-surname').value.trim(), 
+            pass: document.getElementById('u-pass').value.trim(), 
+            role: document.getElementById('u-role').value, 
+            chkVisible: document.getElementById('u-chk-visible').checked, 
+            chkCompanies: selectedComps,
+            repCompanies: selectedRepComps
+        };
+        
         if(docId === "new") { userData.order = dbUsers.length; await db.collection('users').add(userData); } else await db.collection('users').doc(docId).update(userData);
         btn.innerText = "Kaydet"; closeModal('user-modal'); await fetchUsersFromFirebase(); loadAdminSettings();
     }
@@ -1296,6 +1372,10 @@
     function openAddTask() {
         document.getElementById('task-modal-title').innerText = "Paylaşım Görevi Ekle";
         document.getElementById('task-doc-id').value = "new";
+        
+        // Firma kısmını aktif şirkete göre otomatik seç
+        document.getElementById('t-firma').value = currentCompany;
+        
         document.getElementById('t-adet').value = "1"; document.getElementById('t-not').value = "";
         
         if(taskDatePicker) taskDatePicker.destroy();
@@ -1325,7 +1405,7 @@
     async function saveTask() {
         const docId = document.getElementById('task-doc-id').value; const btn = document.getElementById('save-task-btn'); btn.innerText = "Kaydediliyor...";
         const taskData = { category: document.getElementById('task-category').value, firma: document.getElementById('t-firma').value, tur: document.getElementById('t-tur').value, adet: parseInt(document.getElementById('t-adet').value) || 1, hazirlayan: document.getElementById('t-hazirlayan').value, paylasan: document.getElementById('t-paylasan').value, not: document.getElementById('t-not').value, hazirlandi: document.getElementById('t-hazirlandi').checked, paylasildi: document.getElementById('t-paylasildi').checked };
-        const dates = document.getElementById('t-tarih').value.split(', ');
+        const dates = document.getElementById('t-tarih').value.split(',').map(d => d.trim());
         
         if(docId === "new") { taskData.hazirlandi = false; taskData.paylasildi = false; for (let d of dates) { if(d) await db.collection('tasks').add({ ...taskData, tarih: d }); } } 
         else { taskData.tarih = dates[0]; await db.collection('tasks').doc(docId).update(taskData); }
@@ -1338,12 +1418,20 @@
 
     function openAddShoot() {
         document.getElementById('shoot-modal-title').innerText = "Çekim Ekle";
-        document.getElementById('sh-doc-id').value = "new"; document.getElementById('sh-not').value = ""; document.getElementById('sh-link').value = ""; document.getElementById('sh-boyut').value = ""; document.getElementById('sh-foto').value = "0"; document.getElementById('sh-video').value = "0";
+        document.getElementById('sh-doc-id').value = "new"; 
+        
+        // Firma kısmını aktif şirkete göre otomatik seç
+        document.getElementById('sh-firma').value = currentCompany;
+        
+        document.getElementById('sh-not').value = ""; document.getElementById('sh-link').value = ""; document.getElementById('sh-boyut').value = ""; document.getElementById('sh-foto').value = "0"; document.getElementById('sh-video').value = "0";
         document.getElementById('sh-cekildi').checked = false; document.getElementById('sh-teslim').checked = false; document.getElementById('sh-hdd').checked = false; document.getElementById('sh-drive').checked = false;
         document.querySelectorAll('.sh-kisi-cb').forEach(cb => cb.checked = false); 
         
         if(shootDatePicker) shootDatePicker.destroy(); shootDatePicker = flatpickr("#sh-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: new Date(), altInput: true, altFormat: "j F Y" });
-        if(shootTimePicker) shootTimePicker.destroy(); shootTimePicker = flatpickr("#sh-saat", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true });
+        document.getElementById('sh-saat').value = "";
+        
+        // Yeni eklemede alt kısmı gizle
+        document.getElementById('shoot-extra-fields').style.display = 'none';
 
         document.getElementById('shoot-buttons').innerHTML = `<button class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('shoot-modal')">Kapat</button><button class="login-btn btn-orange" id="save-shoot-btn" style="flex: 1;" onclick="saveShoot()">Kaydet</button>`;
         openModal('shoot-modal');
@@ -1360,7 +1448,10 @@
         document.querySelectorAll('.sh-kisi-cb').forEach(cb => { cb.checked = kisiArray.includes(cb.value); });
 
         if(shootDatePicker) shootDatePicker.destroy(); shootDatePicker = flatpickr("#sh-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: s.tarih, altInput: true, altFormat: "j F Y" });
-        if(shootTimePicker) shootTimePicker.destroy(); shootTimePicker = flatpickr("#sh-saat", { enableTime: true, noCalendar: true, dateFormat: "H:i", time_24hr: true, defaultDate: s.saat });
+        document.getElementById('sh-saat').value = s.saat || "";
+        
+        // Düzenlemede alt kısmı göster
+        document.getElementById('shoot-extra-fields').style.display = 'block';
 
         document.getElementById('shoot-buttons').innerHTML = `<button class="login-btn btn-orange" id="save-shoot-btn" style="flex: 1;" onclick="saveShoot()">Kaydet</button><button class="login-btn" style="flex: 1; background: var(--primary-red);" onclick="deleteShoot('${docId}')">Sil</button><button class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('shoot-modal')">Kapat</button>`;
         openModal('shoot-modal');
