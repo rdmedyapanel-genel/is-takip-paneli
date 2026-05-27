@@ -438,6 +438,7 @@
     let currentCategoryContext = ""; 
     let activePage = "";
     let showArchivedGA = false; 
+    let reportDate = new Date(); // Raporlar sayfası için seçili ay
     
     let taskDatePicker, shootDatePicker, shootTimePicker, chkDatePicker, gaDatePicker;
     
@@ -622,6 +623,7 @@
     const menuData = {
         'tum_isler': [ { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-book', name: 'Genel Ajanda' } ],
         'rdgrup': [
+            { icon: 'fa-chart-bar', name: 'Raporlar' },
             { icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' },
             { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' },
             { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' },
@@ -647,10 +649,20 @@
         const sidebarMenu = document.getElementById('sidebar-menu'); sidebarMenu.innerHTML = ''; 
         calDate = new Date(); currentCalView = 'month'; currentChecklistDate = formatDate(new Date());
 
-        const items = menuData[type] || menuData['rdgrup'];
+        let items = menuData[type] || menuData['rdgrup'];
+        
+        // Raporlar Yetki Kontrolü
+        const role = (currentUser.role || "").toLowerCase();
+        const isAdminOrYonetici = role === 'admin' || role === 'yönetici' || currentUser.id === 'alperen';
+
         items.forEach((item, index) => {
+            if (item.name === 'Raporlar' && !isAdminOrYonetici) return; // Yetkisi yoksa menüye ekleme
+
             const li = document.createElement('li');
-            li.className = index === 0 ? 'menu-item active' : 'menu-item';
+            li.className = 'menu-item';
+            // İlk görünür menü elemanını aktif yap
+            if (sidebarMenu.children.length === 0) li.classList.add('active'); 
+            
             li.innerHTML = `<i class="fa-solid ${item.icon}"></i> ${item.name}`;
             li.onclick = () => {
                 document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
@@ -658,13 +670,17 @@
             };
             sidebarMenu.appendChild(li);
         });
-        loadPageView(items[0].name);
+        
+        // İlk sayfayı yükle (Raporlar görünüyorsa o, görünmüyorsa Anasayfa)
+        const firstVisiblePage = isAdminOrYonetici && type === 'rdgrup' ? 'Raporlar' : (items.find(i => i.name !== 'Raporlar').name);
+        loadPageView(firstVisiblePage);
     }
 
     function loadPageView(pageName) {
         activePage = pageName;
         const mainContent = document.getElementById('main-content');
-        if(pageName === 'Ayarlar') loadAdminSettings();
+        if (pageName === 'Raporlar') { reportDate = new Date(); loadRaporlarPage(); }
+        else if (pageName === 'Ayarlar') loadAdminSettings();
         else if (pageName === 'Firmalar') loadFirmalarPage();
         else if (pageName === 'Checklist') loadChecklistPage(currentChecklistDate);
         else if (pageName === 'Genel Ajanda') loadGenelAgenda();
@@ -673,6 +689,142 @@
         else if (pageName.includes('Takvim')) { mainContent.innerHTML = renderCalendarView(pageName); initCalendar(); }
         else mainContent.innerHTML = `<div class="content-card"><h2 class="content-title">${currentCompany} - ${pageName}</h2><p style="color: var(--text-muted);">Bu alan ${pageName} sayfası için ayrılmıştır.</p></div>`;
     }
+
+    // --- RAPORLAR SAYFASI ---
+    async function loadRaporlarPage() {
+        document.getElementById('main-content').innerHTML = `<div class="full-loader" style="position:relative; height: 300px; background: transparent;"><div class="spinner"></div><p style="margin-top: 15px; font-weight: 600; font-size:12px; color: var(--text-muted);">Raporlar Hesaplanıyor...</p></div>`;
+        
+        let y = reportDate.getFullYear();
+        let m = reportDate.getMonth() + 1;
+        let monthStr = `${y}-${m < 10 ? '0'+m : m}`;
+        // Özel tarih formatı: Mayıs 2026 
+        let displayMonth = reportDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+
+        // İlgili ayın Checklist verilerini çek
+        const chkSnapshot = await db.collection('checklists').where('company', '==', currentCompany).get();
+        let monthlyChecklists = [];
+        chkSnapshot.forEach(doc => {
+            let d = doc.data();
+            if(d.date && d.date.startsWith(monthStr)) {
+                monthlyChecklists.push(d);
+            }
+        });
+
+        // O aya ait görevleri ve çekimleri filtrele
+        let rTasks = dbTasks.filter(t => t.firma === currentCompany && (t.tarih || "").startsWith(monthStr));
+        let rShoots = dbShoots.filter(s => s.firma === currentCompany && (s.tarih || "").startsWith(monthStr));
+
+        let html = `
+            <div class="content-card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Aylık Performans Raporları</h2>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #f8fafc; padding: 10px 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="action-btn" onclick="changeReportMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button class="action-btn" onclick="changeReportMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button class="login-btn btn-light" style="width: auto; padding: 5px 12px; font-size: 11px; margin:0;" onclick="reportDate = new Date(); loadRaporlarPage();">Bu Ay</button>
+                    </div>
+                    <h3 style="font-size: 16px; color: var(--bg-dark); font-weight: 700; margin: 0; text-transform:uppercase;">${displayMonth}</h3>
+                    <div style="width: 100px;"></div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">
+        `;
+
+        dbUsers.forEach(u => {
+            const safeName = u.name || "";
+            
+            // 1. Checklist Hesaplamaları
+            let chkDays = 0;
+            let chkItems = 0;
+            monthlyChecklists.forEach(chk => {
+                if(chk.notes && chk.notes[u.id]) {
+                    let text = chk.notes[u.id].trim();
+                    if(text !== "") {
+                        chkDays++;
+                        chkItems += text.split('\n').filter(l => l.trim() !== "").length;
+                    }
+                }
+            });
+
+            // 2. Task (Video, Tasarım, Paylaşım) Hesaplamaları
+            let videoCount = 0;
+            let tasarimCount = 0;
+            let paylasimCount = 0;
+
+            rTasks.forEach(t => {
+                if(t.hazirlandi && t.paylasildi) {
+                    if(t.hazirlayan === safeName) {
+                        if(t.tur === 'Video') videoCount++;
+                        if(t.tur === 'Tasarım') tasarimCount++;
+                    }
+                    if(t.paylasan === safeName) {
+                        paylasimCount++;
+                    }
+                }
+            });
+
+            // 3. Çekim Hesaplamaları
+            let cekimCount = 0;
+            rShoots.forEach(s => {
+                if(s.cekildi && s.teslim && s.hdd && s.drive) {
+                    let k = Array.isArray(s.kisi) ? s.kisi : [s.kisi];
+                    if(k.includes(safeName)) {
+                        cekimCount++;
+                    }
+                }
+            });
+
+            // Sadece o ay işlem yapmış kişileri (veya adminleri) listele
+            let totalStats = chkDays + chkItems + videoCount + tasarimCount + paylasimCount + cekimCount;
+            if(totalStats > 0 || (u.role && u.role.toLowerCase() === 'admin') || u.id === 'alperen') {
+                html += `
+                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: 0.2s;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 12px;">
+                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--task-purple), #4338ca); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; box-shadow: 0 4px 8px rgba(108, 99, 255, 0.2);">${safeName.charAt(0).toUpperCase()}</div>
+                            <div>
+                                <h4 style="font-size: 15px; color: var(--bg-dark); margin:0; font-weight: 700;">${safeName} ${u.surname || ""}</h4>
+                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">${u.role || "Bilinmiyor"}</span>
+                            </div>
+                        </div>
+                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: var(--text-main); display: flex; flex-direction: column; gap: 10px;">
+                            <li style="display: flex; justify-content: space-between; align-items: center; background:#f8fafc; padding: 6px 10px; border-radius: 6px;">
+                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-list-check" style="color:#64748b; font-size:14px;"></i> Checklist</span> 
+                                <b style="color:var(--bg-dark);">${chkDays} Gün (${chkItems} Madde)</b>
+                            </li>
+                            <li style="display: flex; justify-content: space-between; align-items: center; background:#fff7ed; padding: 6px 10px; border-radius: 6px;">
+                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-video" style="color:var(--shoot-orange); font-size:14px;"></i> Yapılan Video</span> 
+                                <b style="color:var(--shoot-orange);">${videoCount}</b>
+                            </li>
+                            <li style="display: flex; justify-content: space-between; align-items: center; background:#fdf2f8; padding: 6px 10px; border-radius: 6px;">
+                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-pen-nib" style="color:#ec4899; font-size:14px;"></i> Yapılan Tasarım</span> 
+                                <b style="color:#ec4899;">${tasarimCount}</b>
+                            </li>
+                            <li style="display: flex; justify-content: space-between; align-items: center; background:#fef2f2; padding: 6px 10px; border-radius: 6px;">
+                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-share-nodes" style="color:var(--primary-red); font-size:14px;"></i> Yapılan Paylaşım</span> 
+                                <b style="color:var(--primary-red);">${paylasimCount}</b>
+                            </li>
+                            <li style="display: flex; justify-content: space-between; align-items: center; background:#ecfdf5; padding: 6px 10px; border-radius: 6px;">
+                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-camera" style="color:#10b981; font-size:14px;"></i> Tamamlanan Çekim</span> 
+                                <b style="color:#10b981;">${cekimCount}</b>
+                            </li>
+                        </ul>
+                    </div>
+                `;
+            }
+        });
+
+        html += `</div></div>`;
+        document.getElementById('main-content').innerHTML = html;
+    }
+
+    function changeReportMonth(direction) {
+        reportDate.setMonth(reportDate.getMonth() + direction);
+        loadRaporlarPage();
+    }
+
 
     // --- GENEL AJANDA ---
     async function loadGenelAgenda() {
