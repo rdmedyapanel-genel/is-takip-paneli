@@ -352,6 +352,32 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="company-modal">
+    <div class="modal-content" style="width: 450px;">
+        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('company-modal')"></i>
+        <h3 class="modal-title" id="company-modal-title">Firmayı Düzenle</h3>
+        
+        <input type="hidden" id="edit-comp-doc-id" value="">
+        <div class="input-group">
+            <label>FİRMA ADI</label>
+            <input type="text" id="edit-comp-name" autocomplete="off">
+        </div>
+        <div class="input-group">
+            <label>FİRMA SAHİBİ</label>
+            <input type="text" id="edit-comp-owner" autocomplete="off">
+        </div>
+        <div class="input-group">
+            <label>SORUMLU PERSONEL</label>
+            <select id="edit-comp-resp"></select>
+        </div>
+        
+        <div style="display: flex; gap: 12px; margin-top: 15px;">
+            <button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('company-modal')">İptal</button>
+            <button type="button" class="login-btn btn-purple" id="save-comp-btn" style="flex: 1;" onclick="saveEditedCompany()">Kaydet</button>
+        </div>
+    </div>
+</div>
+    
 <div class="modal-overlay" id="task-modal">
     <div class="modal-content">
         <i class="fa-solid fa-xmark modal-close" onclick="closeModal('task-modal')"></i>
@@ -1470,7 +1496,8 @@
         let companiesHtml = '';
         dbCompanies.forEach((c, index) => {
             const safeCName = c.name || "İsimsiz Firma";
-            companiesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-building" style="margin-right:6px; color:var(--text-muted);"></i>${safeCName}</div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteCompany('${c.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, 1)" ${index===dbCompanies.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`;
+            // DÜZENLE BUTONU BURAYA EKLENDİ (fa-pen)
+            companiesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-building" style="margin-right:6px; color:var(--text-muted);"></i>${safeCName}</div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditCompany('${c.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteCompany('${c.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, 1)" ${index===dbCompanies.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`;
         });
 
         // Sorumlu personelleri listeye çekiyoruz
@@ -1722,6 +1749,53 @@
     async function deleteShoot(docId) { if(confirm("Çekimi silmek istediğinize emin misiniz?")) { await db.collection('shoots').doc(docId).delete(); closeModal('shoot-modal'); await fetchShootsFromFirebase(); loadPageView(activePage); } }
     function goToShootLink() { const link = document.getElementById('sh-link').value.trim(); if(link) window.open(link.startsWith('http') ? link : 'https://' + link, '_blank'); else alert('Lütfen geçerli bir link girin.'); }
 
+    function openEditCompany(docId) {
+        const c = dbCompanies.find(x => x.docId === docId);
+        if (!c) return;
+        
+        document.getElementById('edit-comp-doc-id').value = docId;
+        document.getElementById('edit-comp-name').value = c.name || "";
+        document.getElementById('edit-comp-owner').value = c.sahibi || "";
+        
+        // Sorumlu personelleri listeye çekip o anki sorumlu kimse onu seçili yapıyoruz
+        let userOptions = `<option value="">Sorumlu Seçiniz</option>`;
+        dbUsers.forEach(u => { 
+            let fullName = `${u.name} ${u.surname || ''}`.trim();
+            let selected = (c.sorumlu === fullName) ? "selected" : "";
+            userOptions += `<option value="${fullName}" ${selected}>${fullName}</option>`; 
+        });
+        document.getElementById('edit-comp-resp').innerHTML = userOptions;
+        
+        openModal('company-modal');
+    }
+
+    async function saveEditedCompany() {
+        const docId = document.getElementById('edit-comp-doc-id').value;
+        const cName = document.getElementById('edit-comp-name').value.trim();
+        const cOwner = document.getElementById('edit-comp-owner').value.trim();
+        const cResp = document.getElementById('edit-comp-resp').value;
+        const btn = document.getElementById('save-comp-btn');
+        
+        if(!cName) return;
+        
+        btn.innerText = "Kaydediliyor...";
+        try {
+            await db.collection('companies').doc(docId).update({
+                name: cName,
+                sahibi: cOwner,
+                sorumlu: cResp
+            });
+            btn.innerText = "Kaydet";
+            closeModal('company-modal');
+            await fetchCompaniesFromFirebase();
+            loadAdminSettings(); 
+        } catch(e) {
+            console.error("Firma Düzenleme Hatası: ", e);
+            alert("Kaydedilemedi, lütfen tekrar deneyin.");
+            btn.innerText = "Kaydet";
+        }
+    }
+    
 </script>
 </body>
 </html>
