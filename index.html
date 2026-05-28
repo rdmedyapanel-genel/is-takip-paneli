@@ -1269,8 +1269,11 @@
         }
 
         const renderMiniCard = (t) => {
-            const extraClass = t.itemType === 'shoot' ? 'shoot' : ''; const clickFn = t.itemType === 'shoot' ? `openEditShoot('${t.docId}')` : `openEditTask('${t.docId}')`;
-            return `<div class="task-card ${extraClass} ${t.isDone ? 'completed' : ''}" onclick="${clickFn}" style="color:white; cursor:pointer;"><b>${t.firma || ""}</b> - ${t.tur || ""} (K:${t.hazirlayan || ""})</div>`;
+            const extraClass = t.itemType === 'shoot' ? 'shoot' : ''; 
+            const clickFn = t.itemType === 'shoot' ? `openEditShoot('${t.docId}')` : `openEditTask('${t.docId}')`;
+            // NUMARALANDIRMA ANASAYFA KARTLARINA DA EKLENDİ
+            const indexStr = t.itemType === 'task' ? ` - ${getTaskIndex(t)}` : ''; 
+            return `<div class="task-card ${extraClass} ${t.isDone ? 'completed' : ''}" onclick="${clickFn}" style="color:white; cursor:pointer;"><b>${t.firma || ""}</b> - ${t.tur || ""}${indexStr} (K:${t.hazirlayan || ""})</div>`;
         };
 
         let myAgenda = dbAgenda.filter(a => a.company === currentCompany || a.company === 'Tümü');
@@ -1315,8 +1318,15 @@
     function changeCalView(view) { currentCalView = view; ['month', 'week', 'day'].forEach(v => document.getElementById('btn-view-'+v).classList.remove('active')); document.getElementById('btn-view-' + view).classList.add('active'); initCalendar(); }
     function changeCalNav(direction) { if(currentCalView === 'month') calDate.setMonth(calDate.getMonth() + direction); if(currentCalView === 'week') calDate.setDate(calDate.getDate() + (direction * 7)); if(currentCalView === 'day') calDate.setDate(calDate.getDate() + direction); initCalendar(); }
     function resetToToday() { calDate = new Date(); initCalendar(); }
-    function getTaskIndex(task) { const taskMonth = (task.tarih || "").substring(0, 7); let monthlyTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(task.holding || task.firma) && (t.tarih || "").startsWith(taskMonth)); monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); const index = monthlyTasks.findIndex(t => t.docId === task.docId); return index !== -1 ? index + 1 : '?'; }
-
+    function getTaskIndex(task) { 
+        const taskMonth = (task.tarih || "").substring(0, 7); 
+        // Holding adına değil, direkt firmaya bakıyoruz ki alt firmaları kaçırmasın
+        let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(task.firma) && (t.tarih || "").startsWith(taskMonth)); 
+        // Önce tarihe göre, aynı günse ID'ye göre sıraya diziyor
+        monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); 
+        const index = monthlyTasks.findIndex(t => t.docId === task.docId); 
+        return index !== -1 ? index + 1 : '?'; 
+    }
     function initCalendar() {
         const grid = document.getElementById('calendar-wrapper'); const monthYearText = document.getElementById('calendar-month-year'); grid.innerHTML = '';
         let y = calDate.getFullYear(); let m = calDate.getMonth();
@@ -1342,12 +1352,12 @@
                 const isReadOnly = (activePage === 'Genel Takvim');
                 if(t.itemType === 'task') {
                     const isCompleted = t.hazirlandi && t.paylasildi; 
-                    // YENİ FORMATLAMA (Daha kompakt ve esnek alan)
+                    const tIndex = getTaskIndex(t); // NUMARALANDIRMA BURADA ÇAĞRILDI
                     html += `<div class="task-card ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}">
             <div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div>
             <div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div>
             <div class="task-text">
-                <div class="task-line">${t.firma || ""} (<strong>${t.tur || ""}</strong>)</div>
+                <div class="task-line">${t.firma || ""} (<strong>${t.tur || ""}</strong>) - <b>${tIndex}</b></div>
                 <div class="task-line">H: <strong>${t.hazirlayan || ""}</strong>, P: ${t.paylasan || ""}</div>
             </div>
          </div>`;
