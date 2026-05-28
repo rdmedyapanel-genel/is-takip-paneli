@@ -1136,7 +1136,7 @@
     async function addPersonalNote() { const text = document.getElementById('pa-new-note').value.trim(); if(!text) return; await db.collection('personal_agenda').add({ userId: currentUser.id, note: text, timestamp: Date.now(), dateStr: formatDate(new Date()) }); loadPersonalAgenda(); }
     async function deletePersonalNote(docId) { if(confirm("Notu silmek istiyor musunuz?")) { await db.collection('personal_agenda').doc(docId).delete(); loadPersonalAgenda(); } }
 
-    // YENİDEN DÜZENLENEN FİRMALAR SAYFASI (YENİ ANALİZ KARTLARI - SAYAÇLAR EKLENDİ)
+    // YENİDEN DÜZENLENEN FİRMALAR SAYFASI (YALIN & TAKVİME TAM ENTEGRE)
     function loadFirmalarPage() {
         let html = '<div class="company-grid" style="margin-top:15px;">';
         
@@ -1153,9 +1153,8 @@
                 const compOwner = c.sahibi || "Belirtilmemiş";
                 const compResp = c.sorumlu || "Atanmamış";
 
-                // --- 1. Paylaşım Verileri (Toplam Sayı ve Son Paylaşım) ---
+                // --- 1. Son Paylaşım Gününü Bulma (Paylaşım Takviminden) ---
                 let compTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(compName) && t.paylasildi === true);
-                let totalShareCount = compTasks.length; // TÜM ZAMANLAR Toplam Paylaşım
                 compTasks.sort((a, b) => new Date(b.tarih) - new Date(a.tarih)); 
                 let lastShareDate = compTasks.length > 0 ? compTasks[0].tarih : null;
                 let lastShareStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Paylaşım Yok</span>";
@@ -1164,9 +1163,8 @@
                     lastShareStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShareDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`;
                 }
 
-                // --- 2. Çekim Verileri (Toplam Sayı ve Son Çekim) ---
+                // --- 2. Son Çekim Gününü Bulma (Çekim Takviminden) ---
                 let compShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(compName) && s.cekildi === true);
-                let totalShootCount = compShoots.length; // TÜM ZAMANLAR Toplam Çekim
                 compShoots.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
                 let lastShootDate = compShoots.length > 0 ? compShoots[0].tarih : null;
                 let lastShootStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Çekim Yok</span>";
@@ -1175,17 +1173,12 @@
                     lastShootStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShootDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`;
                 }
 
-                // --- 3. SADECE BU AY Yapılan Video ve Tasarımlar ---
-                let monthlyTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr) && t.hazirlandi && t.paylasildi);
-                let videoCount = monthlyTasks.filter(t => t.tur === 'Video').length;
-                let tasarimCount = monthlyTasks.filter(t => t.tur === 'Tasarım').length;
-
-                dbGenelAgenda.forEach(g => {
-                    if (normalizeStr(g.holding || g.firma) === normalizeStr(compName) && g.status === 3 && (g.tarih || "").startsWith(currentMonthStr)) {
-                        videoCount += (parseInt(g.video) || 0);
-                        tasarimCount += (parseInt(g.tasarim) || 0);
-                    }
-                });
+                // --- 3. SADECE BU AY Paylaşılan Video ve Tasarımlar (Paylaşım Takviminden) ---
+                let monthlyTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr) && t.paylasildi === true);
+                
+                // Görev eklenirken girilen "adet" sayısını da hesaplamaya katarak gerçek paylaşılan sayıyı buluyoruz
+                let videoCount = monthlyTasks.filter(t => t.tur === 'Video').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
+                let tasarimCount = monthlyTasks.filter(t => t.tur === 'Tasarım').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
 
                 html += `
                     <div class="company-card" style="padding: 20px; text-align: left; cursor: default; display:flex; flex-direction:column; gap:12px; background: white;">
@@ -1224,22 +1217,12 @@
                             </div>
                         </div>
                         
-                        <div style="display:flex; flex-direction:column; gap: 8px; margin-top: auto;">
-                            <div style="display:flex; justify-content:space-between; gap: 8px;">
-                                <div style="font-size: 10px; background:#eff6ff; color:#2563eb; padding:6px 4px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #bfdbfe; display:flex; align-items:center; justify-content:center; gap:4px;" title="Tüm zamanlarda yapılan paylaşımlar">
-                                    <i class="fa-solid fa-share-nodes" style="font-size: 11px;"></i> Toplam Paylaşım: <b style="font-size:12px;">${totalShareCount}</b>
-                                </div>
-                                <div style="font-size: 10px; background:#f0fdf4; color:#16a34a; padding:6px 4px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #bbf7d0; display:flex; align-items:center; justify-content:center; gap:4px;" title="Tüm zamanlarda yapılan çekimler">
-                                    <i class="fa-solid fa-camera-retro" style="font-size: 11px;"></i> Toplam Çekim: <b style="font-size:12px;">${totalShootCount}</b>
-                                </div>
+                        <div style="display:flex; justify-content:space-between; gap: 8px; margin-top: auto;">
+                            <div style="font-size: 11px; background:#fff7ed; color:#c2410c; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan videolar">
+                                <i class="fa-solid fa-video" style="font-size: 12px; margin:0; color:#ea580c;"></i> Video: <b style="font-size:13px;">${videoCount}</b>
                             </div>
-                            <div style="display:flex; justify-content:space-between; gap: 8px;">
-                                <div style="font-size: 10px; background:#fff7ed; color:#c2410c; padding:6px 4px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:4px;" title="Sadece bu ay hazırlanan videolar">
-                                    <i class="fa-solid fa-video" style="font-size: 11px; color:#ea580c;"></i> Bu Ay Video: <b style="font-size:12px;">${videoCount}</b>
-                                </div>
-                                <div style="font-size: 10px; background:#fdf2f8; color:#be185d; padding:6px 4px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #fce7f3; display:flex; align-items:center; justify-content:center; gap:4px;" title="Sadece bu ay hazırlanan tasarımlar">
-                                    <i class="fa-solid fa-pen-nib" style="font-size: 11px; color:#db2777;"></i> Bu Ay Tasarım: <b style="font-size:12px;">${tasarimCount}</b>
-                                </div>
+                            <div style="font-size: 11px; background:#fdf2f8; color:#be185d; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #fce7f3; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan tasarımlar">
+                                <i class="fa-solid fa-pen-nib" style="font-size: 12px; margin:0; color:#db2777;"></i> Tasarım: <b style="font-size:13px;">${tasarimCount}</b>
                             </div>
                         </div>
 
