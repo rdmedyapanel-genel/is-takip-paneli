@@ -1110,7 +1110,7 @@
     async function addPersonalNote() { const text = document.getElementById('pa-new-note').value.trim(); if(!text) return; await db.collection('personal_agenda').add({ userId: currentUser.id, note: text, timestamp: Date.now(), dateStr: formatDate(new Date()) }); loadPersonalAgenda(); }
     async function deletePersonalNote(docId) { if(confirm("Notu silmek istiyor musunuz?")) { await db.collection('personal_agenda').doc(docId).delete(); loadPersonalAgenda(); } }
 
-    // YENİDEN DÜZENLENEN FİRMALAR SAYFASI (YENİ ANALİZ KARTLARI)
+    // YENİDEN DÜZENLENEN FİRMALAR SAYFASI (YENİ ANALİZ KARTLARI - İKONLAR DÜZELTİLDİ)
     function loadFirmalarPage() {
         let html = '<div class="company-grid" style="margin-top:15px;">';
         
@@ -1131,20 +1131,20 @@
                 let compTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(compName) && t.paylasildi === true);
                 compTasks.sort((a, b) => new Date(b.tarih) - new Date(a.tarih)); 
                 let lastShareDate = compTasks.length > 0 ? compTasks[0].tarih : null;
-                let lastShareStr = "<span style='color:#ef4444;'>Henüz Paylaşım Yok</span>";
+                let lastShareStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Paylaşım Yok</span>";
                 if (lastShareDate) {
                     let diff = calculateDaysPassed(lastShareDate);
-                    lastShareStr = `${formatDateTR(lastShareDate)} <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`;
+                    lastShareStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShareDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`;
                 }
 
                 // --- 2. Son Çekim Gününü Bulma ---
                 let compShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(compName) && s.cekildi === true);
                 compShoots.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
                 let lastShootDate = compShoots.length > 0 ? compShoots[0].tarih : null;
-                let lastShootStr = "<span style='color:#ef4444;'>Henüz Çekim Yok</span>";
+                let lastShootStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Çekim Yok</span>";
                 if (lastShootDate) {
                     let diff = calculateDaysPassed(lastShootDate);
-                    lastShootStr = `${formatDateTR(lastShootDate)} <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`;
+                    lastShootStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShootDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`;
                 }
 
                 // --- 3. Bu Ay Yapılan İşleri Bulma ---
@@ -1163,41 +1163,45 @@
                     <div class="company-card" style="padding: 20px; text-align: left; cursor: default; display:flex; flex-direction:column; gap:12px; background: white;">
                         
                         <div style="display:flex; align-items:center; gap:10px; border-bottom: 2px solid #f1f5f9; padding-bottom:12px;">
-                            <div style="width: 40px; height: 40px; background: #fee2e2; border-radius: 10px; display:flex; align-items:center; justify-content:center;">
-                                <i class="fa-solid fa-building" style="font-size: 20px; color: var(--primary-red); margin:0;"></i>
+                            <div style="width: 40px; height: 40px; background: #fee2e2; border-radius: 10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <i class="fa-solid fa-building" style="font-size: 18px; color: var(--primary-red); margin:0;"></i>
                             </div>
-                            <h3 style="font-size: 16px; margin:0; color: var(--bg-dark); font-weight:700;">${compName}</h3>
+                            <h3 style="font-size: 15px; margin:0; color: var(--bg-dark); font-weight:700;">${compName}</h3>
                         </div>
                         
                         <div style="display:flex; flex-direction:column; gap:6px;">
-                            <div style="font-size: 12px; display:flex; justify-content:space-between; align-items:center;">
+                            <div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;">
                                 <span style="color:var(--text-muted); font-weight:600;">Firma Sahibi:</span>
-                                <span style="font-weight:700; color:var(--bg-dark); background:#f8fafc; padding:2px 8px; border-radius:6px; border:1px solid #e2e8f0;">${compOwner}</span>
+                                <span style="font-weight:700; color:var(--bg-dark); background:#f8fafc; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0;">${compOwner}</span>
                             </div>
-                            <div style="font-size: 12px; display:flex; justify-content:space-between; align-items:center;">
+                            <div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;">
                                 <span style="color:var(--text-muted); font-weight:600;">Sorumlu Personel:</span>
-                                <span style="font-weight:700; color:var(--task-purple); background:#f5f3ff; padding:2px 8px; border-radius:6px; border:1px solid #ede9fe;">${compResp}</span>
+                                <span style="font-weight:700; color:var(--task-purple); background:#f5f3ff; padding:3px 8px; border-radius:6px; border:1px solid #ede9fe;">${compResp}</span>
                             </div>
                         </div>
 
-                        <div style="background: #f8fafc; border-radius: 8px; padding: 10px; display:flex; flex-direction:column; gap:8px; border:1px solid #e2e8f0;">
-                            <div style="font-size: 11px; display:flex; flex-direction:column;">
-                                <span style="color:var(--text-muted); font-weight:600; margin-bottom:3px;"><i class="fa-solid fa-share-nodes" style="color:var(--primary-red);"></i> Son Paylaşım Günü:</span>
-                                <span>${lastShareStr}</span>
+                        <div style="background: #f8fafc; border-radius: 8px; padding: 12px; display:flex; flex-direction:column; gap:10px; border:1px solid #e2e8f0;">
+                            <div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;">
+                                <span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;">
+                                    <i class="fa-solid fa-share-nodes" style="font-size: 12px; color:var(--primary-red); margin:0;"></i> Son Paylaşım Günü:
+                                </span>
+                                <span style="padding-left: 18px;">${lastShareStr}</span>
                             </div>
                             <div style="width:100%; height:1px; background:#e2e8f0;"></div>
-                            <div style="font-size: 11px; display:flex; flex-direction:column;">
-                                <span style="color:var(--text-muted); font-weight:600; margin-bottom:3px;"><i class="fa-solid fa-camera" style="color:#10b981;"></i> Son Çekim Günü:</span>
-                                <span>${lastShootStr}</span>
+                            <div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;">
+                                <span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;">
+                                    <i class="fa-solid fa-camera" style="font-size: 12px; color:#10b981; margin:0;"></i> Son Çekim Günü:
+                                </span>
+                                <span style="padding-left: 18px;">${lastShootStr}</span>
                             </div>
                         </div>
                         
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top: auto;">
-                            <div style="font-size: 11px; background:#fff7ed; color:#c2410c; padding:6px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; margin-right:5px; border: 1px solid #ffedd5;" title="Bu ay hazırlanan videolar">
-                                <i class="fa-solid fa-video"></i> Video: <b>${videoCount}</b>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top: auto; gap: 8px;">
+                            <div style="font-size: 11px; background:#fff7ed; color:#c2410c; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay hazırlanan videolar">
+                                <i class="fa-solid fa-video" style="font-size: 12px; margin:0; color:#ea580c;"></i> Video: <b style="font-size:13px;">${videoCount}</b>
                             </div>
-                            <div style="font-size: 11px; background:#fdf2f8; color:#be185d; padding:6px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; margin-left:5px; border: 1px solid #fce7f3;" title="Bu ay hazırlanan tasarımlar">
-                                <i class="fa-solid fa-pen-nib"></i> Tasarım: <b>${tasarimCount}</b>
+                            <div style="font-size: 11px; background:#fdf2f8; color:#be185d; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #fce7f3; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay hazırlanan tasarımlar">
+                                <i class="fa-solid fa-pen-nib" style="font-size: 12px; margin:0; color:#db2777;"></i> Tasarım: <b style="font-size:13px;">${tasarimCount}</b>
                             </div>
                         </div>
 
