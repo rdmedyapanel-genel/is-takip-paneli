@@ -668,19 +668,19 @@
     const menuData = {
         'tum_isler': [ { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-book', name: 'Genel Ajanda' } ],
         'rdgrup': [
-            { icon: 'fa-chart-bar', name: 'Raporlar' },
             { icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' },
             { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' },
             { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' },
             { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' },
-            { icon: 'fa-book-open', name: 'Kişisel Ajanda' }
+            { icon: 'fa-book-open', name: 'Kişisel Ajanda' },
+            { icon: 'fa-chart-bar', name: 'Raporlar' }
         ],
         'mezuniyet': [
-            { icon: 'fa-chart-bar', name: 'Raporlar' },
             { icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-camera-retro', name: 'Çekimler' },
             { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-camera', name: 'Çekim Takvimi' },
             { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' },
-            { icon: 'fa-book-open', name: 'Kişisel Ajanda' }
+            { icon: 'fa-book-open', name: 'Kişisel Ajanda' },
+            { icon: 'fa-chart-bar', name: 'Raporlar' }
         ],
         'admin': [ { icon: 'fa-gear', name: 'Ayarlar' } ]
     };
@@ -715,7 +715,7 @@
             sidebarMenu.appendChild(li);
         });
         
-        const firstVisiblePage = isAdminOrYonetici && (type === 'rdgrup' || type === 'mezuniyet') ? 'Raporlar' : (items.find(i => i.name !== 'Raporlar').name);
+        const firstVisiblePage = items[0].name;
         loadPageView(firstVisiblePage);
     }
 
@@ -774,7 +774,6 @@
         `;
 
         dbUsers.forEach(u => {
-            // Kullanıcı bu şirketin raporlarında görünsün mü diye kontrol
             let repComps = u.repCompanies || [];
             if (!repComps.includes(currentCompany) && u.id !== 'alperen') return; 
 
@@ -835,42 +834,39 @@
                 }
             });
 
-            let totalStats = chkDays + chkItems + videoCount + tasarimCount + paylasimCount + cekimCount;
-            if(totalStats > 0 || (u.role && u.role.toLowerCase() === 'admin') || u.id === 'alperen') {
-                html += `
-                    <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: 0.2s;">
-                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 12px;">
-                            <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--task-purple), #4338ca); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; box-shadow: 0 4px 8px rgba(108, 99, 255, 0.2);">${safeName.charAt(0).toUpperCase()}</div>
-                            <div>
-                                <h4 style="font-size: 15px; color: var(--bg-dark); margin:0; font-weight: 700;">${safeName} ${u.surname || ""}</h4>
-                                <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">${u.role || "Bilinmiyor"}</span>
-                            </div>
+            html += `
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: 0.2s;">
+                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 12px;">
+                        <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--task-purple), #4338ca); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; box-shadow: 0 4px 8px rgba(108, 99, 255, 0.2);">${safeName.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <h4 style="font-size: 15px; color: var(--bg-dark); margin:0; font-weight: 700;">${safeName} ${u.surname || ""}</h4>
+                            <span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">${u.role || "Bilinmiyor"}</span>
                         </div>
-                        <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: var(--text-main); display: flex; flex-direction: column; gap: 10px;">
-                            <li style="display: flex; justify-content: space-between; align-items: center; background:#f8fafc; padding: 6px 10px; border-radius: 6px;">
-                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-list-check" style="color:#64748b; font-size:14px;"></i> Checklist</span> 
-                                <b style="color:var(--bg-dark);">${chkDays} Gün (${chkItems} Madde)</b>
-                            </li>
-                            <li style="display: flex; justify-content: space-between; align-items: center; background:#fff7ed; padding: 6px 10px; border-radius: 6px;">
-                                <span style="display:flex; align-items:center; gap:8px;" title="Ajandadan Gelen: ${gaVideo}"><i class="fa-solid fa-video" style="color:var(--shoot-orange); font-size:14px;"></i> Yapılan Video</span> 
-                                <b style="color:var(--shoot-orange);">${videoCount}</b>
-                            </li>
-                            <li style="display: flex; justify-content: space-between; align-items: center; background:#fdf2f8; padding: 6px 10px; border-radius: 6px;">
-                                <span style="display:flex; align-items:center; gap:8px;" title="Ajandadan Gelen: ${gaTasarim}"><i class="fa-solid fa-pen-nib" style="color:#ec4899; font-size:14px;"></i> Yapılan Tasarım</span> 
-                                <b style="color:#ec4899;">${tasarimCount}</b>
-                            </li>
-                            <li style="display: flex; justify-content: space-between; align-items: center; background:#fef2f2; padding: 6px 10px; border-radius: 6px;">
-                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-share-nodes" style="color:var(--primary-red); font-size:14px;"></i> Yapılan Paylaşım</span> 
-                                <b style="color:var(--primary-red);">${paylasimCount}</b>
-                            </li>
-                            <li style="display: flex; justify-content: space-between; align-items: center; background:#ecfdf5; padding: 6px 10px; border-radius: 6px;">
-                                <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-camera" style="color:#10b981; font-size:14px;"></i> Tamamlanan Çekim</span> 
-                                <b style="color:#10b981;">${cekimCount}</b>
-                            </li>
-                        </ul>
                     </div>
-                `;
-            }
+                    <ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: var(--text-main); display: flex; flex-direction: column; gap: 10px;">
+                        <li style="display: flex; justify-content: space-between; align-items: center; background:#f8fafc; padding: 6px 10px; border-radius: 6px;">
+                            <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-list-check" style="color:#64748b; font-size:14px;"></i> Checklist</span> 
+                            <b style="color:var(--bg-dark);">${chkDays} Gün (${chkItems} Madde)</b>
+                        </li>
+                        <li style="display: flex; justify-content: space-between; align-items: center; background:#fff7ed; padding: 6px 10px; border-radius: 6px;">
+                            <span style="display:flex; align-items:center; gap:8px;" title="Ajandadan Gelen: ${gaVideo}"><i class="fa-solid fa-video" style="color:var(--shoot-orange); font-size:14px;"></i> Yapılan Video</span> 
+                            <b style="color:var(--shoot-orange);">${videoCount}</b>
+                        </li>
+                        <li style="display: flex; justify-content: space-between; align-items: center; background:#fdf2f8; padding: 6px 10px; border-radius: 6px;">
+                            <span style="display:flex; align-items:center; gap:8px;" title="Ajandadan Gelen: ${gaTasarim}"><i class="fa-solid fa-pen-nib" style="color:#ec4899; font-size:14px;"></i> Yapılan Tasarım</span> 
+                            <b style="color:#ec4899;">${tasarimCount}</b>
+                        </li>
+                        <li style="display: flex; justify-content: space-between; align-items: center; background:#fef2f2; padding: 6px 10px; border-radius: 6px;">
+                            <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-share-nodes" style="color:var(--primary-red); font-size:14px;"></i> Yapılan Paylaşım</span> 
+                            <b style="color:var(--primary-red);">${paylasimCount}</b>
+                        </li>
+                        <li style="display: flex; justify-content: space-between; align-items: center; background:#ecfdf5; padding: 6px 10px; border-radius: 6px;">
+                            <span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-camera" style="color:#10b981; font-size:14px;"></i> Tamamlanan Çekim</span> 
+                            <b style="color:#10b981;">${cekimCount}</b>
+                        </li>
+                    </ul>
+                </div>
+            `;
         });
 
         html += `</div></div>`;
@@ -1139,7 +1135,7 @@
                 const isReadOnly = (activePage === 'Genel Takvim');
                 if(t.itemType === 'task') {
                     const isCompleted = t.hazirlandi && t.paylasildi; const taskNum = getTaskIndex(t);
-                    html += `<div class="task-card ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}"><div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div><div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div><div class="task-text">${t.firma || ""} (${taskNum}) - ${t.hazirlayan || ""}</div></div>`;
+                    html += `<div class="task-card ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}"><div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div><div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div><div class="task-text">${t.firma || ""} (${taskNum}) - h: ${t.hazirlayan || ""} p: ${t.paylasan || ""}</div></div>`;
                 } else {
                     const isCompleted = t.cekildi && t.teslim && t.hdd && t.drive; let kisiDisplay = Array.isArray(t.kisi) ? t.kisi.join(', ') : t.kisi;
                     html += `<div class="task-card shoot ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditShoot('${t.docId}')`}"><i class="fa-solid fa-camera" style="margin-right:2px;"></i><div class="task-text">${t.saat ? t.saat+' ' : ''}${t.firma || ""} - ${kisiDisplay}</div></div>`;
@@ -1405,7 +1401,9 @@
     async function saveTask() {
         const docId = document.getElementById('task-doc-id').value; const btn = document.getElementById('save-task-btn'); btn.innerText = "Kaydediliyor...";
         const taskData = { category: document.getElementById('task-category').value, firma: document.getElementById('t-firma').value, tur: document.getElementById('t-tur').value, adet: parseInt(document.getElementById('t-adet').value) || 1, hazirlayan: document.getElementById('t-hazirlayan').value, paylasan: document.getElementById('t-paylasan').value, not: document.getElementById('t-not').value, hazirlandi: document.getElementById('t-hazirlandi').checked, paylasildi: document.getElementById('t-paylasildi').checked };
-        const dates = document.getElementById('t-tarih').value.split(',').map(d => d.trim());
+        
+        let dates = taskDatePicker.selectedDates.map(d => formatDate(d));
+        if(dates.length === 0) dates = [formatDate(new Date())];
         
         if(docId === "new") { taskData.hazirlandi = false; taskData.paylasildi = false; for (let d of dates) { if(d) await db.collection('tasks').add({ ...taskData, tarih: d }); } } 
         else { taskData.tarih = dates[0]; await db.collection('tasks').doc(docId).update(taskData); }
@@ -1461,7 +1459,9 @@
         const docId = document.getElementById('sh-doc-id').value; const btn = document.getElementById('save-shoot-btn'); btn.innerText = "Kaydediliyor...";
         let selectedKisiler = []; document.querySelectorAll('.sh-kisi-cb:checked').forEach(cb => { selectedKisiler.push(cb.value); });
         
-        const shootData = { firma: document.getElementById('sh-firma').value, kisi: selectedKisiler, tarih: document.getElementById('sh-tarih').value, saat: document.getElementById('sh-saat').value, not: document.getElementById('sh-not').value, link: document.getElementById('sh-link').value, boyut: document.getElementById('sh-boyut').value, foto: parseInt(document.getElementById('sh-foto').value) || 0, video: parseInt(document.getElementById('sh-video').value) || 0, cekildi: document.getElementById('sh-cekildi').checked, teslim: document.getElementById('sh-teslim').checked, hdd: document.getElementById('sh-hdd').checked, drive: document.getElementById('sh-drive').checked };
+        let t_date = shootDatePicker.selectedDates.length > 0 ? formatDate(shootDatePicker.selectedDates[0]) : formatDate(new Date());
+
+        const shootData = { firma: document.getElementById('sh-firma').value, kisi: selectedKisiler, tarih: t_date, saat: document.getElementById('sh-saat').value, not: document.getElementById('sh-not').value, link: document.getElementById('sh-link').value, boyut: document.getElementById('sh-boyut').value, foto: parseInt(document.getElementById('sh-foto').value) || 0, video: parseInt(document.getElementById('sh-video').value) || 0, cekildi: document.getElementById('sh-cekildi').checked, teslim: document.getElementById('sh-teslim').checked, hdd: document.getElementById('sh-hdd').checked, drive: document.getElementById('sh-drive').checked };
         
         if(docId === "new") await db.collection('shoots').add(shootData); else await db.collection('shoots').doc(docId).update(shootData);
         closeModal('shoot-modal'); await fetchShootsFromFirebase(); loadPageView(activePage);
