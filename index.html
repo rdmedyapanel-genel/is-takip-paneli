@@ -1136,7 +1136,7 @@
     async function addPersonalNote() { const text = document.getElementById('pa-new-note').value.trim(); if(!text) return; await db.collection('personal_agenda').add({ userId: currentUser.id, note: text, timestamp: Date.now(), dateStr: formatDate(new Date()) }); loadPersonalAgenda(); }
     async function deletePersonalNote(docId) { if(confirm("Notu silmek istiyor musunuz?")) { await db.collection('personal_agenda').doc(docId).delete(); loadPersonalAgenda(); } }
 
-    // YENİDEN DÜZENLENEN FİRMALAR SAYFASI (YALIN & TAKVİME TAM ENTEGRE)
+   // YENİDEN DÜZENLENEN FİRMALAR SAYFASI (HATASI GİDERİLDİ - TAM ENTEGRE)
     function loadFirmalarPage() {
         let html = '<div class="company-grid" style="margin-top:15px;">';
         
@@ -1153,8 +1153,9 @@
                 const compOwner = c.sahibi || "Belirtilmemiş";
                 const compResp = c.sorumlu || "Atanmamış";
 
+                // --- HATA BURADAYDI: (t.holding || t.firma) değil SADECE t.firma aranmalı ---
                 // --- 1. Son Paylaşım Gününü Bulma (Paylaşım Takviminden) ---
-                let compTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(compName) && t.paylasildi === true);
+                let compTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && t.paylasildi === true);
                 compTasks.sort((a, b) => new Date(b.tarih) - new Date(a.tarih)); 
                 let lastShareDate = compTasks.length > 0 ? compTasks[0].tarih : null;
                 let lastShareStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Paylaşım Yok</span>";
@@ -1164,7 +1165,7 @@
                 }
 
                 // --- 2. Son Çekim Gününü Bulma (Çekim Takviminden) ---
-                let compShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(compName) && s.cekildi === true);
+                let compShoots = dbShoots.filter(s => normalizeStr(s.firma) === normalizeStr(compName) && s.cekildi === true);
                 compShoots.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
                 let lastShootDate = compShoots.length > 0 ? compShoots[0].tarih : null;
                 let lastShootStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Çekim Yok</span>";
@@ -1174,9 +1175,8 @@
                 }
 
                 // --- 3. SADECE BU AY Paylaşılan Video ve Tasarımlar (Paylaşım Takviminden) ---
-                let monthlyTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr) && t.paylasildi === true);
+                let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr) && t.paylasildi === true);
                 
-                // Görev eklenirken girilen "adet" sayısını da hesaplamaya katarak gerçek paylaşılan sayıyı buluyoruz
                 let videoCount = monthlyTasks.filter(t => t.tur === 'Video').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
                 let tasarimCount = monthlyTasks.filter(t => t.tur === 'Tasarım').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
 
