@@ -476,6 +476,8 @@
     let currentChecklistDate = formatDate(new Date());
     let isSidebarCollapsed = false;
 
+    const normalizeStr = (str) => (str || "").replace(/\s+/g, '').toLowerCase();
+
     function toggleSidebar() {
         isSidebarCollapsed = !isSidebarCollapsed;
         const sb = document.getElementById('app-sidebar');
@@ -746,8 +748,8 @@
             }
         });
 
-        let rTasks = dbTasks.filter(t => t.firma === currentCompany && (t.tarih || "").startsWith(monthStr));
-        let rShoots = dbShoots.filter(s => s.firma === currentCompany && (s.tarih || "").startsWith(monthStr));
+        let rTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(currentCompany) && (t.tarih || "").startsWith(monthStr));
+        let rShoots = dbShoots.filter(s => normalizeStr(s.firma) === normalizeStr(currentCompany) && (s.tarih || "").startsWith(monthStr));
 
         let html = `
             <div class="content-card" style="padding: 20px;">
@@ -807,7 +809,7 @@
             let gaVideo = 0;
             let gaTasarim = 0;
             dbGenelAgenda.forEach(g => {
-                if (g.firma === currentCompany && g.status === 3 && (g.tarih || "").startsWith(monthStr)) {
+                if (normalizeStr(g.firma) === normalizeStr(currentCompany) && g.status === 3 && (g.tarih || "").startsWith(monthStr)) {
                     if (g.sorumlu === safeName) {
                         gaVideo += (parseInt(g.video) || 0);
                         gaTasarim += (parseInt(g.tasarim) || 0);
@@ -1041,8 +1043,8 @@
         let validShoots = dbShoots;
         
         if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
-            validTasks = validTasks.filter(t => (t.firma || "").toLowerCase() === currentCompany.toLowerCase());
-            validShoots = validShoots.filter(s => (s.firma || "").toLowerCase() === currentCompany.toLowerCase());
+            validTasks = validTasks.filter(t => normalizeStr(t.firma) === normalizeStr(currentCompany));
+            validShoots = validShoots.filter(s => normalizeStr(s.firma) === normalizeStr(currentCompany));
         }
 
         let allItems = [
@@ -1107,7 +1109,7 @@
     function changeCalView(view) { currentCalView = view; ['month', 'week', 'day'].forEach(v => document.getElementById('btn-view-'+v).classList.remove('active')); document.getElementById('btn-view-' + view).classList.add('active'); initCalendar(); }
     function changeCalNav(direction) { if(currentCalView === 'month') calDate.setMonth(calDate.getMonth() + direction); if(currentCalView === 'week') calDate.setDate(calDate.getDate() + (direction * 7)); if(currentCalView === 'day') calDate.setDate(calDate.getDate() + direction); initCalendar(); }
     function resetToToday() { calDate = new Date(); initCalendar(); }
-    function getTaskIndex(task) { const taskMonth = (task.tarih || "").substring(0, 7); let monthlyTasks = dbTasks.filter(t => t.firma === task.firma && (t.tarih || "").startsWith(taskMonth)); monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); const index = monthlyTasks.findIndex(t => t.docId === task.docId); return index !== -1 ? index + 1 : '?'; }
+    function getTaskIndex(task) { const taskMonth = (task.tarih || "").substring(0, 7); let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(task.firma) && (t.tarih || "").startsWith(taskMonth)); monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); const index = monthlyTasks.findIndex(t => t.docId === task.docId); return index !== -1 ? index + 1 : '?'; }
 
     function initCalendar() {
         const grid = document.getElementById('calendar-wrapper'); const monthYearText = document.getElementById('calendar-month-year'); grid.innerHTML = '';
@@ -1119,8 +1121,8 @@
         let validShoots = dbShoots;
 
         if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
-            validTasks = validTasks.filter(t => (t.firma || "").toLowerCase() === currentCompany.toLowerCase());
-            validShoots = validShoots.filter(s => (s.firma || "").toLowerCase() === currentCompany.toLowerCase());
+            validTasks = validTasks.filter(t => normalizeStr(t.firma) === normalizeStr(currentCompany));
+            validShoots = validShoots.filter(s => normalizeStr(s.firma) === normalizeStr(currentCompany));
         }
 
         if (activePage === 'Paylaşım Takvimi') visibleItems = validTasks.map(t => ({...t, itemType: 'task'})); 
