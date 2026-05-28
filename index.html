@@ -1041,8 +1041,8 @@
         let validShoots = dbShoots;
         
         if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
-            validTasks = validTasks.filter(t => t.firma === currentCompany);
-            validShoots = validShoots.filter(s => s.firma === currentCompany);
+            validTasks = validTasks.filter(t => (t.firma || "").toLowerCase() === currentCompany.toLowerCase());
+            validShoots = validShoots.filter(s => (s.firma || "").toLowerCase() === currentCompany.toLowerCase());
         }
 
         let allItems = [
@@ -1119,8 +1119,8 @@
         let validShoots = dbShoots;
 
         if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
-            validTasks = validTasks.filter(t => t.firma === currentCompany);
-            validShoots = validShoots.filter(s => s.firma === currentCompany);
+            validTasks = validTasks.filter(t => (t.firma || "").toLowerCase() === currentCompany.toLowerCase());
+            validShoots = validShoots.filter(s => (s.firma || "").toLowerCase() === currentCompany.toLowerCase());
         }
 
         if (activePage === 'Paylaşım Takvimi') visibleItems = validTasks.map(t => ({...t, itemType: 'task'})); 
@@ -1228,8 +1228,11 @@
             txtArea.value = formattedText;
             
             let docId = `chk_${currentCompany}_${currentChecklistDate}`; let docRef = db.collection('checklists').doc(docId);
-            let updateData = {}; updateData[`notes.${userId}`] = formattedText; updateData[`company`] = currentCompany; updateData[`date`] = currentChecklistDate;
-            await docRef.set(updateData, { merge: true });
+            await docRef.set({
+                notes: { [userId]: formattedText },
+                company: currentCompany,
+                date: currentChecklistDate
+            }, { merge: true });
             
             let oldText = "Listeyi Kaydet / Sırala"; btn.innerText = "Kaydedildi!"; btn.style.backgroundColor = "#16a34a"; setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 2000);
         } catch (error) {
@@ -1415,7 +1418,7 @@
     async function saveTask() {
         const docId = document.getElementById('task-doc-id').value; const btn = document.getElementById('save-task-btn'); btn.innerText = "Kaydediliyor...";
         try {
-            const taskData = { category: document.getElementById('task-category').value, firma: document.getElementById('t-firma').value, tur: document.getElementById('t-tur').value, adet: parseInt(document.getElementById('t-adet').value) || 1, hazirlayan: document.getElementById('t-hazirlayan').value, paylasan: document.getElementById('t-paylasan').value, not: document.getElementById('t-not').value, hazirlandi: document.getElementById('t-hazirlandi').checked, paylasildi: document.getElementById('t-paylasildi').checked };
+            const taskData = { category: document.getElementById('task-category').value, firma: document.getElementById('t-firma').value || currentCompany, tur: document.getElementById('t-tur').value, adet: parseInt(document.getElementById('t-adet').value) || 1, hazirlayan: document.getElementById('t-hazirlayan').value, paylasan: document.getElementById('t-paylasan').value, not: document.getElementById('t-not').value, hazirlandi: document.getElementById('t-hazirlandi').checked, paylasildi: document.getElementById('t-paylasildi').checked };
             
             let dates = taskDatePicker.selectedDates.map(d => formatDate(d));
             if(dates.length === 0) dates = [formatDate(new Date())];
@@ -1479,7 +1482,7 @@
             
             let t_date = shootDatePicker.selectedDates.length > 0 ? formatDate(shootDatePicker.selectedDates[0]) : formatDate(new Date());
 
-            const shootData = { firma: document.getElementById('sh-firma').value, kisi: selectedKisiler, tarih: t_date, saat: document.getElementById('sh-saat').value, not: document.getElementById('sh-not').value, link: document.getElementById('sh-link').value, boyut: document.getElementById('sh-boyut').value, foto: parseInt(document.getElementById('sh-foto').value) || 0, video: parseInt(document.getElementById('sh-video').value) || 0, cekildi: document.getElementById('sh-cekildi').checked, teslim: document.getElementById('sh-teslim').checked, hdd: document.getElementById('sh-hdd').checked, drive: document.getElementById('sh-drive').checked };
+            const shootData = { firma: document.getElementById('sh-firma').value || currentCompany, kisi: selectedKisiler, tarih: t_date, saat: document.getElementById('sh-saat').value, not: document.getElementById('sh-not').value, link: document.getElementById('sh-link').value, boyut: document.getElementById('sh-boyut').value, foto: parseInt(document.getElementById('sh-foto').value) || 0, video: parseInt(document.getElementById('sh-video').value) || 0, cekildi: document.getElementById('sh-cekildi').checked, teslim: document.getElementById('sh-teslim').checked, hdd: document.getElementById('sh-hdd').checked, drive: document.getElementById('sh-drive').checked };
             
             if(docId === "new") await db.collection('shoots').add(shootData); else await db.collection('shoots').doc(docId).update(shootData);
             closeModal('shoot-modal'); await fetchShootsFromFirebase(); loadPageView(activePage);
