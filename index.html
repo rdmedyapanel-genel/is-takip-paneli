@@ -172,14 +172,14 @@
         .cal-tasks::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
         
         /* DAHA OKUNABİLİR VE SARAN GÖREV KARTLARI */
-        .task-card { 
+        /* İNCE VE KİBAR GÖREV KARTLARI */
+.task-card { 
     background-color: var(--task-purple); 
     color: white; 
-    padding: 6px; /* İç boşluğu biraz artırdık */
-    border-radius: 6px; 
-    font-size: 11px; /* Yazı boyutunu bir tık büyüttük */
+    padding: 4px 6px; /* Kart kutusunu incelttik */
+    border-radius: 4px; 
     display: flex; 
-    align-items: flex-start; /* Yazı alt satıra geçerse butonlar havada kalmasın, üstte hizalansın */
+    align-items: center; /* İçerikleri dikeyde ortala */
     gap: 6px; 
     cursor: pointer; 
     transition: all 0.2s; 
@@ -188,7 +188,6 @@
     min-width: 0; 
     width: 100%; 
     box-sizing: border-box; 
-    line-height: 1.3; 
 }
 
 .task-card:hover { transform: translateY(-1px); border-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.15);}
@@ -196,35 +195,45 @@
 .task-card.completed { opacity: 0.6; text-decoration: line-through; background-color: #9ca3af !important; }
         
         
-        .hp-badge { 
+        /* H VE P BUTONLARI (Kibar ama basılabilir) */
+.hp-badge { 
     background: #d1d5db; 
     color: #4b5563; 
-    border-radius: 4px; 
+    border-radius: 3px; 
     padding: 0; 
-    font-size: 10px; /* Buton içi harfleri büyüttük */
+    font-size: 10px; 
     font-weight: 800; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     cursor: pointer; 
     transition: 0.2s; 
-    width: 20px; /* 14px'den 20px'e çıkararak tıklama alanını genişlettik */
-    height: 20px; /* Yüksekliği artırdık */
+    width: 18px; /* 14'ten büyük, 20'den küçük tam ayarında */
+    height: 18px; 
     line-height: 1; 
     flex-shrink: 0;
-    margin-top: 1px; /* Metinle görsel hizalamayı dengelemek için hafif aşağı çektik */
 }
 
 .hp-badge:hover { filter: brightness(0.9); }
 .hp-badge.active { background: #10b981; color: white; }
 
-        .task-text { 
+        /* YAZILAR: 2 SATIR, KÜÇÜK VE İNCE FONT */
+.task-text { 
     flex: 1; 
-    white-space: normal; /* Yazının tek satırda kalma zorunluluğunu kaldırdık */
-    overflow: visible; /* Taşan kısmın gizlenmesini iptal ettik */
-    font-size: 11px; 
+    white-space: normal; 
+    overflow: visible; 
+    font-size: 10px; /* Tüm yazılar aynı küçük boyutta */
+    font-weight: 400; /* Genel yazı tipi ince (normal) */
+    line-height: 1.3; 
     min-width: 0; 
-    word-break: break-word; /* Uzun kelimelerin kutuyu bozmasını engelledik */
+    word-break: break-word; 
+    display: flex;
+    flex-direction: column; /* Yazıları alt alta iki satır yapar */
+    gap: 2px; /* İki satır arasına minik bir esneme payı */
+}
+
+.task-text strong {
+    font-weight: 700; /* Sadece <strong> etiketiyle sardığımız yerler kalın olacak */
 }
         
         .full-loader { position: absolute; top:0; left:0; width:100%; height:100%; background: white; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 0;}
@@ -1200,10 +1209,13 @@
                     const isCompleted = t.hazirlandi && t.paylasildi; 
                     // YENİ FORMATLAMA (Daha kompakt ve esnek alan)
                     html += `<div class="task-card ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}">
-                                <div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div>
-                                <div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div>
-                                <div class="task-text">${t.firma || ""} <span style="font-size: 8px; opacity: 0.9;">(${t.tur || ""})</span> - h: <strong style="font-weight: 800;">${t.hazirlayan || ""}</strong> p: ${t.paylasan || ""}</div>
-                             </div>`;
+            <div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div>
+            <div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div>
+            <div class="task-text">
+                <div>${t.firma || ""} (<strong>${t.tur || ""}</strong>)</div>
+                <div>H: <strong>${t.hazirlayan || ""}</strong>, P: ${t.paylasan || ""}</div>
+            </div>
+         </div>`;
                 } else {
                     const isCompleted = t.cekildi && t.teslim && t.hdd && t.drive; let kisiDisplay = Array.isArray(t.kisi) ? t.kisi.join(', ') : t.kisi;
                     html += `<div class="task-card shoot ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditShoot('${t.docId}')`}"><i class="fa-solid fa-camera" style="margin-right:2px;"></i><div class="task-text">${t.saat ? t.saat+' ' : ''}${t.firma || ""} - ${kisiDisplay}</div></div>`;
