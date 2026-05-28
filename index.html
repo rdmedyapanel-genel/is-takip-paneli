@@ -171,17 +171,61 @@
         .cal-tasks::-webkit-scrollbar-track { background: transparent; }
         .cal-tasks::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 4px; }
         
-        /* DAHA KOMPAKT GÖREV KARTLARI */
-        .task-card { background-color: var(--task-purple); color: white; padding: 4px; border-radius: 4px; font-size: 10px; display: flex; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1); border: 1px solid transparent; min-width: 0; width: 100%; box-sizing: border-box; line-height: 1.2; }
-        .task-card:hover { transform: translateY(-1px); border-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.15);}
-        .task-card.shoot { background-color: var(--shoot-orange); }
-        .task-card.completed { opacity: 0.6; text-decoration: line-through; background-color: #9ca3af !important; }
+        /* DAHA OKUNABİLİR VE SARAN GÖREV KARTLARI */
+        .task-card { 
+    background-color: var(--task-purple); 
+    color: white; 
+    padding: 6px; /* İç boşluğu biraz artırdık */
+    border-radius: 6px; 
+    font-size: 11px; /* Yazı boyutunu bir tık büyüttük */
+    display: flex; 
+    align-items: flex-start; /* Yazı alt satıra geçerse butonlar havada kalmasın, üstte hizalansın */
+    gap: 6px; 
+    cursor: pointer; 
+    transition: all 0.2s; 
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1); 
+    border: 1px solid transparent; 
+    min-width: 0; 
+    width: 100%; 
+    box-sizing: border-box; 
+    line-height: 1.3; 
+}
+
+.task-card:hover { transform: translateY(-1px); border-color: #ffffff; box-shadow: 0 2px 4px rgba(0,0,0,0.15);}
+.task-card.shoot { background-color: var(--shoot-orange); }
+.task-card.completed { opacity: 0.6; text-decoration: line-through; background-color: #9ca3af !important; }
         
-        .hp-badge { background: #d1d5db; color: #4b5563; border-radius: 3px; padding: 0; font-size: 8.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; width: 14px; height: 14px; line-height: 1; flex-shrink: 0;}
-        .hp-badge:hover { filter: brightness(0.9); }
-        .hp-badge.active { background: #10b981; color: white; }
         
-        .task-text { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 10px; min-width: 0; }
+        .hp-badge { 
+    background: #d1d5db; 
+    color: #4b5563; 
+    border-radius: 4px; 
+    padding: 0; 
+    font-size: 10px; /* Buton içi harfleri büyüttük */
+    font-weight: 800; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    cursor: pointer; 
+    transition: 0.2s; 
+    width: 20px; /* 14px'den 20px'e çıkararak tıklama alanını genişlettik */
+    height: 20px; /* Yüksekliği artırdık */
+    line-height: 1; 
+    flex-shrink: 0;
+    margin-top: 1px; /* Metinle görsel hizalamayı dengelemek için hafif aşağı çektik */
+}
+
+.hp-badge:hover { filter: brightness(0.9); }
+.hp-badge.active { background: #10b981; color: white; }
+
+        .task-text { 
+    flex: 1; 
+    white-space: normal; /* Yazının tek satırda kalma zorunluluğunu kaldırdık */
+    overflow: visible; /* Taşan kısmın gizlenmesini iptal ettik */
+    font-size: 11px; 
+    min-width: 0; 
+    word-break: break-word; /* Uzun kelimelerin kutuyu bozmasını engelledik */
+}
         
         .full-loader { position: absolute; top:0; left:0; width:100%; height:100%; background: white; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 0;}
         .spinner { width: 40px; height: 40px; border: 4px solid #f1f5f9; border-top: 4px solid var(--primary-red); border-radius: 50%; animation: spin 1s linear infinite; }
