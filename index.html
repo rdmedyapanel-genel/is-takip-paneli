@@ -748,8 +748,8 @@
             }
         });
 
-        let rTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(currentCompany) && (t.tarih || "").startsWith(monthStr));
-        let rShoots = dbShoots.filter(s => normalizeStr(s.firma) === normalizeStr(currentCompany) && (s.tarih || "").startsWith(monthStr));
+        let rTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(currentCompany) && (t.tarih || "").startsWith(monthStr));
+        let rShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany) && (s.tarih || "").startsWith(monthStr));
 
         let html = `
             <div class="content-card" style="padding: 20px;">
@@ -809,7 +809,7 @@
             let gaVideo = 0;
             let gaTasarim = 0;
             dbGenelAgenda.forEach(g => {
-                if (normalizeStr(g.firma) === normalizeStr(currentCompany) && g.status === 3 && (g.tarih || "").startsWith(monthStr)) {
+                if (normalizeStr(g.holding || g.firma) === normalizeStr(currentCompany) && g.status === 3 && (g.tarih || "").startsWith(monthStr)) {
                     if (g.sorumlu === safeName) {
                         gaVideo += (parseInt(g.video) || 0);
                         gaTasarim += (parseInt(g.tasarim) || 0);
@@ -989,6 +989,7 @@
     async function saveGenelAgenda() {
         const docId = document.getElementById('ga-doc-id').value;
         const data = {
+            holding: currentCompany,
             title: document.getElementById('ga-title').value, firma: document.getElementById('ga-firma').value,
             tarih: document.getElementById('ga-tarih').value, sorumlu: document.getElementById('ga-sorumlu').value,
             video: parseInt(document.getElementById('ga-video').value) || 0, tasarim: parseInt(document.getElementById('ga-tasarim').value) || 0,
@@ -1043,8 +1044,8 @@
         let validShoots = dbShoots;
         
         if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
-            validTasks = validTasks.filter(t => normalizeStr(t.firma) === normalizeStr(currentCompany));
-            validShoots = validShoots.filter(s => normalizeStr(s.firma) === normalizeStr(currentCompany));
+            validTasks = validTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(currentCompany));
+            validShoots = validShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany));
         }
 
         let allItems = [
@@ -1109,7 +1110,7 @@
     function changeCalView(view) { currentCalView = view; ['month', 'week', 'day'].forEach(v => document.getElementById('btn-view-'+v).classList.remove('active')); document.getElementById('btn-view-' + view).classList.add('active'); initCalendar(); }
     function changeCalNav(direction) { if(currentCalView === 'month') calDate.setMonth(calDate.getMonth() + direction); if(currentCalView === 'week') calDate.setDate(calDate.getDate() + (direction * 7)); if(currentCalView === 'day') calDate.setDate(calDate.getDate() + direction); initCalendar(); }
     function resetToToday() { calDate = new Date(); initCalendar(); }
-    function getTaskIndex(task) { const taskMonth = (task.tarih || "").substring(0, 7); let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(task.firma) && (t.tarih || "").startsWith(taskMonth)); monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); const index = monthlyTasks.findIndex(t => t.docId === task.docId); return index !== -1 ? index + 1 : '?'; }
+    function getTaskIndex(task) { const taskMonth = (task.tarih || "").substring(0, 7); let monthlyTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(task.holding || task.firma) && (t.tarih || "").startsWith(taskMonth)); monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); const index = monthlyTasks.findIndex(t => t.docId === task.docId); return index !== -1 ? index + 1 : '?'; }
 
     function initCalendar() {
         const grid = document.getElementById('calendar-wrapper'); const monthYearText = document.getElementById('calendar-month-year'); grid.innerHTML = '';
@@ -1121,8 +1122,8 @@
         let validShoots = dbShoots;
 
         if (currentCompany !== 'TÜM İŞLER' && currentCompany !== 'YÖNETİM PANELİ') {
-            validTasks = validTasks.filter(t => normalizeStr(t.firma) === normalizeStr(currentCompany));
-            validShoots = validShoots.filter(s => normalizeStr(s.firma) === normalizeStr(currentCompany));
+            validTasks = validTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(currentCompany));
+            validShoots = validShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany));
         }
 
         if (activePage === 'Paylaşım Takvimi') visibleItems = validTasks.map(t => ({...t, itemType: 'task'})); 
@@ -1420,7 +1421,7 @@
     async function saveTask() {
         const docId = document.getElementById('task-doc-id').value; const btn = document.getElementById('save-task-btn'); btn.innerText = "Kaydediliyor...";
         try {
-            const taskData = { category: document.getElementById('task-category').value, firma: document.getElementById('t-firma').value || currentCompany, tur: document.getElementById('t-tur').value, adet: parseInt(document.getElementById('t-adet').value) || 1, hazirlayan: document.getElementById('t-hazirlayan').value, paylasan: document.getElementById('t-paylasan').value, not: document.getElementById('t-not').value, hazirlandi: document.getElementById('t-hazirlandi').checked, paylasildi: document.getElementById('t-paylasildi').checked };
+            const taskData = { holding: currentCompany, category: document.getElementById('task-category').value, firma: document.getElementById('t-firma').value || currentCompany, tur: document.getElementById('t-tur').value, adet: parseInt(document.getElementById('t-adet').value) || 1, hazirlayan: document.getElementById('t-hazirlayan').value, paylasan: document.getElementById('t-paylasan').value, not: document.getElementById('t-not').value, hazirlandi: document.getElementById('t-hazirlandi').checked, paylasildi: document.getElementById('t-paylasildi').checked };
             
             let dates = taskDatePicker.selectedDates.map(d => formatDate(d));
             if(dates.length === 0) dates = [formatDate(new Date())];
@@ -1484,7 +1485,7 @@
             
             let t_date = shootDatePicker.selectedDates.length > 0 ? formatDate(shootDatePicker.selectedDates[0]) : formatDate(new Date());
 
-            const shootData = { firma: document.getElementById('sh-firma').value || currentCompany, kisi: selectedKisiler, tarih: t_date, saat: document.getElementById('sh-saat').value, not: document.getElementById('sh-not').value, link: document.getElementById('sh-link').value, boyut: document.getElementById('sh-boyut').value, foto: parseInt(document.getElementById('sh-foto').value) || 0, video: parseInt(document.getElementById('sh-video').value) || 0, cekildi: document.getElementById('sh-cekildi').checked, teslim: document.getElementById('sh-teslim').checked, hdd: document.getElementById('sh-hdd').checked, drive: document.getElementById('sh-drive').checked };
+            const shootData = { holding: currentCompany, firma: document.getElementById('sh-firma').value || currentCompany, kisi: selectedKisiler, tarih: t_date, saat: document.getElementById('sh-saat').value, not: document.getElementById('sh-not').value, link: document.getElementById('sh-link').value, boyut: document.getElementById('sh-boyut').value, foto: parseInt(document.getElementById('sh-foto').value) || 0, video: parseInt(document.getElementById('sh-video').value) || 0, cekildi: document.getElementById('sh-cekildi').checked, teslim: document.getElementById('sh-teslim').checked, hdd: document.getElementById('sh-hdd').checked, drive: document.getElementById('sh-drive').checked };
             
             if(docId === "new") await db.collection('shoots').add(shootData); else await db.collection('shoots').doc(docId).update(shootData);
             closeModal('shoot-modal'); await fetchShootsFromFirebase(); loadPageView(activePage);
