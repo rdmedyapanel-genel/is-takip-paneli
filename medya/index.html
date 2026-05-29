@@ -536,6 +536,114 @@
     function goToShootLink() { const link = document.getElementById('sh-link').value.trim(); if(link) window.open(link.startsWith('http') ? link : 'https://' + link, '_blank'); else alert('Lütfen geçerli bir link girin.'); }
     function loadProfileView() { document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); document.getElementById('main-content').innerHTML = `<div class="content-card" style="max-width: 600px;"><h2 class="content-title">Profil Bilgileri</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;"><div class="input-group"><label>İSİM</label><input type="text" value="${currentUser.name || ""}" disabled></div><div class="input-group"><label>SOYİSİM</label><input type="text" value="${currentUser.surname || ""}" disabled></div></div><h3 style="font-size: 15px; margin-bottom: 15px; color: var(--bg-dark);">Şifre Değiştir</h3><div class="input-group"><label>YENİ ŞİFRE</label><input type="password" id="new-profile-pass" autocomplete="new-password"></div><button type="button" class="login-btn" onclick="updateOwnPassword()">Şifreyi Güncelle</button></div>`; }
     async function updateOwnPassword() { const newPass = document.getElementById('new-profile-pass').value; if(newPass) { currentUser.pass = newPass; await db.collection('users').doc(currentUser.docId).update({ pass: newPass }); await fetchUsersFromFirebase(); alert('Şifreniz güncellendi!'); } }
+// --- KİŞİSEL AJANDA FONKSİYONLARI ---
+    async function loadPersonalAgenda() {
+        await fetchPersonalAgendaFromFirebase();
+        let html = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">Kişisel Ajanda</h2>
+            </div>
+            <div class="checklist-info-bar" style="border-color:#f59e0b; background:#fffdf5; color:#b45309;">
+                <i class="fa-solid fa-lock"></i> Bu alana eklediğiniz notlar sadece sizin tarafınızdan görülür.
+            </div>
+            <div class="content-card" style="margin-bottom:20px;">
+                <textarea id="pa-new-note" class="chk-textarea" placeholder="Yeni bir özel not ekleyin..." style="min-height:80px;" autocomplete="off"></textarea>
+                <div style="text-align:right;">
+                    <button type="button" class="login-btn btn-orange" style="width:auto; padding:6px 15px;" onclick="addPersonalNote()">Notu Kaydet</button>
+                </div>
+            </div><div>
+        `;
+        dbPersonalAgenda.sort((a,b) => b.timestamp - a.timestamp).forEach(p => {
+            html += `
+                <div class="pa-note-card">
+                    <div>
+                        <div class="pa-content">${p.note}</div>
+                        <div class="pa-date">${formatDateTR(p.dateStr)}</div>
+                    </div>
+                    <button type="button" class="action-btn" onclick="deletePersonalNote('${p.docId}')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>`;
+        });
+        html += `</div>`; 
+        document.getElementById('main-content').innerHTML = html;
+    }
+    
+    async function addPersonalNote() { 
+        const text = document.getElementById('pa-new-note').value.trim(); 
+        if(!text) return; 
+        await db.collection('personal_agenda').add({ userId: currentUser.id, note: text, timestamp: Date.now(), dateStr: formatDate(new Date()) }); 
+        loadPersonalAgenda(); 
+    }
+    
+    async function deletePersonalNote(docId) { 
+        if(confirm("Notu silmek istiyor musunuz?")) { 
+            await db.collection('personal_agenda').doc(docId).delete(); 
+            loadPersonalAgenda(); 
+        } 
+    }
+
+    // --- GENEL AJANDA FONKSİYONLARI (Eksik ihtimaline karşı tekrar) ---
+    async function loadGenelAgenda() {
+        await fetchGenelAgendaFromFirebase();
+        let html = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">Genel Ajanda</h2>
+                <button type="button" class="login-btn btn-light" style="width: auto; padding: 6px 15px; font-size:12px; margin:0;" onclick="toggleArchiveGA()">
+                    <i class="fa-solid fa-box-archive"></i> <span>${showArchivedGA ? 'Aktif Görevleri Göster' : 'Arşivi Göster'}</span>
+                </button>
+            </div>
+            <div class="checklist-info-bar" style="border-color:var(--task-purple); background:#f5f3ff; color:#5b21b6;">
+                <i class="fa-solid fa-circle-info"></i> Bu sayfa tüm ekibe açıktır. Eklenen görevleri ve notları herkes görebilir.
+            </div>
+            <div class="ga-grid">
+                ${!showArchivedGA ? `<div class="ga-card add-card" onclick="openAddGenelAgenda()"><i class="fa-solid fa-plus"></i></div>` : ''}
+        `;
+
+        let visibleAgenda = dbGenelAgenda.filter(g => showArchivedGA ? g.isArchived : !g.isArchived);
+        visibleAgenda.sort((a,b) => new Date(a.tarih) - new Date(b.tarih));
+
+        visibleAgenda.forEach(g => {
+            let badgeHtml = '';
+            if(g.video > 0) badgeHtml += `<div class="ga-badge video">${g.video} Video</div>`;
+            if(g.tasarim > 0) badgeHtml += `<div class="ga-badge tasarim">${g.tasarim} Tasarım</div>`;
+            
+            let previewText = (g.not || "").replace(/<[^>]*>?/gm, '');
+            const isCompleted = g.status === 3;
+            const cardClass = isCompleted ? 'ga-card completed-ga' : 'ga-card';
+
+            html += `
+                <div class="${cardClass}">
+                    <div class="ga-header">
+                        <div class="ga-title">${g.title || ""}</div>
+                        <div class="ga-badges">${badgeHtml}</div>
+                    </div>
+                    <div class="ga-date"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i> Teslim: ${formatDateTR(g.tarih)}</div>
+                    <div class="ga-company"><i class="fa-solid fa-building"></i> ${g.firma || ""}</div>
+                    <div class="ga-preview">"${previewText || 'Not eklenmemiş...'}"</div>
+                    <button type="button" class="ga-view-btn" onclick="openEditGenelAgenda('${g.docId}')">
+                        <i class="fa-solid fa-magnifying-glass"></i> İçeriği ve Görevleri Gör
+                    </button>
+                    <div class="ga-footer-info">
+                        <span>Ekleyen: <b>${g.ekleyen || ""}</b></span>
+                        <span>Sorumlu: <b>${g.sorumlu || ""}</b></span>
+                    </div>
+                    ${!showArchivedGA ? `
+                    <div class="ga-status-btns">
+                        <button type="button" class="ga-s-btn ${g.status >= 1 ? 'active-1' : ''}" onclick="updateGAStatus('${g.docId}', 1)">Görüldü</button>
+                        <button type="button" class="ga-s-btn ${g.status >= 2 ? 'active-2' : ''}" onclick="updateGAStatus('${g.docId}', 2)">Hazırlanıyor</button>
+                        <button type="button" class="ga-s-btn ${isCompleted ? 'active-3' : ''}" onclick="updateGAStatus('${g.docId}', 3)">Tamamlandı</button>
+                    </div>
+                    ` : ''}
+                    <button type="button" class="ga-archive-btn" onclick="toggleArchiveStatusGA('${g.docId}')">
+                        <i class="fa-solid ${showArchivedGA ? 'fa-box-open' : 'fa-box-archive'}"></i> ${showArchivedGA ? 'Arşivden Çıkar' : 'Arşivle'}
+                    </button>
+                </div>
+            `;
+        });
+        html += `</div>`; document.getElementById('main-content').innerHTML = html;
+    }
+
 </script>
 </body>
 </html>
