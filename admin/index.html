@@ -80,6 +80,10 @@
             <label>SORUMLU PERSONEL</label>
             <select id="edit-comp-resp"></select>
         </div>
+        <div class="input-group">
+            <label>DOSYALAR (DRIVE vb.) LİNKİ</label>
+            <input type="text" id="edit-comp-drive" placeholder="https://drive.google.com/..." autocomplete="off">
+        </div>
         
         <div style="display: flex; gap: 12px; margin-top: 15px;">
             <button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('company-modal')">İptal</button>
@@ -135,7 +139,6 @@
         
         currentUser = JSON.parse(savedUser);
         
-        // ADMIN YETKİSİ KONTROLÜ
         const role = (currentUser.role || "").toLowerCase();
         if(role !== 'admin' && currentUser.id !== 'alperen') {
             alert("Bu sayfayı görüntüleme yetkiniz yok!");
@@ -217,6 +220,7 @@
         let userOptions = `<option value="">Sorumlu Seçiniz</option>`;
         dbUsers.forEach(u => { userOptions += `<option value="${u.name} ${u.surname || ''}">${u.name} ${u.surname || ''}</option>`; });
 
+        // EKLENEN YENİ ALAN: admin-new-company-drive
         document.getElementById('main-content').innerHTML = `<h2 class="content-title">Yönetim Paneli (Admin)</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;"><div class="content-card" style="margin-bottom:0;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-users" style="color: var(--primary-red);"></i> Kullanıcılar</h3><button type="button" class="login-btn" style="width: auto; padding: 6px 12px; font-size: 11px; margin: 0;" onclick="openAddUser()">+ Yeni Ekle</button></div><div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 250px; overflow-y: auto;">${usersHtml}</div></div><div class="content-card" style="margin-bottom:0;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-building" style="color: var(--primary-red);"></i> Firmalar</h3></div>
         
         <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
@@ -225,6 +229,7 @@
             <select id="admin-new-company-responsible" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;">
                 ${userOptions}
             </select>
+            <input type="text" id="admin-new-company-drive" placeholder="Dosyalar (Drive) Linki" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;" autocomplete="off">
             <button type="button" class="login-btn" style="padding: 8px 15px;" onclick="addCompany()">Firmayı Ekle</button>
         </div>
         
@@ -335,10 +340,11 @@
         const cName = document.getElementById('admin-new-company').value.trim();
         const cOwner = document.getElementById('admin-new-company-owner').value.trim();
         const cResp = document.getElementById('admin-new-company-responsible').value;
+        const cDrive = document.getElementById('admin-new-company-drive').value.trim();
         
         if(!cName) return;
         
-        await db.collection('companies').add({ name: cName, sahibi: cOwner, sorumlu: cResp, order: dbCompanies.length }); 
+        await db.collection('companies').add({ name: cName, sahibi: cOwner, sorumlu: cResp, drive: cDrive, order: dbCompanies.length }); 
         await fetchCompaniesFromFirebase(); 
         loadAdminSettings();
     }
@@ -350,6 +356,7 @@
         document.getElementById('edit-comp-doc-id').value = docId;
         document.getElementById('edit-comp-name').value = c.name || "";
         document.getElementById('edit-comp-owner').value = c.sahibi || "";
+        document.getElementById('edit-comp-drive').value = c.drive || "";
         
         let userOptions = `<option value="">Sorumlu Seçiniz</option>`;
         dbUsers.forEach(u => { 
@@ -367,13 +374,14 @@
         const cName = document.getElementById('edit-comp-name').value.trim();
         const cOwner = document.getElementById('edit-comp-owner').value.trim();
         const cResp = document.getElementById('edit-comp-resp').value;
+        const cDrive = document.getElementById('edit-comp-drive').value.trim();
         const btn = document.getElementById('save-comp-btn');
         
         if(!cName) return;
         
         btn.innerText = "Kaydediliyor...";
         try {
-            await db.collection('companies').doc(docId).update({ name: cName, sahibi: cOwner, sorumlu: cResp });
+            await db.collection('companies').doc(docId).update({ name: cName, sahibi: cOwner, sorumlu: cResp, drive: cDrive });
             btn.innerText = "Kaydet";
             closeModal('company-modal');
             await fetchCompaniesFromFirebase();
