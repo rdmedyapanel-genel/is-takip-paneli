@@ -583,7 +583,7 @@
         } 
     }
 
-    // --- GENEL AJANDA FONKSİYONLARI (Eksik ihtimaline karşı tekrar) ---
+    // --- GENEL AJANDA FONKSİYONLARI (TÜMÜ EKSİKSİZ) ---
     async function loadGenelAgenda() {
         await fetchGenelAgendaFromFirebase();
         let html = `
@@ -642,6 +642,78 @@
             `;
         });
         html += `</div>`; document.getElementById('main-content').innerHTML = html;
+    }
+
+    function toggleArchiveGA() { showArchivedGA = !showArchivedGA; loadGenelAgenda(); }
+    async function updateGAStatus(docId, newStatus) { await db.collection('genel_agenda').doc(docId).update({ status: newStatus }); loadGenelAgenda(); }
+    async function toggleArchiveStatusGA(docId) { let g = dbGenelAgenda.find(x => x.docId === docId); if(!g) return; await db.collection('genel_agenda').doc(docId).update({ isArchived: !g.isArchived }); loadGenelAgenda(); }
+    function execCmd(command) { document.execCommand(command, false, null); } 
+    function insertCheckbox() { document.execCommand('insertHTML', false, '&#8203;<input type="checkbox">&#8203; '); }
+    
+    // --- İŞTE EKSİK OLAN FONKSİYONLAR BURASI ---
+    function openAddGenelAgenda() { 
+        document.getElementById('ga-modal-title').innerText = "Genel Ajanda - Görev Ekle"; 
+        document.getElementById('ga-doc-id').value = "new"; 
+        document.getElementById('ga-status').value = 0; 
+        document.getElementById('ga-title').value = ""; 
+        document.getElementById('ga-video').value = 0; 
+        document.getElementById('ga-tasarim').value = 0; 
+        document.getElementById('ga-not').innerHTML = ""; 
+        document.getElementById('ga-ekleyen').value = currentUser.name; 
+        if(gaDatePicker) gaDatePicker.destroy(); 
+        gaDatePicker = flatpickr("#ga-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: new Date(), altInput: true, altFormat: "j F Y" }); 
+        document.getElementById('ga-buttons').innerHTML = `<button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('ga-modal')">Kapat</button><button type="button" class="login-btn btn-purple" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button>`; 
+        openModal('ga-modal'); 
+    }
+    
+    function openEditGenelAgenda(docId) { 
+        let g = dbGenelAgenda.find(x => x.docId === docId); 
+        if(!g) return; 
+        document.getElementById('ga-modal-title').innerText = "Genel Ajanda - Düzenle"; 
+        document.getElementById('ga-doc-id').value = docId; 
+        document.getElementById('ga-status').value = g.status || 0; 
+        document.getElementById('ga-title').value = g.title || ""; 
+        document.getElementById('ga-firma').value = g.firma || ""; 
+        document.getElementById('ga-sorumlu').value = g.sorumlu || ""; 
+        document.getElementById('ga-video').value = g.video || 0; 
+        document.getElementById('ga-tasarim').value = g.tasarim || 0; 
+        document.getElementById('ga-ekleyen').value = g.ekleyen || ""; 
+        document.getElementById('ga-not').innerHTML = g.not || ""; 
+        if(gaDatePicker) gaDatePicker.destroy(); 
+        gaDatePicker = flatpickr("#ga-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: g.tarih, altInput: true, altFormat: "j F Y" }); 
+        document.getElementById('ga-buttons').innerHTML = `<button type="button" class="login-btn btn-purple" style="flex: 1;" onclick="saveGenelAgenda()">Kaydet</button><button type="button" class="login-btn" style="flex: 1; background: var(--primary-red);" onclick="deleteGenelAgenda('${docId}')">Sil</button><button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('ga-modal')">Kapat</button>`; 
+        openModal('ga-modal'); 
+    }
+    
+    async function saveGenelAgenda() { 
+        const docId = document.getElementById('ga-doc-id').value; 
+        const data = { 
+            holding: currentCompany, 
+            title: document.getElementById('ga-title').value, 
+            firma: document.getElementById('ga-firma').value, 
+            tarih: document.getElementById('ga-tarih').value, 
+            sorumlu: document.getElementById('ga-sorumlu').value, 
+            video: parseInt(document.getElementById('ga-video').value) || 0, 
+            tasarim: parseInt(document.getElementById('ga-tasarim').value) || 0, 
+            not: document.getElementById('ga-not').innerHTML, 
+            ekleyen: document.getElementById('ga-ekleyen').value, 
+            isArchived: false, 
+            status: parseInt(document.getElementById('ga-status').value) || 0 
+        }; 
+        try { 
+            if(docId === "new") await db.collection('genel_agenda').add(data); 
+            else { delete data.isArchived; await db.collection('genel_agenda').doc(docId).update(data); } 
+            closeModal('ga-modal'); loadGenelAgenda(); 
+        } catch (error) { 
+            console.error("Kayıt hatası:", error); alert("Kaydedilirken bir hata oluştu."); 
+        } 
+    }
+    
+    async function deleteGenelAgenda(docId) { 
+        if(confirm("Bu kartı silmek istediğinize emin misiniz?")) { 
+            await db.collection('genel_agenda').doc(docId).delete(); 
+            closeModal('ga-modal'); loadGenelAgenda(); 
+        } 
     }
 
 </script>
