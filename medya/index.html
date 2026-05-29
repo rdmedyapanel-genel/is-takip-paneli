@@ -4,21 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RDGRUP MEDYA - İş Takip Paneli</title>
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
-
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
     <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .reklam-table { width: 100%; border-collapse: collapse; min-width: 1300px; font-size: 11px; }
+        .reklam-table th { background: var(--bg-dark); color: white; padding: 10px 5px; text-align: center; border: 1px solid #475569; }
+        .reklam-table td { padding: 8px 4px; border: 1px solid #e2e8f0; text-align: center; background: white; }
+        .reklam-input { width: 100%; min-width: 60px; padding: 6px; font-size: 12px; text-align: center; border: 1px solid #cbd5e1; border-radius: 4px; font-family: 'Poppins', sans-serif; }
+        .reklam-input:focus { border-color: var(--task-purple); outline: none; }
+        .reklam-readonly { background: #f8fafc; font-weight: 700; color: var(--primary-red); border-color: transparent; }
+    </style>
 </head>
 <body>
 
@@ -54,10 +58,7 @@
             <div class="input-group"><label>Tarih:</label><input type="text" id="sh-tarih" placeholder="Tarih seçin..." autocomplete="off"></div>
             <div class="input-group" style="grid-column: span 2;"><label>Saat:</label><input type="time" id="sh-saat" style="font-family: 'Poppins';" autocomplete="off"></div>
         </div>
-        <div class="input-group">
-            <label>Çekimi Yapanlar (Birden fazla seçilebilir):</label>
-            <div class="multi-checkbox-list" id="sh-kisi-list"></div>
-        </div>
+        <div class="input-group"><label>Çekimi Yapanlar (Birden fazla seçilebilir):</label><div class="multi-checkbox-list" id="sh-kisi-list"></div></div>
         <div class="input-group"><label>Çekim Notu:</label><textarea id="sh-not" rows="2" placeholder="Mekan, konsept vb. detaylar..." autocomplete="off"></textarea></div>
         
         <div id="shoot-extra-fields" style="display: none;">
@@ -67,11 +68,7 @@
                 <label><input type="checkbox" id="sh-hdd"> Yedek HDD'ye Alındı</label><label><input type="checkbox" id="sh-drive"> Yedek Drive'a Alındı</label>
             </div>
             <div class="input-group" style="margin-top: 10px;">
-                <label>Yedek Linki:</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="sh-link" placeholder="Drive, WeTransfer vb. link" style="flex: 1;" autocomplete="off">
-                    <button type="button" class="login-btn btn-light" style="width: auto; padding: 10px 15px;" onclick="goToShootLink()" title="Linke Git"><i class="fa-solid fa-arrow-up-right-from-square"></i></button>
-                </div>
+                <label>Yedek Linki:</label><div style="display: flex; gap: 10px;"><input type="text" id="sh-link" placeholder="Drive, WeTransfer vb. link" style="flex: 1;" autocomplete="off"><button type="button" class="login-btn btn-light" style="width: auto; padding: 10px 15px;" onclick="goToShootLink()" title="Linke Git"><i class="fa-solid fa-arrow-up-right-from-square"></i></button></div>
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
                 <div class="input-group"><label>Toplam Boyut:</label><input type="text" id="sh-boyut" placeholder="Örn: 45 GB" autocomplete="off"></div>
@@ -79,9 +76,7 @@
                 <div class="input-group"><label>Video Sayısı:</label><input type="number" id="sh-video" value="0" min="0" autocomplete="off"></div>
             </div>
         </div>
-        <div style="display: flex; gap: 10px; margin-top: 15px;" id="shoot-buttons">
-            <button type="button" class="login-btn btn-orange" id="save-shoot-btn" style="flex: 1;" onclick="saveShoot()">Kaydet</button>
-        </div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;" id="shoot-buttons"><button type="button" class="login-btn btn-orange" id="save-shoot-btn" style="flex: 1;" onclick="saveShoot()">Kaydet</button></div>
     </div>
 </div>
 
@@ -110,9 +105,7 @@
             </div>
             <div id="ga-not" class="rt-editor" contenteditable="true" placeholder="Notları buraya yazınız..."></div>
         </div>
-        <div style="display: flex; gap: 10px; margin-top: 15px;" id="ga-buttons">
-            <button type="button" class="login-btn btn-purple" id="save-ga-btn" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button>
-        </div>
+        <div style="display: flex; gap: 10px; margin-top: 15px;" id="ga-buttons"><button type="button" class="login-btn btn-purple" id="save-ga-btn" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button></div>
     </div>
 </div>
 
@@ -143,10 +136,8 @@
             </div>
             
             <button type="button" class="back-to-company" onclick="backToCompanySelection()"><i class="fa-solid fa-arrow-left"></i> <span>Şube Seçimine Dön</span></button>
-            
             <div class="menu-category" style="font-size: 10px; font-weight: 700; color:#94a3b8; margin-bottom: 8px; letter-spacing: 1px;">MENÜ</div>
             <ul class="menu-list" id="sidebar-menu"></ul>
-            
             <button type="button" class="logout-item" onclick="logout()"><i class="fa-solid fa-power-off"></i> <span>Çıkış Yap</span></button>
         </div>
         
@@ -157,12 +148,10 @@
 </div>
 
 <script src="../js/firebase-config.js"></script>
-
 <script>
-    let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = [];
-    let currentUser = null; 
-    let currentCompany = "RDGRUP MEDYA"; 
-    let activePage = ""; let showArchivedGA = false; let reportDate = new Date();
+    let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = []; let dbAds = [];
+    let currentUser = null; let currentCompany = "RDGRUP MEDYA"; 
+    let activePage = ""; let showArchivedGA = false; let reportDate = new Date(); let reklamDate = new Date();
     let taskDatePicker, shootDatePicker, chkDatePicker, gaDatePicker;
     let calDate = new Date(); let currentCalView = 'month'; let currentChecklistDate = formatDate(new Date()); let isSidebarCollapsed = false;
 
@@ -174,41 +163,20 @@
         return [year, month, day].join('-');
     }
 
-    function formatDateTR(dateString) {
-        if(!dateString) return "";
-        return new Date(dateString).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
-    }
-
-    function calculateDaysPassed(dateString) {
-        if (!dateString) return null;
-        const targetDate = new Date(dateString); const today = new Date();
-        targetDate.setHours(0,0,0,0); today.setHours(0,0,0,0);
-        const diffTime = today - targetDate; 
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays >= 0 ? diffDays : 0; 
-    }
+    function formatDateTR(dateString) { if(!dateString) return ""; return new Date(dateString).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }); }
+    function calculateDaysPassed(dateString) { if (!dateString) return null; const targetDate = new Date(dateString); const today = new Date(); targetDate.setHours(0,0,0,0); today.setHours(0,0,0,0); const diffTime = today - targetDate; const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); return diffDays >= 0 ? diffDays : 0; }
 
     window.onload = async function() {
         const savedUser = localStorage.getItem('rdgrup_user');
         if (!savedUser) { window.location.href = '../index.html'; return; }
-        
         currentUser = JSON.parse(savedUser);
-        document.getElementById('logged-user-name').innerText = currentUser.name || "Kullanıcı";
-        document.getElementById('logged-user-role').innerText = currentUser.role || "Bilinmiyor";
-        document.getElementById('logged-avatar').innerText = (currentUser.name || "?").charAt(0).toUpperCase();
-
+        document.getElementById('logged-user-name').innerText = currentUser.name || "Kullanıcı"; document.getElementById('logged-user-role').innerText = currentUser.role || "Bilinmiyor"; document.getElementById('logged-avatar').innerText = (currentUser.name || "?").charAt(0).toUpperCase();
         await initializeSystem();
     };
 
     async function initializeSystem() {
         try {
-            await fetchCompaniesFromFirebase(); 
-            await fetchUsersFromFirebase();     
-            await fetchTasksFromFirebase();
-            await fetchShootsFromFirebase();
-            await fetchAgendaFromFirebase();
-            await fetchGenelAgendaFromFirebase();
-            
+            await fetchCompaniesFromFirebase(); await fetchUsersFromFirebase(); await fetchTasksFromFirebase(); await fetchShootsFromFirebase(); await fetchAgendaFromFirebase(); await fetchGenelAgendaFromFirebase(); await fetchAdsFromFirebase();
             loadSidebarMenu();
         } catch (error) { console.error("Bağlantı hatası: ", error); }
     }
@@ -226,6 +194,7 @@
     async function fetchAgendaFromFirebase() { const snapshot = await db.collection('agenda').get(); dbAgenda = []; snapshot.forEach(doc => { dbAgenda.push({ docId: doc.id, ...doc.data() }); }); }
     async function fetchGenelAgendaFromFirebase() { const snapshot = await db.collection('genel_agenda').get(); dbGenelAgenda = []; snapshot.forEach(doc => { dbGenelAgenda.push({ docId: doc.id, ...doc.data() }); }); }
     async function fetchPersonalAgendaFromFirebase() { if(!currentUser) return; const snapshot = await db.collection('personal_agenda').where('userId', '==', currentUser.id).get(); dbPersonalAgenda = []; snapshot.forEach(doc => { dbPersonalAgenda.push({ docId: doc.id, ...doc.data() }); }); }
+    async function fetchAdsFromFirebase() { const snapshot = await db.collection('ads_data').get(); dbAds = []; snapshot.forEach(doc => { dbAds.push({ docId: doc.id, ...doc.data() }); }); }
 
     function populateUserDropdowns() {
         const hSelect = document.getElementById('t-hazirlayan'), pSelect = document.getElementById('t-paylasan'); const sSelect = document.getElementById('sh-kisi-list'), gaSelect = document.getElementById('ga-sorumlu');
@@ -240,9 +209,8 @@
     function populateCompanyDropdown() {
         const fSelect = document.getElementById('t-firma'), shSelect = document.getElementById('sh-firma'), gaSelect = document.getElementById('ga-firma');
         if(fSelect) fSelect.innerHTML = ''; if(shSelect) shSelect.innerHTML = ''; if(gaSelect) gaSelect.innerHTML = '';
-        if(dbCompanies.length === 0) {
-            let opt = new Option("Firma bulunamadı", ""); if(fSelect) fSelect.add(opt); if(shSelect) shSelect.add(opt); if(gaSelect) gaSelect.add(opt);
-        } else { dbCompanies.forEach(c => { const cName = c.name || "İsimsiz"; if(fSelect) fSelect.add(new Option(cName, cName)); if(shSelect) shSelect.add(new Option(cName, cName)); if(gaSelect) gaSelect.add(new Option(cName, cName)); }); }
+        if(dbCompanies.length === 0) { let opt = new Option("Firma bulunamadı", ""); if(fSelect) fSelect.add(opt); if(shSelect) shSelect.add(opt); if(gaSelect) gaSelect.add(opt); } 
+        else { dbCompanies.forEach(c => { const cName = c.name || "İsimsiz"; if(fSelect) fSelect.add(new Option(cName, cName)); if(shSelect) shSelect.add(new Option(cName, cName)); if(gaSelect) gaSelect.add(new Option(cName, cName)); }); }
     }
 
     function loadSidebarMenu() {
@@ -252,16 +220,16 @@
             { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' },
             { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' },
             { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' },
-            { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, { icon: 'fa-chart-bar', name: 'Raporlar' }
+            { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, 
+            { icon: 'fa-bullhorn', name: 'Reklamlar' }, // REKLAMLAR EKLENDİ
+            { icon: 'fa-chart-bar', name: 'Raporlar' }
         ];
 
-        const role = (currentUser.role || "").toLowerCase();
-        const isAdminOrYonetici = role === 'admin' || role === 'yönetici' || currentUser.id === 'alperen';
+        const role = (currentUser.role || "").toLowerCase(); const isAdminOrYonetici = role === 'admin' || role === 'yönetici' || currentUser.id === 'alperen';
 
         items.forEach((item) => {
-            if (item.name === 'Raporlar' && !isAdminOrYonetici) return; 
-            const li = document.createElement('li');
-            li.className = 'menu-item';
+            if ((item.name === 'Raporlar' || item.name === 'Reklamlar') && !isAdminOrYonetici) return; 
+            const li = document.createElement('li'); li.className = 'menu-item';
             if (sidebarMenu.children.length === 0) li.classList.add('active'); 
             li.innerHTML = `<i class="fa-solid ${item.icon}"></i> <span>${item.name}</span>`;
             li.onclick = () => { document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); li.classList.add('active'); loadPageView(item.name); };
@@ -271,9 +239,9 @@
     }
 
     function loadPageView(pageName) {
-        activePage = pageName;
-        const mainContent = document.getElementById('main-content');
+        activePage = pageName; const mainContent = document.getElementById('main-content');
         if (pageName === 'Raporlar') { reportDate = new Date(); loadRaporlarPage(); }
+        else if (pageName === 'Reklamlar') { reklamDate = new Date(); loadReklamlarPage(); } // REKLAMLAR YÖNLENDİRMESİ
         else if (pageName === 'Firmalar') loadFirmalarPage();
         else if (pageName === 'Checklist') loadChecklistPage(currentChecklistDate);
         else if (pageName === 'Genel Ajanda') loadGenelAgenda();
@@ -282,124 +250,179 @@
         else if (pageName.includes('Takvim')) { mainContent.innerHTML = renderCalendarView(pageName); initCalendar(); }
     }
 
+    // --- REKLAMLAR SAYFASI (YENİ EKLENTİ) ---
+    function loadReklamlarPage() {
+        let y = reklamDate.getFullYear(); let m = reklamDate.getMonth() + 1; 
+        let monthStr = `${y}-${m < 10 ? '0'+m : m}`; 
+        let displayMonth = reklamDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+
+        let targetComps = dbCompanies.filter(c => c.showInAds === true);
+
+        let html = `
+            <div class="content-card" style="padding: 20px; overflow-x: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Reklam Yönetimi</h2></div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #f8fafc; padding: 10px 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button type="button" class="action-btn" onclick="changeReklamMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button type="button" class="action-btn" onclick="changeReklamMonth(1)"><i class="fa-solid fa-chevron-right"></i></button>
+                        <button type="button" class="login-btn btn-light" style="width: auto; padding: 5px 12px; font-size: 11px; margin:0;" onclick="reklamDate = new Date(); loadReklamlarPage();">Bu Ay</button>
+                    </div>
+                    <h3 style="font-size: 16px; color: var(--bg-dark); font-weight: 700; margin: 0; text-transform:uppercase;">${displayMonth}</h3>
+                    <div style="width: 100px;"></div>
+                </div>
+        `;
+
+        if (targetComps.length === 0) {
+            html += `<div style="text-align:center; color:var(--text-muted); padding:30px;">Reklam sayfasında görünecek firma bulunamadı. Lütfen Admin panelinden firmaları düzenleyip onaylayın.</div></div>`;
+            document.getElementById('main-content').innerHTML = html;
+            return;
+        }
+
+        html += `
+            <table class="reklam-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 150px; text-align: left;">Firma Adı</th>
+                        <th>Tamamlanan<br>Reklam (Adet)</th>
+                        <th>Tamamlanan<br>Bütçe (₺)</th>
+                        <th style="background:#475569;">Bütçe + KDV (₺)</th>
+                        <th>Aktif Reklam 1</th>
+                        <th>Aktif Reklam 2</th>
+                        <th>Aktif Reklam 3</th>
+                        <th>Aktif Reklam 4</th>
+                        <th>Aktif Reklam 5</th>
+                        <th style="background:#475569;">Top. Aktif + KDV</th>
+                        <th style="background:#475569;">Bu Ay Top. Harcanan</th>
+                        <th>Firma Bütçesi (₺)</th>
+                        <th style="background:#1e293b; color:#10b981;">Kalan Bütçe</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        targetComps.forEach(c => {
+            let docIdStr = `${c.docId}_${monthStr}`;
+            let adData = dbAds.find(a => a.docId === docIdStr) || {};
+
+            html += `
+                <tr>
+                    <td style="font-weight: 700; color: var(--bg-dark); text-align: left;"><i class="fa-solid fa-building" style="margin-right:6px; color:var(--text-muted);"></i>${c.name}</td>
+                    <td><input type="number" id="r_count_${c.docId}" class="reklam-input" value="${adData.count || 0}"></td>
+                    <td><input type="number" id="r_compBudg_${c.docId}" class="reklam-input" value="${adData.compBudg || 0}" oninput="calcReklam('${c.docId}')"></td>
+                    <td><input type="text" id="r_compKdv_${c.docId}" class="reklam-input reklam-readonly" readonly></td>
+                    <td><input type="number" id="r_act1_${c.docId}" class="reklam-input" value="${adData.act1 || 0}" oninput="calcReklam('${c.docId}')"></td>
+                    <td><input type="number" id="r_act2_${c.docId}" class="reklam-input" value="${adData.act2 || 0}" oninput="calcReklam('${c.docId}')"></td>
+                    <td><input type="number" id="r_act3_${c.docId}" class="reklam-input" value="${adData.act3 || 0}" oninput="calcReklam('${c.docId}')"></td>
+                    <td><input type="number" id="r_act4_${c.docId}" class="reklam-input" value="${adData.act4 || 0}" oninput="calcReklam('${c.docId}')"></td>
+                    <td><input type="number" id="r_act5_${c.docId}" class="reklam-input" value="${adData.act5 || 0}" oninput="calcReklam('${c.docId}')"></td>
+                    <td><input type="text" id="r_actTotalKdv_${c.docId}" class="reklam-input reklam-readonly" readonly></td>
+                    <td><input type="text" id="r_totalSpent_${c.docId}" class="reklam-input reklam-readonly" readonly></td>
+                    <td><input type="number" id="r_totalBudg_${c.docId}" class="reklam-input" style="border-color: #6366f1;" value="${adData.totalBudg || 0}" oninput="calcReklam('${c.docId}')"></td>
+                    <td><input type="text" id="r_remaining_${c.docId}" class="reklam-input reklam-readonly" style="color:#10b981;" readonly></td>
+                </tr>
+            `;
+        });
+
+        html += `
+                </tbody>
+            </table>
+            <div style="text-align: right; margin-top: 20px;">
+                <button type="button" id="save-reklam-btn" class="login-btn btn-purple" style="width: auto; padding: 12px 25px;" onclick="saveAllReklam()">Tüm Değişiklikleri Kaydet</button>
+            </div>
+        </div>`;
+
+        document.getElementById('main-content').innerHTML = html;
+        
+        targetComps.forEach(c => calcReklam(c.docId));
+    }
+
+    function changeReklamMonth(direction) { reklamDate.setMonth(reklamDate.getMonth() + direction); loadReklamlarPage(); }
+
+    function calcReklam(docId) {
+        let compBudg = parseFloat(document.getElementById(`r_compBudg_${docId}`).value) || 0;
+        let compKdv = compBudg * 1.20;
+        document.getElementById(`r_compKdv_${docId}`).value = compKdv.toFixed(2);
+
+        let a1 = parseFloat(document.getElementById(`r_act1_${docId}`).value) || 0;
+        let a2 = parseFloat(document.getElementById(`r_act2_${docId}`).value) || 0;
+        let a3 = parseFloat(document.getElementById(`r_act3_${docId}`).value) || 0;
+        let a4 = parseFloat(document.getElementById(`r_act4_${docId}`).value) || 0;
+        let a5 = parseFloat(document.getElementById(`r_act5_${docId}`).value) || 0;
+        
+        let actTotalKdv = (a1 + a2 + a3 + a4 + a5) * 1.20;
+        document.getElementById(`r_actTotalKdv_${docId}`).value = actTotalKdv.toFixed(2);
+
+        let totalSpent = compKdv + actTotalKdv;
+        document.getElementById(`r_totalSpent_${docId}`).value = totalSpent.toFixed(2);
+
+        let totalBudg = parseFloat(document.getElementById(`r_totalBudg_${docId}`).value) || 0;
+        let remaining = totalBudg - totalSpent;
+        document.getElementById(`r_remaining_${docId}`).value = remaining.toFixed(2);
+    }
+
+    async function saveAllReklam() {
+        let btn = document.getElementById('save-reklam-btn'); btn.innerText = "Kaydediliyor...";
+        let y = reklamDate.getFullYear(); let m = reklamDate.getMonth() + 1; let monthStr = `${y}-${m < 10 ? '0'+m : m}`; 
+        
+        let targetComps = dbCompanies.filter(c => c.showInAds === true);
+        
+        try {
+            for (let c of targetComps) {
+                let docIdStr = `${c.docId}_${monthStr}`;
+                let data = {
+                    companyId: c.docId, month: monthStr,
+                    count: parseInt(document.getElementById(`r_count_${c.docId}`).value) || 0,
+                    compBudg: parseFloat(document.getElementById(`r_compBudg_${c.docId}`).value) || 0,
+                    act1: parseFloat(document.getElementById(`r_act1_${c.docId}`).value) || 0,
+                    act2: parseFloat(document.getElementById(`r_act2_${c.docId}`).value) || 0,
+                    act3: parseFloat(document.getElementById(`r_act3_${docId}`).value) || 0,
+                    act4: parseFloat(document.getElementById(`r_act4_${docId}`).value) || 0,
+                    act5: parseFloat(document.getElementById(`r_act5_${docId}`).value) || 0,
+                    totalBudg: parseFloat(document.getElementById(`r_totalBudg_${c.docId}`).value) || 0
+                };
+                await db.collection('ads_data').doc(docIdStr).set(data);
+            }
+            await fetchAdsFromFirebase();
+            btn.innerText = "Değişiklikler Kaydedildi!"; btn.style.background = "#10b981";
+            setTimeout(() => { btn.innerText = "Tüm Değişiklikleri Kaydet"; btn.style.background = "var(--task-purple)"; }, 2000);
+        } catch (error) {
+            console.error("Reklam Kayıt Hatası:", error); alert("Kaydedilirken hata oluştu!"); btn.innerText = "Tüm Değişiklikleri Kaydet";
+        }
+    }
+
     function renderDashboardHome(pageName) {
         let todayStr = formatDate(new Date()); let tomorrowStr = new Date(); tomorrowStr.setDate(tomorrowStr.getDate() + 1); tomorrowStr = formatDate(tomorrowStr);
         let myTasksOnly = (pageName === 'Kendi İşlerim');
-
         let validTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(currentCompany));
         let validShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany));
-
-        let allItems = [
-            ...validTasks.map(t => ({...t, itemType: 'task', isDone: (t.hazirlandi && t.paylasildi)})),
-            ...validShoots.map(s => { let kisiStr = Array.isArray(s.kisi) ? s.kisi.join(', ') : s.kisi; return {...s, itemType: 'shoot', tur: 'Çekim', hazirlayan: kisiStr, paylasan: '-', isDone: (s.cekildi && s.teslim && s.hdd && s.drive)}; })
-        ];
-
-        let gecikenler = allItems.filter(t => t.tarih < todayStr && !t.isDone);
-        let bugun = allItems.filter(t => t.tarih === todayStr);
-        let yarin = allItems.filter(t => t.tarih === tomorrowStr);
-
-        if (myTasksOnly) {
-            gecikenler = gecikenler.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name);
-            bugun = bugun.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name);
-            yarin = yarin.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name);
-        }
-
-        const renderMiniCard = (t) => {
-            const extraClass = t.itemType === 'shoot' ? 'shoot' : ''; 
-            const clickFn = t.itemType === 'shoot' ? `openEditShoot('${t.docId}')` : `openEditTask('${t.docId}')`;
-            const indexStr = t.itemType === 'task' ? ` - ${getTaskIndex(t)}` : ''; 
-            return `<div class="task-card ${extraClass} ${t.isDone ? 'completed' : ''}" onclick="${clickFn}" style="color:white; cursor:pointer;"><b>${t.firma || ""}</b> - ${t.tur || ""}${indexStr} (K:${t.hazirlayan || ""})</div>`;
-        };
-
-        let myAgenda = dbAgenda.filter(a => a.company === currentCompany || a.company === 'Tümü');
-        let agendaHtml = myAgenda.length > 0 ? myAgenda.map(a => `<div class="agenda-item"><span>${a.text || ""}</span> <button type="button" class="action-btn" onclick="deleteAgenda('${a.docId}')"><i class="fa-solid fa-check"></i></button></div>`).join('') : `<div class="dash-empty-state">Aktif not bulunmuyor.</div>`;
-
-        return `
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h2 class="content-title" style="margin-bottom: 0; border: none;">${currentCompany} - ${pageName}</h2><div style="color: var(--text-muted); font-size: 13px;">${new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div></div>
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-                <div class="dash-card"><div class="dash-card-header"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary-red);"></i> Geciken İşler</div><div class="dash-task-list">${gecikenler.length > 0 ? gecikenler.map(renderMiniCard).join('') : '<div class="dash-empty-state">Geciken iş bulunmuyor.</div>'}</div></div>
-                <div class="dash-card"><div class="dash-card-header"><i class="fa-solid fa-calendar-day" style="color: #f59e0b;"></i> Bugünün İşleri</div><div class="dash-task-list">${bugun.length > 0 ? bugun.map(renderMiniCard).join('') : '<div class="dash-empty-state">Bugün için kayıtlı iş yok.</div>'}</div></div>
-                <div class="dash-card"><div class="dash-card-header"><i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Yarının İşleri</div><div class="dash-task-list">${yarin.length > 0 ? yarin.map(renderMiniCard).join('') : '<div class="dash-empty-state">Yarına ait kayıtlı iş yok.</div>'}</div></div>
-            </div>
-            <div class="content-card" style="margin-top: 15px; padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;"><h3 style="color: var(--bg-dark); font-size: 15px;"><i class="fa-solid fa-book-open" style="color: var(--task-purple); margin-right:5px;"></i> Aktif Ajanda Notları</h3></div>
-                <div style="display:flex; gap:10px; margin-bottom: 15px;"><input type="text" id="new-agenda-note" placeholder="Hızlı not ekle..." style="flex:1; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family:'Poppins';" autocomplete="off"><button type="button" class="login-btn" style="width: auto; padding: 8px 15px; font-size:12px;" onclick="addAgendaNote()">Ekle</button></div>
-                <div>${agendaHtml}</div>
-            </div>
-        `;
+        let allItems = [...validTasks.map(t => ({...t, itemType: 'task', isDone: (t.hazirlandi && t.paylasildi)})), ...validShoots.map(s => { let kisiStr = Array.isArray(s.kisi) ? s.kisi.join(', ') : s.kisi; return {...s, itemType: 'shoot', tur: 'Çekim', hazirlayan: kisiStr, paylasan: '-', isDone: (s.cekildi && s.teslim && s.hdd && s.drive)}; })];
+        let gecikenler = allItems.filter(t => t.tarih < todayStr && !t.isDone); let bugun = allItems.filter(t => t.tarih === todayStr); let yarin = allItems.filter(t => t.tarih === tomorrowStr);
+        if (myTasksOnly) { gecikenler = gecikenler.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name); bugun = bugun.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name); yarin = yarin.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name); }
+        const renderMiniCard = (t) => { const extraClass = t.itemType === 'shoot' ? 'shoot' : ''; const clickFn = t.itemType === 'shoot' ? `openEditShoot('${t.docId}')` : `openEditTask('${t.docId}')`; const indexStr = t.itemType === 'task' ? ` - ${getTaskIndex(t)}` : ''; return `<div class="task-card ${extraClass} ${t.isDone ? 'completed' : ''}" onclick="${clickFn}" style="color:white; cursor:pointer;"><b>${t.firma || ""}</b> - ${t.tur || ""}${indexStr} (K:${t.hazirlayan || ""})</div>`; };
+        let myAgenda = dbAgenda.filter(a => a.company === currentCompany || a.company === 'Tümü'); let agendaHtml = myAgenda.length > 0 ? myAgenda.map(a => `<div class="agenda-item"><span>${a.text || ""}</span> <button type="button" class="action-btn" onclick="deleteAgenda('${a.docId}')"><i class="fa-solid fa-check"></i></button></div>`).join('') : `<div class="dash-empty-state">Aktif not bulunmuyor.</div>`;
+        return `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h2 class="content-title" style="margin-bottom: 0; border: none;">${currentCompany} - ${pageName}</h2><div style="color: var(--text-muted); font-size: 13px;">${new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;"><div class="dash-card"><div class="dash-card-header"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary-red);"></i> Geciken İşler</div><div class="dash-task-list">${gecikenler.length > 0 ? gecikenler.map(renderMiniCard).join('') : '<div class="dash-empty-state">Geciken iş bulunmuyor.</div>'}</div></div><div class="dash-card"><div class="dash-card-header"><i class="fa-solid fa-calendar-day" style="color: #f59e0b;"></i> Bugünün İşleri</div><div class="dash-task-list">${bugun.length > 0 ? bugun.map(renderMiniCard).join('') : '<div class="dash-empty-state">Bugün için kayıtlı iş yok.</div>'}</div></div><div class="dash-card"><div class="dash-card-header"><i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Yarının İşleri</div><div class="dash-task-list">${yarin.length > 0 ? yarin.map(renderMiniCard).join('') : '<div class="dash-empty-state">Yarına ait kayıtlı iş yok.</div>'}</div></div></div><div class="content-card" style="margin-top: 15px; padding: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;"><h3 style="color: var(--bg-dark); font-size: 15px;"><i class="fa-solid fa-book-open" style="color: var(--task-purple); margin-right:5px;"></i> Aktif Ajanda Notları</h3></div><div style="display:flex; gap:10px; margin-bottom: 15px;"><input type="text" id="new-agenda-note" placeholder="Hızlı not ekle..." style="flex:1; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family:'Poppins';" autocomplete="off"><button type="button" class="login-btn" style="width: auto; padding: 8px 15px; font-size:12px;" onclick="addAgendaNote()">Ekle</button></div><div>${agendaHtml}</div></div>`;
     }
 
     async function addAgendaNote() { const text = document.getElementById('new-agenda-note').value.trim(); if(!text) return; await db.collection('agenda').add({ text: text, company: currentCompany, date: formatDate(new Date()) }); await fetchAgendaFromFirebase(); loadPageView(activePage); }
     async function deleteAgenda(docId) { await db.collection('agenda').doc(docId).delete(); await fetchAgendaFromFirebase(); loadPageView(activePage); }
 
-    // --- TAKVİM VE SÜRÜKLE BIRAK EKLENTİSİ ---
     function renderCalendarView(pageName) {
-        let headerAction = '';
-        if (pageName === 'Paylaşım Takvimi') headerAction = `<button type="button" class="login-btn btn-purple" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddTask()"><i class="fa-solid fa-plus"></i> <span>Paylaşım Ekle</span></button>`;
-        else if (pageName === 'Çekim Takvimi') headerAction = `<button type="button" class="login-btn btn-orange" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddShoot()"><i class="fa-solid fa-plus"></i> <span>Çekim Ekle</span></button>`;
-        else if (pageName === 'Genel Takvim') headerAction = `<div style="font-size:11px; color:var(--text-muted); font-style:italic;">* Yalnızca Görüntüleme</div>`;
-
-        return `
-            <div class="content-card" style="padding: 20px; display: flex; flex-direction: column;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - ${pageName}</h2>${headerAction}</div>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f8fafc; padding: 8px 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
-                    <div style="display: flex; gap: 8px; align-items: center;"><button type="button" class="action-btn" onclick="changeCalNav(-1)"><i class="fa-solid fa-chevron-left"></i></button><button type="button" class="action-btn" onclick="changeCalNav(1)"><i class="fa-solid fa-chevron-right"></i></button><button type="button" class="login-btn" style="width: auto; padding: 5px 12px; font-size: 11px; margin:0;" onclick="resetToToday()">Bugün</button></div>
-                    <h3 id="calendar-month-year" style="font-size: 15px; color: var(--bg-dark); font-weight: 700; margin: 0; text-transform:uppercase;">Yükleniyor...</h3>
-                    <div style="display: flex; gap: 10px;"><button type="button" class="action-btn active" id="btn-view-month" onclick="changeCalView('month')">Aylık</button><button type="button" class="action-btn" id="btn-view-week" onclick="changeCalView('week')">Haftalık</button><button type="button" class="action-btn" id="btn-view-day" onclick="changeCalView('day')">Günlük</button></div>
-                </div>
-                <div class="cal-grid" id="calendar-wrapper"></div>
-            </div>
-        `;
+        let headerAction = ''; if (pageName === 'Paylaşım Takvimi') headerAction = `<button type="button" class="login-btn btn-purple" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddTask()"><i class="fa-solid fa-plus"></i> <span>Paylaşım Ekle</span></button>`; else if (pageName === 'Çekim Takvimi') headerAction = `<button type="button" class="login-btn btn-orange" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddShoot()"><i class="fa-solid fa-plus"></i> <span>Çekim Ekle</span></button>`; else if (pageName === 'Genel Takvim') headerAction = `<div style="font-size:11px; color:var(--text-muted); font-style:italic;">* Yalnızca Görüntüleme</div>`;
+        return `<div class="content-card" style="padding: 20px; display: flex; flex-direction: column;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - ${pageName}</h2>${headerAction}</div><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f8fafc; padding: 8px 15px; border-radius: 10px; border: 1px solid #e2e8f0;"><div style="display: flex; gap: 8px; align-items: center;"><button type="button" class="action-btn" onclick="changeCalNav(-1)"><i class="fa-solid fa-chevron-left"></i></button><button type="button" class="action-btn" onclick="changeCalNav(1)"><i class="fa-solid fa-chevron-right"></i></button><button type="button" class="login-btn" style="width: auto; padding: 5px 12px; font-size: 11px; margin:0;" onclick="resetToToday()">Bugün</button></div><h3 id="calendar-month-year" style="font-size: 15px; color: var(--bg-dark); font-weight: 700; margin: 0; text-transform:uppercase;">Yükleniyor...</h3><div style="display: flex; gap: 10px;"><button type="button" class="action-btn active" id="btn-view-month" onclick="changeCalView('month')">Aylık</button><button type="button" class="action-btn" id="btn-view-week" onclick="changeCalView('week')">Haftalık</button><button type="button" class="action-btn" id="btn-view-day" onclick="changeCalView('day')">Günlük</button></div></div><div class="cal-grid" id="calendar-wrapper"></div></div>`;
     }
     function changeCalView(view) { currentCalView = view; ['month', 'week', 'day'].forEach(v => document.getElementById('btn-view-'+v).classList.remove('active')); document.getElementById('btn-view-' + view).classList.add('active'); initCalendar(); }
     function changeCalNav(direction) { if(currentCalView === 'month') calDate.setMonth(calDate.getMonth() + direction); if(currentCalView === 'week') calDate.setDate(calDate.getDate() + (direction * 7)); if(currentCalView === 'day') calDate.setDate(calDate.getDate() + direction); initCalendar(); }
     function resetToToday() { calDate = new Date(); initCalendar(); }
-    
-    function getTaskIndex(task) { 
-        const taskMonth = (task.tarih || "").substring(0, 7); 
-        let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(task.firma) && (t.tarih || "").startsWith(taskMonth)); 
-        monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); 
-        const index = monthlyTasks.findIndex(t => t.docId === task.docId); 
-        return index !== -1 ? index + 1 : '?'; 
-    }
-
-    // DRAG AND DROP FONKSİYONLARI
-    function dragTask(ev, docId) {
-        ev.dataTransfer.setData("text/plain", docId);
-    }
-    function allowDrop(ev) {
-        ev.preventDefault();
-    }
-    async function dropTask(ev, newDateStr) {
-        ev.preventDefault();
-        const docId = ev.dataTransfer.getData("text/plain");
-        if(!docId || !newDateStr) return;
-        
-        let isTask = dbTasks.find(x => x.docId === docId);
-        let isShoot = dbShoots.find(x => x.docId === docId);
-        
-        if(isTask) {
-            await db.collection('tasks').doc(docId).update({ tarih: newDateStr });
-            await fetchTasksFromFirebase();
-        } else if(isShoot) {
-            await db.collection('shoots').doc(docId).update({ tarih: newDateStr });
-            await fetchShootsFromFirebase();
-        }
-        loadPageView(activePage); 
-    }
+    function getTaskIndex(task) { const taskMonth = (task.tarih || "").substring(0, 7); let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(task.firma) && (t.tarih || "").startsWith(taskMonth)); monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); const index = monthlyTasks.findIndex(t => t.docId === task.docId); return index !== -1 ? index + 1 : '?'; }
+    function dragTask(ev, docId) { ev.dataTransfer.setData("text/plain", docId); } function allowDrop(ev) { ev.preventDefault(); }
+    async function dropTask(ev, newDateStr) { ev.preventDefault(); const docId = ev.dataTransfer.getData("text/plain"); if(!docId || !newDateStr) return; let isTask = dbTasks.find(x => x.docId === docId); let isShoot = dbShoots.find(x => x.docId === docId); if(isTask) { await db.collection('tasks').doc(docId).update({ tarih: newDateStr }); await fetchTasksFromFirebase(); } else if(isShoot) { await db.collection('shoots').doc(docId).update({ tarih: newDateStr }); await fetchShootsFromFirebase(); } loadPageView(activePage); }
 
     function initCalendar() {
         const grid = document.getElementById('calendar-wrapper'); const monthYearText = document.getElementById('calendar-month-year'); grid.innerHTML = '';
         let y = calDate.getFullYear(); let m = calDate.getMonth();
         if(currentCalView === 'day') monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }); else monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
-
-        let validTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(currentCompany));
-        let validShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany));
-        let visibleItems = [];
-
-        if (activePage === 'Paylaşım Takvimi') visibleItems = validTasks.map(t => ({...t, itemType: 'task'})); 
-        else if (activePage === 'Çekim Takvimi') visibleItems = validShoots.map(s => ({...s, itemType: 'shoot'})); 
-        else visibleItems = [...validTasks.map(t => ({...t, itemType: 'task'})), ...validShoots.map(s => ({...s, itemType: 'shoot'}))];
+        let validTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(currentCompany)); let validShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany)); let visibleItems = [];
+        if (activePage === 'Paylaşım Takvimi') visibleItems = validTasks.map(t => ({...t, itemType: 'task'})); else if (activePage === 'Çekim Takvimi') visibleItems = validShoots.map(s => ({...s, itemType: 'shoot'})); else visibleItems = [...validTasks.map(t => ({...t, itemType: 'task'})), ...validShoots.map(s => ({...s, itemType: 'shoot'}))];
 
         function getTasksForDateHTML(dateString) {
             const dayItems = visibleItems.filter(t => t.tarih === dateString); if(dayItems.length === 0) return '';
@@ -407,17 +430,8 @@
             dayItems.forEach(t => {
                 const isReadOnly = (activePage === 'Genel Takvim');
                 if(t.itemType === 'task') {
-                    const isCompleted = t.hazirlandi && t.paylasildi; 
-                    const tIndex = getTaskIndex(t);
-                    // EKLENDİ: draggable="true" ondragstart="dragTask..."
-                    html += `<div class="task-card ${isCompleted ? 'completed' : ''}" draggable="${!isReadOnly}" ondragstart="dragTask(event, '${t.docId}')" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}">
-            <div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div>
-            <div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div>
-            <div class="task-text">
-                <div class="task-line">${t.firma || ""} (<strong>${t.tur || ""}</strong>) - <b>${tIndex}</b></div>
-                <div class="task-line">H: <strong>${t.hazirlayan || ""}</strong>, P: ${t.paylasan || ""}</div>
-            </div>
-         </div>`;
+                    const isCompleted = t.hazirlandi && t.paylasildi; const tIndex = getTaskIndex(t);
+                    html += `<div class="task-card ${isCompleted ? 'completed' : ''}" draggable="${!isReadOnly}" ondragstart="dragTask(event, '${t.docId}')" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}"><div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div><div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div><div class="task-text"><div class="task-line">${t.firma || ""} (<strong>${t.tur || ""}</strong>) - <b>${tIndex}</b></div><div class="task-line">H: <strong>${t.hazirlayan || ""}</strong>, P: ${t.paylasan || ""}</div></div></div>`;
                 } else {
                     const isCompleted = t.cekildi && t.teslim && t.hdd && t.drive; let kisiDisplay = Array.isArray(t.kisi) ? t.kisi.join(', ') : t.kisi;
                     html += `<div class="task-card shoot ${isCompleted ? 'completed' : ''}" draggable="${!isReadOnly}" ondragstart="dragTask(event, '${t.docId}')" onclick="${isReadOnly ? '' : `openEditShoot('${t.docId}')`}"><i class="fa-solid fa-camera" style="margin-right:2px;"></i><div class="task-text">${t.saat ? t.saat+' ' : ''}${t.firma || ""} - ${kisiDisplay}</div></div>`;
@@ -425,164 +439,42 @@
             }); html += '</div>'; return html;
         }
 
-        if(currentCalView === 'month') {
-            grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`;
-            let firstDay = new Date(y, m, 1).getDay() - 1; if(firstDay === -1) firstDay = 6; let daysInMonth = new Date(y, m + 1, 0).getDate();
-            for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day padding"></div>`;
-            for(let i=1; i<=daysInMonth; i++) { 
-                let cellDate = new Date(y, m, i); let dateStr = formatDate(cellDate); let isToday = (i === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear()); 
-                // EKLENDİ: ondragover ve ondrop
-                grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div>${getTasksForDateHTML(dateStr)}</div>`; 
-            }
-        } else if (currentCalView === 'week') {
-            grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`;
-            let dayOfWeek = calDate.getDay() - 1; if(dayOfWeek === -1) dayOfWeek = 6; let startOfWeek = new Date(calDate); startOfWeek.setDate(calDate.getDate() - dayOfWeek);
-            for(let i=0; i<7; i++) { 
-                let currentDay = new Date(startOfWeek); currentDay.setDate(startOfWeek.getDate() + i); let dateStr = formatDate(currentDay); let isToday = (currentDay.getDate() === new Date().getDate() && currentDay.getMonth() === new Date().getMonth() && currentDay.getFullYear() === new Date().getFullYear()); 
-                grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div>${getTasksForDateHTML(dateStr)}</div>`; 
-            }
-        } else if (currentCalView === 'day') {
-            grid.style.gridTemplateColumns = '1fr'; grid.innerHTML = `<div class="cal-header-day">${calDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>`;
-            let isToday = (calDate.getDate() === new Date().getDate() && calDate.getMonth() === new Date().getMonth() && calDate.getFullYear() === new Date().getFullYear()); let dateStr = formatDate(calDate); let tasksHtml = getTasksForDateHTML(dateStr);
-            grid.innerHTML += `<div class="cal-day" style="min-height: 300px; padding: 20px;" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 15px; font-size: 24px;">${calDate.getDate()}</div><div style="margin-top: 5px;">${tasksHtml !== '' ? tasksHtml : '<div style="color:var(--text-muted); font-size:14px;">Kayıt bulunmuyor.</div>'}</div></div>`;
-        }
+        if(currentCalView === 'month') { grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`; let firstDay = new Date(y, m, 1).getDay() - 1; if(firstDay === -1) firstDay = 6; let daysInMonth = new Date(y, m + 1, 0).getDate(); for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day padding"></div>`; for(let i=1; i<=daysInMonth; i++) { let cellDate = new Date(y, m, i); let dateStr = formatDate(cellDate); let isToday = (i === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear()); grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div>${getTasksForDateHTML(dateStr)}</div>`; } } 
+        else if (currentCalView === 'week') { grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`; let dayOfWeek = calDate.getDay() - 1; if(dayOfWeek === -1) dayOfWeek = 6; let startOfWeek = new Date(calDate); startOfWeek.setDate(calDate.getDate() - dayOfWeek); for(let i=0; i<7; i++) { let currentDay = new Date(startOfWeek); currentDay.setDate(startOfWeek.getDate() + i); let dateStr = formatDate(currentDay); let isToday = (currentDay.getDate() === new Date().getDate() && currentDay.getMonth() === new Date().getMonth() && currentDay.getFullYear() === new Date().getFullYear()); grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div>${getTasksForDateHTML(dateStr)}</div>`; } } 
+        else if (currentCalView === 'day') { grid.style.gridTemplateColumns = '1fr'; grid.innerHTML = `<div class="cal-header-day">${calDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>`; let isToday = (calDate.getDate() === new Date().getDate() && calDate.getMonth() === new Date().getMonth() && calDate.getFullYear() === new Date().getFullYear()); let dateStr = formatDate(calDate); let tasksHtml = getTasksForDateHTML(dateStr); grid.innerHTML += `<div class="cal-day" style="min-height: 300px; padding: 20px;" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 15px; font-size: 24px;">${calDate.getDate()}</div><div style="margin-top: 5px;">${tasksHtml !== '' ? tasksHtml : '<div style="color:var(--text-muted); font-size:14px;">Kayıt bulunmuyor.</div>'}</div></div>`; }
     }
 
-    // --- FİRMA ANALİZ KARTLARI (YENİ DOSYA VE NOT BUTONLARI EKLENDİ) ---
     function loadFirmalarPage() {
         let html = '<div class="company-grid" style="margin-top:15px;">';
-        if(dbCompanies.length === 0) {
-            html += '<p style="color: var(--text-muted); width: 100%; text-align: center;">Henüz sisteme eklenmiş firma yok.</p>';
-        } else {
-            let today = new Date(); let y = today.getFullYear(); let m = today.getMonth() + 1;
-            let currentMonthStr = `${y}-${m < 10 ? '0'+m : m}`; 
-
+        if(dbCompanies.length === 0) { html += '<p style="color: var(--text-muted); width: 100%; text-align: center;">Henüz sisteme eklenmiş firma yok.</p>'; } else {
+            let today = new Date(); let y = today.getFullYear(); let m = today.getMonth() + 1; let currentMonthStr = `${y}-${m < 10 ? '0'+m : m}`; 
             dbCompanies.forEach(c => {
                 const compName = c.name || "İsimsiz"; const compOwner = c.sahibi || "Belirtilmemiş"; const compResp = c.sorumlu || "Atanmamış";
-
-                let compTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && t.paylasildi === true);
-                compTasks.sort((a, b) => new Date(b.tarih) - new Date(a.tarih)); 
-                let lastShareDate = compTasks.length > 0 ? compTasks[0].tarih : null;
-                let lastShareStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Paylaşım Yok</span>";
-                if (lastShareDate) { let diff = calculateDaysPassed(lastShareDate); lastShareStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShareDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`; }
-
-                let compShoots = dbShoots.filter(s => normalizeStr(s.firma) === normalizeStr(compName) && s.cekildi === true);
-                compShoots.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-                let lastShootDate = compShoots.length > 0 ? compShoots[0].tarih : null;
-                let lastShootStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Çekim Yok</span>";
-                if (lastShootDate) { let diff = calculateDaysPassed(lastShootDate); lastShootStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShootDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`; }
-
-                let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr) && t.paylasildi === true);
-                let videoCount = monthlyTasks.filter(t => t.tur === 'Video').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
-                let tasarimCount = monthlyTasks.filter(t => t.tur === 'Tasarım').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
-
+                let compTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && t.paylasildi === true); compTasks.sort((a, b) => new Date(b.tarih) - new Date(a.tarih)); let lastShareDate = compTasks.length > 0 ? compTasks[0].tarih : null; let lastShareStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Paylaşım Yok</span>"; if (lastShareDate) { let diff = calculateDaysPassed(lastShareDate); lastShareStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShareDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`; }
+                let compShoots = dbShoots.filter(s => normalizeStr(s.firma) === normalizeStr(compName) && s.cekildi === true); compShoots.sort((a, b) => new Date(b.tarih) - new Date(a.tarih)); let lastShootDate = compShoots.length > 0 ? compShoots[0].tarih : null; let lastShootStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Çekim Yok</span>"; if (lastShootDate) { let diff = calculateDaysPassed(lastShootDate); lastShootStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShootDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`; }
+                let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr) && t.paylasildi === true); let videoCount = monthlyTasks.filter(t => t.tur === 'Video').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0); let tasarimCount = monthlyTasks.filter(t => t.tur === 'Tasarım').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
                 let driveBtnAttr = c.drive && c.drive.trim() !== "" ? `onclick="window.open('${c.drive}', '_blank')"` : `disabled style="opacity:0.5; cursor:not-allowed;"`;
 
-                html += `
-                    <div class="company-card" style="padding: 20px; text-align: left; cursor: default; display:flex; flex-direction:column; gap:12px; background: white;">
-                        <div style="display:flex; align-items:center; gap:10px; border-bottom: 2px solid #f1f5f9; padding-bottom:12px;">
-                            <div style="width: 40px; height: 40px; background: #fee2e2; border-radius: 10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                <i class="fa-solid fa-building" style="font-size: 18px; color: var(--primary-red); margin:0;"></i>
-                            </div>
-                            <h3 style="font-size: 15px; margin:0; color: var(--bg-dark); font-weight:700;">${compName}</h3>
-                        </div>
-                        
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="color:var(--text-muted); font-weight:600;">Firma Sahibi:</span>
-                                <span style="font-weight:700; color:var(--bg-dark); background:#f8fafc; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0;">${compOwner}</span>
-                            </div>
-                            <div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="color:var(--text-muted); font-weight:600;">Sorumlu Personel:</span>
-                                <span style="font-weight:700; color:var(--task-purple); background:#f5f3ff; padding:3px 8px; border-radius:6px; border:1px solid #ede9fe;">${compResp}</span>
-                            </div>
-                        </div>
-
-                        <div style="background: #f8fafc; border-radius: 8px; padding: 12px; display:flex; flex-direction:column; gap:10px; border:1px solid #e2e8f0;">
-                            <div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-share-nodes" style="font-size: 12px; color:var(--primary-red); margin:0;"></i> Son Paylaşım Günü:</span><span style="padding-left: 18px;">${lastShareStr}</span></div>
-                            <div style="width:100%; height:1px; background:#e2e8f0;"></div>
-                            <div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-camera" style="font-size: 12px; color:#10b981; margin:0;"></i> Son Çekim Günü:</span><span style="padding-left: 18px;">${lastShootStr}</span></div>
-                        </div>
-                        
-                        <div style="display:flex; justify-content:space-between; gap: 8px;">
-                            <button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" ${driveBtnAttr}>
-                                <i class="fa-brands fa-google-drive" style="color:#10b981; font-size:14px; margin-right:4px;"></i> Dosyalar
-                            </button>
-                            <button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" onclick="openCompanyNote('${c.docId}')">
-                                <i class="fa-solid fa-note-sticky" style="color:var(--shoot-orange); font-size:14px; margin-right:4px;"></i> Firma Notu
-                            </button>
-                        </div>
-
-                        <div style="display:flex; justify-content:space-between; gap: 8px; margin-top: auto;">
-                            <div style="font-size: 11px; background:#fff7ed; color:#c2410c; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan videolar"><i class="fa-solid fa-video" style="font-size: 12px; margin:0; color:#ea580c;"></i> Video: <b style="font-size:13px;">${videoCount}</b></div>
-                            <div style="font-size: 11px; background:#fdf2f8; color:#be185d; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #fce7f3; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan tasarımlar"><i class="fa-solid fa-pen-nib" style="font-size: 12px; margin:0; color:#db2777;"></i> Tasarım: <b style="font-size:13px;">${tasarimCount}</b></div>
-                        </div>
-                    </div>
-                `;
+                html += `<div class="company-card" style="padding: 20px; text-align: left; cursor: default; display:flex; flex-direction:column; gap:12px; background: white;"><div style="display:flex; align-items:center; gap:10px; border-bottom: 2px solid #f1f5f9; padding-bottom:12px;"><div style="width: 40px; height: 40px; background: #fee2e2; border-radius: 10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fa-solid fa-building" style="font-size: 18px; color: var(--primary-red); margin:0;"></i></div><h3 style="font-size: 15px; margin:0; color: var(--bg-dark); font-weight:700;">${compName}</h3></div><div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted); font-weight:600;">Firma Sahibi:</span><span style="font-weight:700; color:var(--bg-dark); background:#f8fafc; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0;">${compOwner}</span></div><div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted); font-weight:600;">Sorumlu Personel:</span><span style="font-weight:700; color:var(--task-purple); background:#f5f3ff; padding:3px 8px; border-radius:6px; border:1px solid #ede9fe;">${compResp}</span></div></div><div style="background: #f8fafc; border-radius: 8px; padding: 12px; display:flex; flex-direction:column; gap:10px; border:1px solid #e2e8f0;"><div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-share-nodes" style="font-size: 12px; color:var(--primary-red); margin:0;"></i> Son Paylaşım Günü:</span><span style="padding-left: 18px;">${lastShareStr}</span></div><div style="width:100%; height:1px; background:#e2e8f0;"></div><div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-camera" style="font-size: 12px; color:#10b981; margin:0;"></i> Son Çekim Günü:</span><span style="padding-left: 18px;">${lastShootStr}</span></div></div><div style="display:flex; justify-content:space-between; gap: 8px;"><button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" ${driveBtnAttr}><i class="fa-brands fa-google-drive" style="color:#10b981; font-size:14px; margin-right:4px;"></i> Dosyalar</button><button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" onclick="openCompanyNote('${c.docId}')"><i class="fa-solid fa-note-sticky" style="color:var(--shoot-orange); font-size:14px; margin-right:4px;"></i> Firma Notu</button></div><div style="display:flex; justify-content:space-between; gap: 8px; margin-top: auto;"><div style="font-size: 11px; background:#fff7ed; color:#c2410c; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan videolar"><i class="fa-solid fa-video" style="font-size: 12px; margin:0; color:#ea580c;"></i> Video: <b style="font-size:13px;">${videoCount}</b></div><div style="font-size: 11px; background:#fdf2f8; color:#be185d; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #fce7f3; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan tasarımlar"><i class="fa-solid fa-pen-nib" style="font-size: 12px; margin:0; color:#db2777;"></i> Tasarım: <b style="font-size:13px;">${tasarimCount}</b></div></div></div>`;
             });
         }
-        html += '</div>';
-        document.getElementById('main-content').innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Firma Analiz Kartları</h2></div>${html}`;
+        html += '</div>'; document.getElementById('main-content').innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Firma Analiz Kartları</h2></div>${html}`;
     }
 
-    // FİRMA NOTU FONKSİYONLARI
-    function openCompanyNote(docId) {
-        let c = dbCompanies.find(x => x.docId === docId);
-        if(!c) return;
-        document.getElementById('comp-note-doc-id').value = docId;
-        document.getElementById('comp-note-title').innerText = `${c.name} - Firma Notu`;
-        document.getElementById('comp-note-text').value = c.notlar || "";
-        openModal('company-note-modal');
-    }
+    function openCompanyNote(docId) { let c = dbCompanies.find(x => x.docId === docId); if(!c) return; document.getElementById('comp-note-doc-id').value = docId; document.getElementById('comp-note-title').innerText = `${c.name} - Firma Notu`; document.getElementById('comp-note-text').value = c.notlar || ""; openModal('company-note-modal'); }
+    async function saveCompanyNote() { let docId = document.getElementById('comp-note-doc-id').value; let text = document.getElementById('comp-note-text').value; let btn = document.getElementById('save-comp-note-btn'); btn.innerText = "Kaydediliyor..."; try { await db.collection('companies').doc(docId).update({ notlar: text }); await fetchCompaniesFromFirebase(); btn.innerText = "Kaydedildi!"; setTimeout(() => { btn.innerText = "Notu Kaydet"; closeModal('company-note-modal'); loadFirmalarPage(); }, 1000); } catch(e) { console.error(e); alert("Not kaydedilirken bir hata oluştu."); btn.innerText = "Notu Kaydet"; } }
 
-    async function saveCompanyNote() {
-        let docId = document.getElementById('comp-note-doc-id').value;
-        let text = document.getElementById('comp-note-text').value;
-        let btn = document.getElementById('save-comp-note-btn');
-        btn.innerText = "Kaydediliyor...";
-        try {
-            await db.collection('companies').doc(docId).update({ notlar: text });
-            await fetchCompaniesFromFirebase(); // Sayfayı yenileyip veriyi çekelim ki tekrar tıkladığımızda gelsin
-            btn.innerText = "Kaydedildi!";
-            setTimeout(() => { btn.innerText = "Notu Kaydet"; closeModal('company-note-modal'); loadFirmalarPage(); }, 1000);
-        } catch(e) {
-            console.error(e);
-            alert("Not kaydedilirken bir hata oluştu.");
-            btn.innerText = "Notu Kaydet";
-        }
-    }
-
-    // --- CHECKLIST SAYFASI ---
     async function loadChecklistPage(dateStr) {
-        currentChecklistDate = dateStr || formatDate(new Date());
-        let dateObj = new Date(currentChecklistDate); let displayDate = dateObj.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric', weekday:'long' });
-        
-        let docId = `chk_${currentCompany}_${currentChecklistDate}`;
-        let doc = await db.collection('checklists').doc(docId).get();
-        let docData = doc.exists ? doc.data() : {}; let checklistData = docData.notes || {};
-
-        let targetUsers = dbUsers.filter(u => u.chkVisible === true && u.chkCompanies && u.chkCompanies.includes(currentCompany));
-        let todayStr = formatDate(new Date()); let isPast = currentChecklistDate < todayStr; 
-        let role = (currentUser.role || "").toLowerCase(); let isAdmin = role === 'admin' || currentUser.id === 'alperen';
-
-        let html = `
-            <div class="checklist-container"><div class="checklist-header"><div class="checklist-title"><i class="fa-solid fa-list-check" style="color: var(--primary-red);"></i> Günlük Checklist</div><div class="checklist-controls"><span style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-right: 5px;">Arşiv:</span><div style="display: flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px; background: white;"><button type="button" class="action-btn" style="padding: 4px 8px; font-size: 12px;" onclick="changeChecklistDate(-1)"><i class="fa-solid fa-chevron-left"></i></button><input type="text" id="chk-date-picker" style="border: none; padding: 4px; width: 110px; text-align: center; font-family:'Poppins'; outline: none; background: transparent; font-weight: 500; color: var(--bg-dark);"><button type="button" class="action-btn" style="padding: 4px 8px; font-size: 12px;" onclick="changeChecklistDate(1)"><i class="fa-solid fa-chevron-right"></i></button></div><button type="button" class="login-btn btn-green" style="width: auto; padding: 8px 15px; margin: 0; display:flex; align-items:center; gap:8px;" onclick="downloadChecklistImage()"><i class="fa-solid fa-download"></i> Görüntü İndir</button></div></div><div class="checklist-info-bar"><i class="fa-solid fa-circle-info"></i> Checklist her gece 00:00'da otomatik olarak yeni güne geçer. Okları veya takvimi kullanarak geçmiş ve gelecek günlere bakabilirsiniz.</div><div id="checklist-export-area" class="checklist-export-wrapper"><div class="checklist-export-title">${displayDate} Checklisti</div>
-        `;
+        currentChecklistDate = dateStr || formatDate(new Date()); let dateObj = new Date(currentChecklistDate); let displayDate = dateObj.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric', weekday:'long' }); let docId = `chk_${currentCompany}_${currentChecklistDate}`; let doc = await db.collection('checklists').doc(docId).get(); let docData = doc.exists ? doc.data() : {}; let checklistData = docData.notes || {}; let targetUsers = dbUsers.filter(u => u.chkVisible === true && u.chkCompanies && u.chkCompanies.includes(currentCompany)); let todayStr = formatDate(new Date()); let isPast = currentChecklistDate < todayStr; let role = (currentUser.role || "").toLowerCase(); let isAdmin = role === 'admin' || currentUser.id === 'alperen';
+        let html = `<div class="checklist-container"><div class="checklist-header"><div class="checklist-title"><i class="fa-solid fa-list-check" style="color: var(--primary-red);"></i> Günlük Checklist</div><div class="checklist-controls"><span style="font-size: 12px; color: var(--text-muted); font-weight: 600; margin-right: 5px;">Arşiv:</span><div style="display: flex; align-items: center; gap: 4px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 2px; background: white;"><button type="button" class="action-btn" style="padding: 4px 8px; font-size: 12px;" onclick="changeChecklistDate(-1)"><i class="fa-solid fa-chevron-left"></i></button><input type="text" id="chk-date-picker" style="border: none; padding: 4px; width: 110px; text-align: center; font-family:'Poppins'; outline: none; background: transparent; font-weight: 500; color: var(--bg-dark);"><button type="button" class="action-btn" style="padding: 4px 8px; font-size: 12px;" onclick="changeChecklistDate(1)"><i class="fa-solid fa-chevron-right"></i></button></div><button type="button" class="login-btn btn-green" style="width: auto; padding: 8px 15px; margin: 0; display:flex; align-items:center; gap:8px;" onclick="downloadChecklistImage()"><i class="fa-solid fa-download"></i> Görüntü İndir</button></div></div><div class="checklist-info-bar"><i class="fa-solid fa-circle-info"></i> Checklist her gece 00:00'da otomatik olarak yeni güne geçer. Okları veya takvimi kullanarak geçmiş ve gelecek günlere bakabilirsiniz.</div><div id="checklist-export-area" class="checklist-export-wrapper"><div class="checklist-export-title">${displayDate} Checklisti</div>`;
         if(targetUsers.length === 0) html += `<div style="text-align:center; padding: 30px; color: var(--text-muted);">Bu şirketin checklistinde görünecek kullanıcı bulunamadı.</div>`;
-
-        targetUsers.forEach(u => {
-            let noteContent = checklistData[u.id] || ""; let canEdit = isAdmin || (!isPast && u.id === currentUser.id); let disabledAttr = canEdit ? "" : "disabled";
-            html += `<div class="chk-user-card"><span class="chk-user-title">${u.name || "İsimsiz"}</span><textarea class="chk-textarea" id="chk-txt-${u.id}" placeholder="Buraya notlarınızı yazın... Kaydettiğinizde otomatik olarak numaralandırılacaktır." ${disabledAttr} autocomplete="off">${noteContent}</textarea>${canEdit ? `<div style="text-align: right;"><button type="button" class="login-btn btn-green" style="width: auto; padding: 6px 15px;" onclick="saveChecklist('${u.id}')">Listeyi Kaydet / Sırala</button></div>` : ''}</div>`;
-        });
-        html += `</div></div>`; document.getElementById('main-content').innerHTML = html;
-
+        targetUsers.forEach(u => { let noteContent = checklistData[u.id] || ""; let canEdit = isAdmin || (!isPast && u.id === currentUser.id); let disabledAttr = canEdit ? "" : "disabled"; html += `<div class="chk-user-card"><span class="chk-user-title">${u.name || "İsimsiz"}</span><textarea class="chk-textarea" id="chk-txt-${u.id}" placeholder="Buraya notlarınızı yazın... Kaydettiğinizde otomatik olarak numaralandırılacaktır." ${disabledAttr} autocomplete="off">${noteContent}</textarea>${canEdit ? `<div style="text-align: right;"><button type="button" class="login-btn btn-green" style="width: auto; padding: 6px 15px;" onclick="saveChecklist('${u.id}')">Listeyi Kaydet / Sırala</button></div>` : ''}</div>`; }); html += `</div></div>`; document.getElementById('main-content').innerHTML = html;
         if(chkDatePicker) chkDatePicker.destroy(); chkDatePicker = flatpickr("#chk-date-picker", { dateFormat: "Y-m-d", locale: "tr", defaultDate: currentChecklistDate, altInput: true, altFormat: "j F Y", onChange: function(selectedDates, dateStr) { loadChecklistPage(dateStr); } });
     }
     function changeChecklistDate(direction) { let d = new Date(currentChecklistDate); d.setDate(d.getDate() + direction); loadChecklistPage(formatDate(d)); }
     async function saveChecklist(userId) { let btn = event.target; btn.innerText = "Kaydediliyor..."; try { let txtArea = document.getElementById(`chk-txt-${userId}`); let rawText = txtArea.value; let lines = rawText.split('\n'); let counter = 1; let formattedText = lines.map(line => { let cleanLine = line.replace(/^\d+[\-\.)]\s*/, '').trim(); if(cleanLine === "") return ""; return `${counter++}- ${cleanLine}`; }).filter(l => l !== "").join('\n'); txtArea.value = formattedText; let docId = `chk_${currentCompany}_${currentChecklistDate}`; let docRef = db.collection('checklists').doc(docId); await docRef.set({ notes: { [userId]: formattedText }, company: currentCompany, date: currentChecklistDate }, { merge: true }); let oldText = "Listeyi Kaydet / Sırala"; btn.innerText = "Kaydedildi!"; btn.style.backgroundColor = "#16a34a"; setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 2000); } catch (error) { console.error("Checklist Kayıt Hatası: ", error); alert("Kaydedilemedi, bağlantınızı kontrol edin."); btn.innerText = "Listeyi Kaydet / Sırala"; } }
     function downloadChecklistImage() { const element = document.getElementById('checklist-export-area'); const textareas = element.querySelectorAll('textarea'); textareas.forEach(ta => { ta.style.height = ta.scrollHeight + "px"; ta.style.overflow = "hidden"; }); html2canvas(element, { scale: 2, backgroundColor: "#f8fafc" }).then(canvas => { const link = document.createElement('a'); link.download = `${currentCompany}_Checklist_${currentChecklistDate}.png`; link.href = canvas.toDataURL('image/png'); link.click(); textareas.forEach(ta => { ta.style.height = ""; ta.style.overflow = "auto"; }); }); }
 
-    // --- RAPORLAR SAYFASI ---
     async function loadRaporlarPage() {
         document.getElementById('main-content').innerHTML = `<div class="full-loader" style="position:relative; height: 300px; background: transparent;"><div class="spinner"></div><p style="margin-top: 15px; font-weight: 600; font-size:12px; color: var(--text-muted);">Raporlar Hesaplanıyor...</p></div>`;
         let y = reportDate.getFullYear(); let m = reportDate.getMonth() + 1; let monthStr = `${y}-${m < 10 ? '0'+m : m}`; let displayMonth = reportDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
@@ -590,15 +482,11 @@
         let rTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(currentCompany) && (t.tarih || "").startsWith(monthStr)); let rShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany) && (s.tarih || "").startsWith(monthStr));
 
         let html = `<div class="content-card" style="padding: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Aylık Performans Raporları</h2></div><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #f8fafc; padding: 10px 15px; border-radius: 10px; border: 1px solid #e2e8f0;"><div style="display: flex; gap: 8px; align-items: center;"><button type="button" class="action-btn" onclick="changeReportMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button><button type="button" class="action-btn" onclick="changeReportMonth(1)"><i class="fa-solid fa-chevron-right"></i></button><button type="button" class="login-btn btn-light" style="width: auto; padding: 5px 12px; font-size: 11px; margin:0;" onclick="reportDate = new Date(); loadRaporlarPage();">Bu Ay</button></div><h3 style="font-size: 16px; color: var(--bg-dark); font-weight: 700; margin: 0; text-transform:uppercase;">${displayMonth}</h3><div style="width: 100px;"></div></div><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px;">`;
-
         dbUsers.forEach(u => {
-            let repComps = u.repCompanies || []; if (!repComps.includes(currentCompany) && u.id !== 'alperen') return; 
-            const safeName = u.name || "";
+            let repComps = u.repCompanies || []; if (!repComps.includes(currentCompany) && u.id !== 'alperen') return; const safeName = u.name || "";
             let chkDays = 0; let chkItems = 0; monthlyChecklists.forEach(chk => { if(chk.notes && chk.notes[u.id]) { let text = chk.notes[u.id].trim(); if(text !== "") { chkDays++; chkItems += text.split('\n').filter(l => l.trim() !== "").length; } } }); let bosGunSayisi = monthlyChecklists.length - chkDays;
-            let videoCount = 0; let tasarimCount = 0; let paylasimCount = 0;
-            rTasks.forEach(t => { if(t.hazirlandi && t.paylasildi) { if(t.hazirlayan === safeName) { if(t.tur === 'Video') videoCount++; if(t.tur === 'Tasarım') tasarimCount++; } if(t.paylasan === safeName) { paylasimCount++; } } });
-            let gaVideo = 0; let gaTasarim = 0; dbGenelAgenda.forEach(g => { if (normalizeStr(g.holding || g.firma) === normalizeStr(currentCompany) && g.status === 3 && (g.tarih || "").startsWith(monthStr)) { if (g.sorumlu === safeName) { gaVideo += (parseInt(g.video) || 0); gaTasarim += (parseInt(g.tasarim) || 0); } } });
-            videoCount += gaVideo; tasarimCount += gaTasarim;
+            let videoCount = 0; let tasarimCount = 0; let paylasimCount = 0; rTasks.forEach(t => { if(t.hazirlandi && t.paylasildi) { if(t.hazirlayan === safeName) { if(t.tur === 'Video') videoCount++; if(t.tur === 'Tasarım') tasarimCount++; } if(t.paylasan === safeName) { paylasimCount++; } } });
+            let gaVideo = 0; let gaTasarim = 0; dbGenelAgenda.forEach(g => { if (normalizeStr(g.holding || g.firma) === normalizeStr(currentCompany) && g.status === 3 && (g.tarih || "").startsWith(monthStr)) { if (g.sorumlu === safeName) { gaVideo += (parseInt(g.video) || 0); gaTasarim += (parseInt(g.tasarim) || 0); } } }); videoCount += gaVideo; tasarimCount += gaTasarim;
             let cekimCount = 0; rShoots.forEach(s => { if(s.cekildi && s.teslim && s.hdd && s.drive) { let k = Array.isArray(s.kisi) ? s.kisi : [s.kisi]; if(k.includes(safeName)) { cekimCount++; } } });
 
             html += `<div style="background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); transition: 0.2s;"><div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px; border-bottom: 1px dashed #cbd5e1; padding-bottom: 12px;"><div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--task-purple), #4338ca); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; box-shadow: 0 4px 8px rgba(108, 99, 255, 0.2);">${safeName.charAt(0).toUpperCase()}</div><div><h4 style="font-size: 15px; color: var(--bg-dark); margin:0; font-weight: 700;">${safeName} ${u.surname || ""}</h4><span style="font-size: 11px; color: var(--text-muted); font-weight: 500;">${u.role || "Bilinmiyor"}</span></div></div><ul style="list-style: none; padding: 0; margin: 0; font-size: 13px; color: var(--text-main); display: flex; flex-direction: column; gap: 10px;"><li style="display: flex; justify-content: space-between; align-items: center; background:#f8fafc; padding: 6px 10px; border-radius: 6px;"><span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-list-check" style="color:#64748b; font-size:14px;"></i> Checklist</span> <b style="color:var(--bg-dark);">${chkItems} Madde (${bosGunSayisi} boş gün)</b></li><li style="display: flex; justify-content: space-between; align-items: center; background:#fff7ed; padding: 6px 10px; border-radius: 6px;"><span style="display:flex; align-items:center; gap:8px;" title="Ajandadan Gelen: ${gaVideo}"><i class="fa-solid fa-video" style="color:var(--shoot-orange); font-size:14px;"></i> Yapılan Video</span> <b style="color:var(--shoot-orange);">${videoCount}</b></li><li style="display: flex; justify-content: space-between; align-items: center; background:#fdf2f8; padding: 6px 10px; border-radius: 6px;"><span style="display:flex; align-items:center; gap:8px;" title="Ajandadan Gelen: ${gaTasarim}"><i class="fa-solid fa-pen-nib" style="color:#ec4899; font-size:14px;"></i> Yapılan Tasarım</span> <b style="color:#ec4899;">${tasarimCount}</b></li><li style="display: flex; justify-content: space-between; align-items: center; background:#fef2f2; padding: 6px 10px; border-radius: 6px;"><span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-share-nodes" style="color:var(--primary-red); font-size:14px;"></i> Yapılan Paylaşım</span> <b style="color:var(--primary-red);">${paylasimCount}</b></li><li style="display: flex; justify-content: space-between; align-items: center; background:#ecfdf5; padding: 6px 10px; border-radius: 6px;"><span style="display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-camera" style="color:#10b981; font-size:14px;"></i> Tamamlanan Çekim</span> <b style="color:#10b981;">${cekimCount}</b></li></ul></div>`;
@@ -607,32 +495,6 @@
     }
     function changeReportMonth(direction) { reportDate.setMonth(reportDate.getMonth() + direction); loadRaporlarPage(); }
 
-    // --- GENEL AJANDA ---
-    async function loadGenelAgenda() {
-        await fetchGenelAgendaFromFirebase();
-        let html = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">Genel Ajanda</h2><button type="button" class="login-btn btn-light" style="width: auto; padding: 6px 15px; font-size:12px; margin:0;" onclick="toggleArchiveGA()"><i class="fa-solid fa-box-archive"></i> <span>${showArchivedGA ? 'Aktif Görevleri Göster' : 'Arşivi Göster'}</span></button></div><div class="checklist-info-bar" style="border-color:var(--task-purple); background:#f5f3ff; color:#5b21b6;"><i class="fa-solid fa-circle-info"></i> Bu sayfa tüm ekibe açıktır. Eklenen görevleri ve notları herkes görebilir.</div><div class="ga-grid">${!showArchivedGA ? `<div class="ga-card add-card" onclick="openAddGenelAgenda()"><i class="fa-solid fa-plus"></i></div>` : ''}`;
-        let visibleAgenda = dbGenelAgenda.filter(g => showArchivedGA ? g.isArchived : !g.isArchived); visibleAgenda.sort((a,b) => new Date(a.tarih) - new Date(b.tarih));
-        visibleAgenda.forEach(g => {
-            let badgeHtml = ''; if(g.video > 0) badgeHtml += `<div class="ga-badge video">${g.video} Video</div>`; if(g.tasarim > 0) badgeHtml += `<div class="ga-badge tasarim">${g.tasarim} Tasarım</div>`;
-            let previewText = (g.not || "").replace(/<[^>]*>?/gm, ''); const isCompleted = g.status === 3; const cardClass = isCompleted ? 'ga-card completed-ga' : 'ga-card';
-            html += `<div class="${cardClass}"><div class="ga-header"><div class="ga-title">${g.title || ""}</div><div class="ga-badges">${badgeHtml}</div></div><div class="ga-date"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i> Teslim: ${formatDateTR(g.tarih)}</div><div class="ga-company"><i class="fa-solid fa-building"></i> ${g.firma || ""}</div><div class="ga-preview">"${previewText || 'Not eklenmemiş...'}"</div><button type="button" class="ga-view-btn" onclick="openEditGenelAgenda('${g.docId}')"><i class="fa-solid fa-magnifying-glass"></i> İçeriği ve Görevleri Gör</button><div class="ga-footer-info"><span>Ekleyen: <b>${g.ekleyen || ""}</b></span><span>Sorumlu: <b>${g.sorumlu || ""}</b></span></div>${!showArchivedGA ? `<div class="ga-status-btns"><button type="button" class="ga-s-btn ${g.status >= 1 ? 'active-1' : ''}" onclick="updateGAStatus('${g.docId}', 1)">Görüldü</button><button type="button" class="ga-s-btn ${g.status >= 2 ? 'active-2' : ''}" onclick="updateGAStatus('${g.docId}', 2)">Hazırlanıyor</button><button type="button" class="ga-s-btn ${isCompleted ? 'active-3' : ''}" onclick="updateGAStatus('${g.docId}', 3)">Tamamlandı</button></div>` : ''}<button type="button" class="ga-archive-btn" onclick="toggleArchiveStatusGA('${g.docId}')"><i class="fa-solid ${showArchivedGA ? 'fa-box-open' : 'fa-box-archive'}"></i> ${showArchivedGA ? 'Arşivden Çıkar' : 'Arşivle'}</button></div>`;
-        });
-        html += `</div>`; document.getElementById('main-content').innerHTML = html;
-    }
-    function toggleArchiveGA() { showArchivedGA = !showArchivedGA; loadGenelAgenda(); }
-    async function updateGAStatus(docId, newStatus) { await db.collection('genel_agenda').doc(docId).update({ status: newStatus }); loadGenelAgenda(); }
-    async function toggleArchiveStatusGA(docId) { let g = dbGenelAgenda.find(x => x.docId === docId); if(!g) return; await db.collection('genel_agenda').doc(docId).update({ isArchived: !g.isArchived }); loadGenelAgenda(); }
-    function execCmd(command) { document.execCommand(command, false, null); } function insertCheckbox() { document.execCommand('insertHTML', false, '&#8203;<input type="checkbox">&#8203; '); }
-    function openAddGenelAgenda() { document.getElementById('ga-modal-title').innerText = "Genel Ajanda - Görev Ekle"; document.getElementById('ga-doc-id').value = "new"; document.getElementById('ga-status').value = 0; document.getElementById('ga-title').value = ""; document.getElementById('ga-video').value = 0; document.getElementById('ga-tasarim').value = 0; document.getElementById('ga-not').innerHTML = ""; document.getElementById('ga-ekleyen').value = currentUser.name; if(gaDatePicker) gaDatePicker.destroy(); gaDatePicker = flatpickr("#ga-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: new Date(), altInput: true, altFormat: "j F Y" }); document.getElementById('ga-buttons').innerHTML = `<button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('ga-modal')">Kapat</button><button type="button" class="login-btn btn-purple" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button>`; openModal('ga-modal'); }
-    function openEditGenelAgenda(docId) { let g = dbGenelAgenda.find(x => x.docId === docId); if(!g) return; document.getElementById('ga-modal-title').innerText = "Genel Ajanda - Düzenle"; document.getElementById('ga-doc-id').value = docId; document.getElementById('ga-status').value = g.status || 0; document.getElementById('ga-title').value = g.title || ""; document.getElementById('ga-firma').value = g.firma || ""; document.getElementById('ga-sorumlu').value = g.sorumlu || ""; document.getElementById('ga-video').value = g.video || 0; document.getElementById('ga-tasarim').value = g.tasarim || 0; document.getElementById('ga-ekleyen').value = g.ekleyen || ""; document.getElementById('ga-not').innerHTML = g.not || ""; if(gaDatePicker) gaDatePicker.destroy(); gaDatePicker = flatpickr("#ga-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: g.tarih, altInput: true, altFormat: "j F Y" }); document.getElementById('ga-buttons').innerHTML = `<button type="button" class="login-btn btn-purple" style="flex: 1;" onclick="saveGenelAgenda()">Kaydet</button><button type="button" class="login-btn" style="flex: 1; background: var(--primary-red);" onclick="deleteGenelAgenda('${docId}')">Sil</button><button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('ga-modal')">Kapat</button>`; openModal('ga-modal'); }
-    async function saveGenelAgenda() { const docId = document.getElementById('ga-doc-id').value; const data = { holding: currentCompany, title: document.getElementById('ga-title').value, firma: document.getElementById('ga-firma').value, tarih: document.getElementById('ga-tarih').value, sorumlu: document.getElementById('ga-sorumlu').value, video: parseInt(document.getElementById('ga-video').value) || 0, tasarim: parseInt(document.getElementById('ga-tasarim').value) || 0, not: document.getElementById('ga-not').innerHTML, ekleyen: document.getElementById('ga-ekleyen').value, isArchived: false, status: parseInt(document.getElementById('ga-status').value) || 0 }; try { if(docId === "new") await db.collection('genel_agenda').add(data); else { delete data.isArchived; await db.collection('genel_agenda').doc(docId).update(data); } closeModal('ga-modal'); loadGenelAgenda(); } catch (error) { console.error("Kayıt hatası:", error); alert("Kaydedilirken bir hata oluştu."); } }
-    async function deleteGenelAgenda(docId) { if(confirm("Bu kartı silmek istediğinize emin misiniz?")) { await db.collection('genel_agenda').doc(docId).delete(); closeModal('ga-modal'); loadGenelAgenda(); } }
-
-    // --- PROFIL ---
-    function loadProfileView() { document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); document.getElementById('main-content').innerHTML = `<div class="content-card" style="max-width: 600px;"><h2 class="content-title">Profil Bilgileri</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;"><div class="input-group"><label>İSİM</label><input type="text" value="${currentUser.name || ""}" disabled></div><div class="input-group"><label>SOYİSİM</label><input type="text" value="${currentUser.surname || ""}" disabled></div></div><h3 style="font-size: 15px; margin-bottom: 15px; color: var(--bg-dark);">Şifre Değiştir</h3><div class="input-group"><label>YENİ ŞİFRE</label><input type="password" id="new-profile-pass" autocomplete="new-password"></div><button type="button" class="login-btn" onclick="updateOwnPassword()">Şifreyi Güncelle</button></div>`; }
-    async function updateOwnPassword() { const newPass = document.getElementById('new-profile-pass').value; if(newPass) { currentUser.pass = newPass; await db.collection('users').doc(currentUser.docId).update({ pass: newPass }); await fetchUsersFromFirebase(); alert('Şifreniz güncellendi!'); } }
-
-    // --- KAYIT İŞLEMLERİ (PAYLAŞIM VE ÇEKİM) ---
     function openAddTask() { document.getElementById('task-modal-title').innerText = "Paylaşım Görevi Ekle"; document.getElementById('task-doc-id').value = "new"; document.getElementById('t-firma').value = ""; document.getElementById('t-adet').value = "1"; document.getElementById('t-not').value = ""; if(taskDatePicker) taskDatePicker.destroy(); taskDatePicker = flatpickr("#t-tarih", { mode: "multiple", dateFormat: "Y-m-d", locale: "tr", defaultDate: new Date(), altInput: true, altFormat: "j F Y" }); document.getElementById('t-status-group').style.display = 'none'; document.getElementById('t-hazirlandi').checked = false; document.getElementById('t-paylasildi').checked = false; document.getElementById('task-buttons').innerHTML = `<button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('task-modal')">Kapat</button><button type="button" class="login-btn btn-purple" id="save-task-btn" style="flex: 1;" onclick="saveTask()">Kaydet</button>`; openModal('task-modal'); }
     function openEditTask(docId) { const t = dbTasks.find(x => x.docId === docId); if(!t) return; document.getElementById('task-modal-title').innerText = "Paylaşım Görevi Düzenle"; document.getElementById('task-doc-id').value = docId; document.getElementById('t-firma').value = t.firma || ""; document.getElementById('t-tur').value = t.tur || ""; document.getElementById('t-adet').value = t.adet || 1; document.getElementById('t-hazirlayan').value = t.hazirlayan || ""; document.getElementById('t-paylasan').value = t.paylasan || ""; document.getElementById('t-not').value = t.not || ""; if(taskDatePicker) taskDatePicker.destroy(); taskDatePicker = flatpickr("#t-tarih", { mode: "single", dateFormat: "Y-m-d", locale: "tr", defaultDate: t.tarih, altInput: true, altFormat: "j F Y" }); document.getElementById('t-status-group').style.display = 'flex'; document.getElementById('t-hazirlandi').checked = t.hazirlandi; document.getElementById('t-paylasildi').checked = t.paylasildi; document.getElementById('task-buttons').innerHTML = `<button type="button" class="login-btn btn-purple" id="save-task-btn" style="flex: 1;" onclick="saveTask()">Kaydet</button><button type="button" class="login-btn" style="flex: 1; background: var(--primary-red);" onclick="deleteTask('${docId}')">Sil</button><button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('task-modal')">Kapat</button>`; openModal('task-modal'); }
     async function saveTask() { const docId = document.getElementById('task-doc-id').value; const btn = document.getElementById('save-task-btn'); btn.innerText = "Kaydediliyor..."; try { const taskData = { holding: currentCompany, category: document.getElementById('task-category').value, firma: document.getElementById('t-firma').value || "", tur: document.getElementById('t-tur').value, adet: parseInt(document.getElementById('t-adet').value) || 1, hazirlayan: document.getElementById('t-hazirlayan').value, paylasan: document.getElementById('t-paylasan').value, not: document.getElementById('t-not').value, hazirlandi: document.getElementById('t-hazirlandi').checked, paylasildi: document.getElementById('t-paylasildi').checked }; let dates = taskDatePicker.selectedDates.map(d => formatDate(d)); if(dates.length === 0) dates = [formatDate(new Date())]; if(docId === "new") { taskData.hazirlandi = false; taskData.paylasildi = false; for (let d of dates) { if(d) await db.collection('tasks').add({ ...taskData, tarih: d }); } } else { taskData.tarih = dates[0]; await db.collection('tasks').doc(docId).update(taskData); } closeModal('task-modal'); await fetchTasksFromFirebase(); loadPageView(activePage); } catch (error) { console.error("Görev Kayıt Hatası:", error); alert("Görev kaydedilemedi. Bağlantınızı kontrol edin."); btn.innerText = "Kaydet"; } }
@@ -644,6 +506,8 @@
     async function saveShoot() { const docId = document.getElementById('sh-doc-id').value; const btn = document.getElementById('save-shoot-btn'); btn.innerText = "Kaydediliyor..."; try { let selectedKisiler = []; document.querySelectorAll('.sh-kisi-cb:checked').forEach(cb => { selectedKisiler.push(cb.value); }); let t_date = shootDatePicker.selectedDates.length > 0 ? formatDate(shootDatePicker.selectedDates[0]) : formatDate(new Date()); const shootData = { holding: currentCompany, firma: document.getElementById('sh-firma').value || "", kisi: selectedKisiler, tarih: t_date, saat: document.getElementById('sh-saat').value, not: document.getElementById('sh-not').value, link: document.getElementById('sh-link').value, boyut: document.getElementById('sh-boyut').value, foto: parseInt(document.getElementById('sh-foto').value) || 0, video: parseInt(document.getElementById('sh-video').value) || 0, cekildi: document.getElementById('sh-cekildi').checked, teslim: document.getElementById('sh-teslim').checked, hdd: document.getElementById('sh-hdd').checked, drive: document.getElementById('sh-drive').checked }; if(docId === "new") await db.collection('shoots').add(shootData); else await db.collection('shoots').doc(docId).update(shootData); closeModal('shoot-modal'); await fetchShootsFromFirebase(); loadPageView(activePage); } catch (error) { console.error("Çekim Kayıt Hatası:", error); alert("Çekim kaydedilemedi."); btn.innerText = "Kaydet"; } }
     async function deleteShoot(docId) { if(confirm("Çekimi silmek istediğinize emin misiniz?")) { await db.collection('shoots').doc(docId).delete(); closeModal('shoot-modal'); await fetchShootsFromFirebase(); loadPageView(activePage); } }
     function goToShootLink() { const link = document.getElementById('sh-link').value.trim(); if(link) window.open(link.startsWith('http') ? link : 'https://' + link, '_blank'); else alert('Lütfen geçerli bir link girin.'); }
+    function loadProfileView() { document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); document.getElementById('main-content').innerHTML = `<div class="content-card" style="max-width: 600px;"><h2 class="content-title">Profil Bilgileri</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;"><div class="input-group"><label>İSİM</label><input type="text" value="${currentUser.name || ""}" disabled></div><div class="input-group"><label>SOYİSİM</label><input type="text" value="${currentUser.surname || ""}" disabled></div></div><h3 style="font-size: 15px; margin-bottom: 15px; color: var(--bg-dark);">Şifre Değiştir</h3><div class="input-group"><label>YENİ ŞİFRE</label><input type="password" id="new-profile-pass" autocomplete="new-password"></div><button type="button" class="login-btn" onclick="updateOwnPassword()">Şifreyi Güncelle</button></div>`; }
+    async function updateOwnPassword() { const newPass = document.getElementById('new-profile-pass').value; if(newPass) { currentUser.pass = newPass; await db.collection('users').doc(currentUser.docId).update({ pass: newPass }); await fetchUsersFromFirebase(); alert('Şifreniz güncellendi!'); } }
 </script>
 </body>
 </html>
