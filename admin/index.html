@@ -25,7 +25,6 @@
         
         .list-container-box { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 300px; overflow-y: auto; margin-top: 10px; }
         .perm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 5px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .section-header { font-size: 11px; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
     </style>
 </head>
 <body>
@@ -61,59 +60,6 @@
     </div>
 </div>
 
-<div class="modal-overlay master-modal" id="master-equipments-modal">
-    <div class="modal-content" style="width: 600px;">
-        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('master-equipments-modal')"></i>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
-            <h3 style="color: var(--bg-dark); font-size: 16px; margin:0;"><i class="fa-solid fa-toolbox" style="color: var(--task-purple); margin-right:6px;"></i> Ekipman Listesi</h3>
-            <button type="button" class="login-btn btn-purple" style="width: auto; padding: 6px 12px; font-size: 11px; margin: 0;" onclick="openAddEquipment()">+ Yeni Ekipman Ekle</button>
-        </div>
-        <div class="list-container-box" id="equipments-list-target"></div>
-        <button type="button" class="login-btn btn-gray" style="margin-top:15px; width:100%;" onclick="closeModal('master-equipments-modal')">Kapat</button>
-    </div>
-</div>
-
-<div class="modal-overlay master-modal" id="master-roles-modal">
-    <div class="modal-content" style="width: 650px;">
-        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('master-roles-modal')"></i>
-        <h3 style="color: var(--bg-dark); font-size: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;"><i class="fa-solid fa-user-shield" style="color: #6366f1; margin-right:6px;"></i> Unvan (Rol & Sayfa Yetkileri) Yönetimi</h3>
-        
-        <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:15px; display:flex; flex-direction:column; gap:10px;">
-            <input type="hidden" id="role-doc-id" value="new">
-            <div class="input-group" style="margin:0;"><label>UNVAN / ROL ADI</label><input type="text" id="role-name" placeholder="Örn: Tasarımcı, Videographer, Stajyer" autocomplete="off"></div>
-            
-            <div class="input-group" style="margin:0; margin-top: 10px;">
-                <div class="section-header" style="color: var(--primary-red); border-color: #fecaca;"><i class="fa-solid fa-layer-group"></i> GİRİŞ EKRANI YETKİLERİ</div>
-                <div class="perm-grid" id="role-pages-grid-main" style="margin-bottom: 15px;"></div>
-
-                <div class="section-header" style="color: var(--task-purple); border-color: #e9d5ff;"><i class="fa-solid fa-clapperboard"></i> MEDYA PANELİ YETKİLERİ</div>
-                <div class="perm-grid" id="role-pages-grid-medya"></div>
-            </div>
-
-            <div style="display:flex; gap:10px; margin-top:10px;">
-                <button type="button" class="login-btn btn-purple" id="save-role-btn" style="flex:1; margin:0;" onclick="saveRole()">Unvanı / Yetkileri Kaydet</button>
-                <button type="button" class="login-btn btn-gray" id="cancel-role-edit-btn" style="display:none; width:auto; margin:0;" onclick="clearRoleForm()">Düzenlemeden Çık</button>
-            </div>
-        </div>
-
-        <div class="list-container-box" id="roles-list-target"></div>
-        <button type="button" class="login-btn btn-gray" style="margin-top:15px; width:100%;" onclick="closeModal('master-roles-modal')">Kapat</button>
-    </div>
-</div>
-
-<div class="modal-overlay master-modal" id="master-system-modal">
-    <div class="modal-content" style="width: 550px;">
-        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('master-system-modal')"></i>
-        <h3 style="color: var(--bg-dark); border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; font-size: 16px;"><i class="fa-solid fa-pen-to-square" style="color: var(--primary-red); margin-right:6px;"></i> Giriş Ekranı Yazıları & Versiyon Bilgisi</h3>
-        <div class="input-group"><label>SÜRÜM BİLGİSİ</label><input type="text" id="admin-version" autocomplete="off"></div>
-        <div class="input-group"><label>EKLENEN ÖZELLİKLER / NOTLAR</label><textarea id="admin-notes" rows="4" autocomplete="off"></textarea></div>
-        <div style="display:flex; gap:10px;">
-            <button type="button" class="login-btn btn-purple" style="flex:1;" id="save-version-btn" onclick="updateVersionTexts()">Uygula & Kaydet</button>
-            <button type="button" class="login-btn btn-gray" style="flex:1;" onclick="closeModal('master-system-modal')">Kapat</button>
-        </div>
-    </div>
-</div>
-
 <div class="modal-overlay sub-modal" id="user-modal">
     <div class="modal-content">
         <i class="fa-solid fa-xmark modal-close" onclick="closeModal('user-modal')"></i>
@@ -126,8 +72,15 @@
         <div class="input-group"><label>KULLANICI ADI (ID)</label><input type="text" id="u-id" placeholder="Örn: alperen_y" autocomplete="off"></div>
         <div class="input-group"><label>ŞİFRE</label><input type="text" id="u-pass" placeholder="Şifre Belirleyin" autocomplete="off"></div>
         <div class="input-group">
-            <label>GÖREV (ROL / UNVAN)</label>
-            <select id="u-role"></select>
+            <label>GÖREV (ROL)</label>
+            <select id="u-role">
+                <option value="Admin">Admin</option>
+                <option value="Yönetici">Yönetici</option>
+                <option value="Tasarımcı">Tasarımcı / Videographer</option>
+                <option value="Fotoğrafçı">Fotoğrafçı</option>
+                <option value="Asistan">Asistan</option>
+                <option value="Stajyer">Stajyer</option>
+            </select>
         </div>
         <div class="checkbox-group" style="margin-bottom: 12px;">
             <label><input type="checkbox" id="u-chk-visible" onchange="toggleUserCompanies()"> Checklist Profilinde Görünsün</label>
@@ -166,40 +119,6 @@
     </div>
 </div>
 
-<div class="modal-overlay sub-modal" id="equipment-modal">
-    <div class="modal-content" style="width: 450px;">
-        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('equipment-modal')"></i>
-        <h3 class="modal-title" id="eq-modal-title">Ekipman Düzenle</h3>
-        <input type="hidden" id="edit-eq-doc-id" value="">
-        <div class="input-group"><label>EKİPMAN İSMİ</label><input type="text" id="eq-name" placeholder="Örn: Sony A7 IV" autocomplete="off"></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="input-group">
-                <label>TÜR</label>
-                <select id="eq-type">
-                    <option value="Kamera">Kamera</option>
-                    <option value="Lens">Lens</option>
-                    <option value="Işık">Işık</option>
-                    <option value="Ses/Mikrofon">Ses / Mikrofon</option>
-                    <option value="Fon">Fon / Perde</option>
-                    <option value="Diğer">Diğer</option>
-                </select>
-            </div>
-            <div class="input-group">
-                <label>ŞİRKET</label>
-                <select id="eq-company">
-                    <option value="RDGRUP MEDYA">RDGrup Medya</option>
-                    <option value="ANKARA MEZUNİYET">Ankara Mezuniyet</option>
-                    <option value="TÜRKİYE MEZUNİYET">Türkiye Mezuniyet</option>
-                </select>
-            </div>
-        </div>
-        <div style="display: flex; gap: 12px; margin-top: 15px;">
-            <button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('equipment-modal')">İptal</button>
-            <button type="button" class="login-btn btn-purple" id="save-eq-btn" style="flex: 1;" onclick="saveEditedEquipment()">Kaydet</button>
-        </div>
-    </div>
-</div>
-
 <div class="slide-container" id="dashboard-screen" style="display: flex;">
     <div class="dashboard-layout">
         <div class="sidebar" id="app-sidebar">
@@ -220,8 +139,7 @@
             </ul>
             <button type="button" class="logout-item" onclick="logout()"><i class="fa-solid fa-power-off"></i> <span>Çıkış Yap</span></button>
         </div>
-        
-        <div class="main-panel" id="main-content-parent">
+        <div class="main-panel" id="main-content">
             <div class="full-loader" id="init-loader" style="display: flex; background: transparent;"><div class="spinner"></div><p style="margin-top: 15px; font-weight: 600; font-size:12px; color: var(--text-muted);">Veriler Yükleniyor...</p></div>
             
             <h2 class="content-title">RDGRUP Kontrol & Yönetim Merkezi</h2>
@@ -236,18 +154,6 @@
                     <div class="admin-launcher-icon" style="background:#f59e0b;"><i class="fa-solid fa-building"></i></div>
                     <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Firma Yönetimi</h4><span style="font-size:11px; color:var(--text-muted);">Markaları ekle ve Drive bağla</span></div>
                 </div>
-                <div class="admin-launcher-card" onclick="openModal('master-equipments-modal')">
-                    <div class="admin-launcher-icon" style="background:#a855f7;"><i class="fa-solid fa-toolbox"></i></div>
-                    <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Ekipman Yönetimi</h4><span style="font-size:11px; color:var(--text-muted);">Kamera, lens ve depo takvimi</span></div>
-                </div>
-                <div class="admin-launcher-card" onclick="openModal('master-roles-modal')">
-                    <div class="admin-launcher-icon" style="background:#6366f1;"><i class="fa-solid fa-user-shield"></i></div>
-                    <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Unvan & Sayfa Yetkileri</h4><span style="font-size:11px; color:var(--text-muted);">Dinamik rol ve menü sınırlandırma</span></div>
-                </div>
-                <div class="admin-launcher-card" onclick="openModal('master-system-modal')">
-                    <div class="admin-launcher-icon" style="background:#64748b;"><i class="fa-solid fa-pen-to-square"></i></div>
-                    <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Giriş Ekranı & Sürüm</h4><span style="font-size:11px; color:var(--text-muted);">Sürüm bilgisini ve notları güncelle</span></div>
-                </div>
             </div>
             
         </div>
@@ -255,16 +161,9 @@
 </div>
 
 <script src="js/firebase-config.js"></script>
-
 <script>
-    let dbUsers = []; let dbCompanies = []; let dbEquipments = []; let dbRoles = [];
-    let dbVersionInfo = { version: "RDGRUP V.1.5", notes: "" }; let currentUser = null; let isSidebarCollapsed = false;
-
+    let dbUsers = []; let dbCompanies = []; let dbVersionInfo = { version: "RDGRUP V.1.5", notes: "" }; let currentUser = null; let isSidebarCollapsed = false;
     const holdingCompanies = ["RDGRUP MEDYA", "ANKARA MEZUNİYET", "TÜRKİYE MEZUNİYET"];
-    
-    // SAYFALAR İKİYE BÖLÜNDÜ
-    const mainPages = ["Tüm İşler", "Tüm Ekipmanlar", "Yönetim Paneli"];
-    const medyaPages = ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Reklamlar", "Ekipmanlar", "Raporlar"];
 
     window.onload = async function() {
         const savedUser = localStorage.getItem('rdgrup_user');
@@ -272,86 +171,32 @@
         currentUser = JSON.parse(savedUser);
         const role = (currentUser.role || "").toLowerCase();
         if(role !== 'admin' && currentUser.id !== 'alperen') { alert("Bu sayfayı görüntüleme yetkiniz yok!"); window.location.href = 'index.html'; return; }
-        
         document.getElementById('logged-user-name').innerText = currentUser.name || "Kullanıcı"; document.getElementById('logged-user-role').innerText = currentUser.role || "Bilinmiyor"; document.getElementById('logged-avatar').innerText = (currentUser.name || "?").charAt(0).toUpperCase();
         await initializeSystem();
     };
 
     async function initializeSystem() {
-        document.getElementById('init-loader').style.display = 'flex';
-        try { const doc = await db.collection('settings').doc('system').get(); if (doc.exists) dbVersionInfo = doc.data(); document.getElementById('admin-version').value = dbVersionInfo.version || ""; document.getElementById('admin-notes').value = dbVersionInfo.notes || ""; } catch(e) { console.error("Sistem ayarı çekilemedi:", e); }
-        try { await fetchRolesFromFirebase(); } catch(e) { console.error("Roller çekilemedi:", e); }
-        try { await fetchUsersFromFirebase(); } catch(e) { console.error("Kullanıcılar çekilemedi:", e); }
-        try { await fetchCompaniesFromFirebase(); } catch(e) { console.error("Firmalar çekilemedi:", e); }
-        try { await fetchEquipmentsFromFirebase(); } catch(e) { console.error("Ekipmanlar çekilemedi:", e); }
-        
         try {
-            renderAllLists();
-            renderPermissionCheckboxes();
-        } catch(e) { console.error("Listeler ekrana basılamadı:", e); }
-
-        document.getElementById('init-loader').style.display = 'none';
+            const settingsRef = db.collection('settings').doc('system'); const doc = await settingsRef.get(); if (doc.exists) dbVersionInfo = doc.data();
+            await fetchUsersFromFirebase(); await fetchCompaniesFromFirebase(); loadAdminSettings();
+        } catch (error) { 
+            console.error("Hata:", error); 
+        } finally {
+            document.getElementById('init-loader').style.display = 'none';
+        }
     }
 
     function toggleSidebar() { isSidebarCollapsed = !isSidebarCollapsed; const sb = document.getElementById('app-sidebar'); if (isSidebarCollapsed) { sb.classList.add('collapsed'); } else { sb.classList.remove('collapsed'); } }
+    
+    // ÇIKIŞ LİNKLERİ DÜZELTİLDİ
     function logout() { localStorage.removeItem('rdgrup_user'); window.location.href = 'index.html'; }
     function backToCompanySelection() { window.location.href = 'index.html'; }
+    
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     async function fetchUsersFromFirebase() { const snapshot = await db.collection('users').get(); dbUsers = []; snapshot.forEach(doc => { dbUsers.push({ docId: doc.id, ...doc.data() }); }); dbUsers.sort((a, b) => (a.order || 0) - (b.order || 0)); }
     async function fetchCompaniesFromFirebase() { const snapshot = await db.collection('companies').get(); dbCompanies = []; snapshot.forEach(doc => { dbCompanies.push({ docId: doc.id, ...doc.data() }); }); dbCompanies.sort((a, b) => (a.order || 0) - (b.order || 0)); }
-    async function fetchEquipmentsFromFirebase() { const snapshot = await db.collection('equipments').get(); dbEquipments = []; snapshot.forEach(doc => { dbEquipments.push({ docId: doc.id, ...doc.data() }); }); dbEquipments.sort((a, b) => (a.order || 0) - (b.order || 0)); }
-    
-    async function fetchRolesFromFirebase() { 
-        const snapshot = await db.collection('roles').get(); 
-        dbRoles = []; 
-        snapshot.forEach(doc => { dbRoles.push({ docId: doc.id, ...doc.data() }); }); 
-        
-        if(dbRoles.length === 0) {
-            const defaultRoles = [
-                { name: "Admin", pages: [...mainPages, ...medyaPages] }, 
-                { name: "Yönetici", pages: [...mainPages, ...medyaPages] },
-                { name: "Tasarımcı", pages: ["Tüm İşler", "Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
-                { name: "Fotoğrafçı", pages: ["Tüm İşler", "Anasayfa", "Kendi İşlerim", "Genel Takvim", "Çekim Takvimi", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
-                { name: "Asistan", pages: ["Anasayfa", "Genel Takvim", "Genel Ajanda", "Kişisel Ajanda", "Checklist"] },
-                { name: "Stajyer", pages: ["Anasayfa", "Kendi İşlerim", "Genel Ajanda", "Kişisel Ajanda"] }
-            ];
-            for(let r of defaultRoles) { let docRef = await db.collection('roles').add(r); dbRoles.push({ docId: docRef.id, ...r }); }
-        }
-        dbRoles.sort((a,b) => (a.name || "").localeCompare(b.name || ""));
-    }
-
-    // İKİYE BÖLÜNMÜŞ YETKİ KUTUCUKLARI
-    function renderPermissionCheckboxes() {
-        let htmlMain = '';
-        mainPages.forEach(p => { htmlMain += `<label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500;"><input type="checkbox" value="${p}" class="role-perm-cb"> <span>${p}</span></label>`; });
-        document.getElementById('role-pages-grid-main').innerHTML = htmlMain;
-
-        let htmlMedya = '';
-        medyaPages.forEach(p => { htmlMedya += `<label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500;"><input type="checkbox" value="${p}" class="role-perm-cb"> <span>${p}</span></label>`; });
-        document.getElementById('role-pages-grid-medya').innerHTML = htmlMedya;
-    }
-
-    function renderAllLists() {
-        let usersHtml = ''; dbUsers.forEach((u, index) => { const safeRole = u.role || 'Bilinmiyor'; const safeName = u.name || "İsimsiz"; const safeSurname = u.surname || ""; usersHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><div style="width: 26px; height: 26px; background: var(--bg-dark); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">${safeName.charAt(0).toUpperCase()}</div><div><div style="font-weight: 600; color: var(--bg-dark);">${safeName} ${safeSurname}</div><div style="font-size: 10px; color: var(--text-muted);">@${u.id || ''}</div></div></div><div style="display: flex; align-items: center; gap: 10px;"><span style="background: #e2e8f0; color: var(--bg-dark); padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700;">${safeRole}</span><button type="button" class="action-btn" onclick="openEditUser('${u.docId}')"><i class="fa-solid fa-pen"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('users', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('users', ${index}, 1)" ${index===dbUsers.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
-        document.getElementById('users-list-target').innerHTML = usersHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Kullanıcı bulunamadı.</div>';
-
-        let companiesHtml = ''; dbCompanies.forEach((c, index) => { companiesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-building" style="margin-right:6px; color:var(--text-muted);"></i>${c.name || 'İsimsiz'}</div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditCompany('${c.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteCompany('${c.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, 1)" ${index===dbCompanies.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
-        document.getElementById('companies-list-target').innerHTML = companiesHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Firma bulunamadı.</div>';
-
-        let eqHtml = ''; dbEquipments.forEach((e, index) => { eqHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-toolbox" style="margin-right:6px; color:var(--task-purple);"></i>${e.name || "İsimsiz"} <span style="color:var(--text-muted); font-size:10px; font-weight:400; margin-left:5px;">(${e.company})</span></div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditEquipment('${e.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteEquipment('${e.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('equipments', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('equipments', ${index}, 1)" ${index===dbEquipments.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
-        document.getElementById('equipments-list-target').innerHTML = eqHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Ekipman bulunamadı.</div>';
-
-        let rolesHtml = ''; dbRoles.forEach(r => { rolesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-user-shield" style="margin-right:6px; color:#6366f1;"></i>${r.name || 'İsimsiz'}</div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditRole('${r.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteRole('${r.docId}')"><i class="fa-solid fa-trash"></i></button></div></div>`; });
-        document.getElementById('roles-list-target').innerHTML = rolesHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Kayıtlı unvan bulunmuyor.</div>';
-
-        let uRoleSelect = document.getElementById('u-role'); uRoleSelect.innerHTML = '';
-        dbRoles.forEach(r => { uRoleSelect.add(new Option(r.name || "Bilinmiyor", r.name || "Bilinmiyor")); });
-
-        let userOptions = `<option value="">Sorumlu Seçiniz</option>`; dbUsers.forEach(u => { userOptions += `<option value="${u.name} ${u.surname || ''}">${u.name} ${u.surname || ''}</option>`; });
-        document.getElementById('admin-new-company-responsible').innerHTML = userOptions;
-    }
 
     function populateUserModalCompanies() {
         const cList = document.getElementById('u-chk-companies-list'); const rList = document.getElementById('u-rep-companies-list');
@@ -362,77 +207,49 @@
         });
     }
 
-    async function moveItem(type, index, direction) { let arr = type === 'users' ? dbUsers : (type === 'companies' ? dbCompanies : dbEquipments); if(index + direction < 0 || index + direction >= arr.length) return; let item1 = arr[index]; let item2 = arr[index + direction]; let tempOrder = item1.order || index; item1.order = item2.order || (index + direction); item2.order = tempOrder; await db.collection(type).doc(item1.docId).update({ order: item1.order }); await db.collection(type).doc(item2.docId).update({ order: item2.order }); if(type === 'users') await fetchUsersFromFirebase(); else if (type === 'companies') await fetchCompaniesFromFirebase(); else await fetchEquipmentsFromFirebase(); renderAllLists(); }
-    async function updateVersionTexts() { const btn = document.getElementById('save-version-btn'); btn.innerText = "Kaydediliyor..."; dbVersionInfo.version = document.getElementById('admin-version').value; dbVersionInfo.notes = document.getElementById('admin-notes').value; await db.collection('settings').doc('system').set(dbVersionInfo); btn.innerText = "Uygula & Kaydet"; alert("Sürüm notları kaydedildi!"); closeModal('master-system-modal'); }
+    function loadAdminSettings() {
+        let usersHtml = ''; dbUsers.forEach((u, index) => { const safeRole = (u.role || "").toLowerCase() === 'admin' || u.id === 'alperen' ? 'Admin' : (u.role || 'Bilinmiyor'); const roleColor = safeRole === 'Admin' ? 'background: #fee2e2; color: var(--primary-red);' : 'background: #e2e8f0; color: var(--bg-dark);'; const safeName = u.name || "İsimsiz"; const safeSurname = u.surname || ""; const safeId = u.id || "id_yok"; const firstChar = safeName.charAt(0).toUpperCase(); usersHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><div style="width: 26px; height: 26px; background: var(--bg-dark); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">${firstChar}</div><div><div style="font-weight: 600; color: var(--bg-dark);">${safeName} ${safeSurname}</div><div style="font-size: 10px; color: var(--text-muted);">@${safeId}</div></div></div><div style="display: flex; align-items: center; gap: 10px;"><span style="${roleColor} padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700;">${safeRole}</span><button type="button" class="action-btn" onclick="openEditUser('${u.docId}')"><i class="fa-solid fa-pen"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('users', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('users', ${index}, 1)" ${index===dbUsers.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
+        let companiesHtml = ''; dbCompanies.forEach((c, index) => { const safeCName = c.name || "İsimsiz Firma"; companiesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-building" style="margin-right:6px; color:var(--text-muted);"></i>${safeCName}</div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditCompany('${c.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteCompany('${c.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, 1)" ${index===dbCompanies.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
+        let userOptions = `<option value="">Sorumlu Seçiniz</option>`; dbUsers.forEach(u => { userOptions += `<option value="${u.name} ${u.surname || ''}">${u.name} ${u.surname || ''}</option>`; });
+        
+        document.getElementById('users-list-target').innerHTML = usersHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Kullanıcı bulunamadı.</div>';
+        document.getElementById('companies-list-target').innerHTML = companiesHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Firma bulunamadı.</div>';
+        document.getElementById('admin-new-company-responsible').innerHTML = userOptions;
+    }
+
+    async function moveItem(type, index, direction) { let arr = type === 'users' ? dbUsers : dbCompanies; if(index + direction < 0 || index + direction >= arr.length) return; let item1 = arr[index]; let item2 = arr[index + direction]; let tempOrder = item1.order || index; item1.order = item2.order || (index + direction); item2.order = tempOrder; await db.collection(type).doc(item1.docId).update({ order: item1.order }); await db.collection(type).doc(item2.docId).update({ order: item2.order }); if(type === 'users') await fetchUsersFromFirebase(); else await fetchCompaniesFromFirebase(); loadAdminSettings(); }
     function toggleUserCompanies() { document.getElementById('u-chk-companies-wrapper').style.display = document.getElementById('u-chk-visible').checked ? 'block' : 'none'; }
     
-    // --- YENİLENMİŞ VE HATASIZ UNVAN & YETKİ MODÜLÜ ---
-    function clearRoleForm() { 
-        document.getElementById('role-doc-id').value = "new"; 
-        document.getElementById('role-name').value = ""; 
-        document.querySelectorAll('.role-perm-cb').forEach(cb => cb.checked = false); 
-        document.getElementById('cancel-role-edit-btn').style.display = 'none'; 
-        document.getElementById('save-role-btn').innerText = "Unvanı / Yetkileri Kaydet"; 
-    }
-
-    function openEditRole(docId) { 
-        let r = dbRoles.find(x => x.docId === docId); if(!r) return; 
-        document.getElementById('role-doc-id').value = docId; 
-        document.getElementById('role-name').value = r.name || ""; 
-        let allowedPages = r.pages || []; 
-        document.querySelectorAll('.role-perm-cb').forEach(cb => { 
-            cb.checked = allowedPages.includes(cb.value); 
-        }); 
-        document.getElementById('cancel-role-edit-btn').style.display = 'inline-block'; 
-        document.getElementById('save-role-btn').innerText = "Değişiklikleri Güncelle"; 
-    }
-
-    async function saveRole() { 
-        let docId = document.getElementById('role-doc-id').value; 
-        let rName = document.getElementById('role-name').value.trim(); 
-        let btn = document.getElementById('save-role-btn');
-        if(!rName) { alert("Lütfen bir unvan adı girin!"); return; } 
-        btn.innerText = "Kaydediliyor...";
-        
-        let checkedPages = []; 
-        document.querySelectorAll('.role-perm-cb:checked').forEach(cb => { checkedPages.push(cb.value); }); 
-        
-        let data = { name: rName, pages: checkedPages }; 
-        try { 
-            if(docId === "new") { 
-                await db.collection('roles').add(data); 
-            } else { 
-                await db.collection('roles').doc(docId).update(data); 
-            } 
-            clearRoleForm(); 
-            await fetchRolesFromFirebase(); 
-            renderAllLists(); 
-            alert("Unvan başarıyla kaydedildi!"); 
-        } catch(e) { 
-            console.error(e); 
-        } finally {
-            btn.innerText = "Unvanı / Yetkileri Kaydet";
-        }
-    }
-
-    async function deleteRole(docId) { if(confirm("Bu unvanı silmek istediğinize emin misiniz?")) { await db.collection('roles').doc(docId).delete(); await fetchRolesFromFirebase(); renderAllLists(); } }
-
-    // --- KULLANICI MODAL TETİKLEYİCİLERİ ---
     function openAddUser() { populateUserModalCompanies(); document.getElementById('edit-doc-id').value = "new"; document.getElementById('user-modal-title').innerText = "Yeni Kullanıcı Ekle"; document.getElementById('u-name').value = ""; document.getElementById('u-surname').value = ""; document.getElementById('u-id').value = ""; document.getElementById('u-pass').value = ""; document.getElementById('u-chk-visible').checked = false; toggleUserCompanies(); document.querySelectorAll('.u-comp-cb').forEach(cb => cb.checked = false); document.querySelectorAll('.u-rep-cb').forEach(cb => cb.checked = false); document.getElementById('delete-user-btn').style.display = 'none'; openModal('user-modal'); }
     function openEditUser(docId) { populateUserModalCompanies(); const u = dbUsers.find(x => x.docId === docId); document.getElementById('edit-doc-id').value = docId; document.getElementById('user-modal-title').innerText = "Kullanıcıyı Düzenle"; document.getElementById('u-name').value = u.name || ""; document.getElementById('u-surname').value = u.surname || ""; document.getElementById('u-id').value = u.id || ""; document.getElementById('u-pass').value = u.pass || ""; document.getElementById('u-role').value = u.role || ""; document.getElementById('u-chk-visible').checked = u.chkVisible || false; toggleUserCompanies(); let chkComps = u.chkCompanies || []; document.querySelectorAll('.u-comp-cb').forEach(cb => { cb.checked = chkComps.includes(cb.value); }); let repComps = u.repCompanies || []; document.querySelectorAll('.u-rep-cb').forEach(cb => { cb.checked = repComps.includes(cb.value); }); document.getElementById('delete-user-btn').style.display = 'block'; openModal('user-modal'); }
-    async function saveUser() { const docId = document.getElementById('edit-doc-id').value; const btn = document.getElementById('save-user-btn'); btn.innerText = "Kaydediliyor..."; let selectedComps = []; if(document.getElementById('u-chk-visible').checked) { document.querySelectorAll('.u-comp-cb:checked').forEach(cb => selectedComps.push(cb.value)); } let selectedRepComps = []; document.querySelectorAll('.u-rep-cb:checked').forEach(cb => selectedRepComps.push(cb.value)); const userData = { id: document.getElementById('u-id').value.trim().toLowerCase(), name: document.getElementById('u-name').value.trim(), surname: document.getElementById('u-surname').value.trim(), pass: document.getElementById('u-pass').value.trim(), role: document.getElementById('u-role').value, chkVisible: document.getElementById('u-chk-visible').checked, chkCompanies: selectedComps, repCompanies: selectedRepComps }; try { if(docId === "new") { userData.order = dbUsers.length; await db.collection('users').add(userData); } else await db.collection('users').doc(docId).update(userData); btn.innerText = "Kaydet"; closeModal('user-modal'); await fetchUsersFromFirebase(); renderAllLists(); } catch (error) { console.error(error); alert("Kaydedilemedi!"); btn.innerText = "Kaydet"; } }
-    async function deleteUser() { const docId = document.getElementById('edit-doc-id').value; if(docId !== "new") { const u = dbUsers.find(x => x.docId === docId); if(u.id === currentUser.id) { alert("Kendi hesabınızı silemezsiniz!"); return; } if(confirm("Silmek istediğinize emin misiniz?")) { document.getElementById('delete-user-btn').innerText = "Siliniyor..."; await db.collection('users').doc(docId).delete(); closeModal('user-modal'); document.getElementById('delete-user-btn').innerText = "Sil"; await fetchUsersFromFirebase(); renderAllLists(); } } }
+    async function saveUser() { const docId = document.getElementById('edit-doc-id').value; const btn = document.getElementById('save-user-btn'); btn.innerText = "Kaydediliyor..."; let selectedComps = []; if(document.getElementById('u-chk-visible').checked) { document.querySelectorAll('.u-comp-cb:checked').forEach(cb => selectedComps.push(cb.value)); } let selectedRepComps = []; document.querySelectorAll('.u-rep-cb:checked').forEach(cb => selectedRepComps.push(cb.value)); const userData = { id: document.getElementById('u-id').value.trim().toLowerCase(), name: document.getElementById('u-name').value.trim(), surname: document.getElementById('u-surname').value.trim(), pass: document.getElementById('u-pass').value.trim(), role: document.getElementById('u-role').value, chkVisible: document.getElementById('u-chk-visible').checked, chkCompanies: selectedComps, repCompanies: selectedRepComps }; try { if(docId === "new") { userData.order = dbUsers.length; await db.collection('users').add(userData); } else await db.collection('users').doc(docId).update(userData); btn.innerText = "Kaydet"; closeModal('user-modal'); await fetchUsersFromFirebase(); loadAdminSettings(); } catch (error) { console.error(error); alert("Kaydedilemedi!"); btn.innerText = "Kaydet"; } }
+    async function deleteUser() { const docId = document.getElementById('edit-doc-id').value; if(docId !== "new") { const u = dbUsers.find(x => x.docId === docId); if(u.id === currentUser.id) { alert("Kendi hesabınızı silemezsiniz!"); return; } if(confirm("Silmek istediğinize emin misiniz?")) { document.getElementById('delete-user-btn').innerText = "Siliniyor..."; await db.collection('users').doc(docId).delete(); closeModal('user-modal'); document.getElementById('delete-user-btn').innerText = "Sil"; await fetchUsersFromFirebase(); loadAdminSettings(); } } }
 
-    // --- FİRMA VE EKİPMAN TETİKLEYİCİLERİ ---
-    async function addCompany() { const cName = document.getElementById('admin-new-company').value.trim(); const cOwner = document.getElementById('admin-new-company-owner').value.trim(); const cResp = document.getElementById('admin-new-company-responsible').value; const cDrive = document.getElementById('admin-new-company-drive').value.trim(); const cAds = document.getElementById('admin-new-company-ads').checked; if(!cName) return; await db.collection('companies').add({ name: cName, sahibi: cOwner, sorumlu: cResp, drive: cDrive, showInAds: cAds, order: dbCompanies.length }); document.getElementById('admin-new-company').value = ''; document.getElementById('admin-new-company-owner').value = ''; document.getElementById('admin-new-company-drive').value = ''; document.getElementById('admin-new-company-ads').checked = false; await fetchCompaniesFromFirebase(); renderAllLists(); }
-    function openEditCompany(docId) { const c = dbCompanies.find(x => x.docId === docId); if (!c) return; document.getElementById('edit-comp-doc-id').value = docId; document.getElementById('edit-comp-name').value = c.name || ""; document.getElementById('edit-comp-owner').value = c.sahibi || ""; document.getElementById('edit-comp-drive').value = c.drive || ""; document.getElementById('edit-comp-ads').checked = c.showInAds || false; let userOptions = `<option value="">Sorumlu Seçiniz</option>`; dbUsers.forEach(u => { let fullName = `${u.name} ${u.surname || ''}`.trim(); let selected = (c.sorumlu === fullName) ? "selected" : ""; userOptions += `<option value="${fullName}" ${selected}>${fullName}</option>`; }); document.getElementById('edit-comp-resp').innerHTML = userOptions; openModal('company-modal'); }
-    async function saveEditedCompany() { const docId = document.getElementById('edit-comp-doc-id').value; const cName = document.getElementById('edit-comp-name').value.trim(); const cOwner = document.getElementById('edit-comp-owner').value.trim(); const cResp = document.getElementById('edit-comp-resp').value; const cDrive = document.getElementById('edit-comp-drive').value.trim(); const cAds = document.getElementById('edit-comp-ads').checked; const btn = document.getElementById('save-comp-btn'); if(!cName) return; btn.innerText = "Kaydediliyor..."; try { await db.collection('companies').doc(docId).update({ name: cName, sahibi: cOwner, sorumlu: cResp, drive: cDrive, showInAds: cAds }); btn.innerText = "Kaydet"; closeModal('company-modal'); await fetchCompaniesFromFirebase(); renderAllLists(); } catch(e) { console.error(e); alert("Kaydedilemedi, lütfen tekrar deneyin."); btn.innerText = "Kaydet"; } }
-    async function deleteCompany(docId) { if(confirm("Bu firmayı silmek istediğinize emin misiniz?")) { await db.collection('companies').doc(docId).delete(); await fetchCompaniesFromFirebase(); renderAllLists(); } }
+    async function addCompany() {
+        const cName = document.getElementById('admin-new-company').value.trim(); const cOwner = document.getElementById('admin-new-company-owner').value.trim(); const cResp = document.getElementById('admin-new-company-responsible').value; const cDrive = document.getElementById('admin-new-company-drive').value.trim(); const cAds = document.getElementById('admin-new-company-ads').checked;
+        if(!cName) return;
+        await db.collection('companies').add({ name: cName, sahibi: cOwner, sorumlu: cResp, drive: cDrive, showInAds: cAds, order: dbCompanies.length }); 
+        document.getElementById('admin-new-company').value = ''; document.getElementById('admin-new-company-owner').value = ''; document.getElementById('admin-new-company-drive').value = ''; document.getElementById('admin-new-company-ads').checked = false;
+        await fetchCompaniesFromFirebase(); loadAdminSettings();
+    }
 
-    function openAddEquipment() { document.getElementById('edit-eq-doc-id').value = "new"; document.getElementById('eq-modal-title').innerText = "Yeni Ekipman Ekle"; document.getElementById('eq-name').value = ""; document.getElementById('eq-type').value = "Kamera"; document.getElementById('eq-company').value = "RDGRUP MEDYA"; openModal('equipment-modal'); }
-    function openEditEquipment(docId) { const e = dbEquipments.find(x => x.docId === docId); if(!e) return; document.getElementById('edit-eq-doc-id').value = docId; document.getElementById('eq-modal-title').innerText = "Ekipmanı Düzenle"; document.getElementById('eq-name').value = e.name || ""; document.getElementById('eq-type').value = e.type || "Kamera"; document.getElementById('eq-company').value = e.company || "RDGRUP MEDYA"; openModal('equipment-modal'); }
-    async function saveEditedEquipment() { const docId = document.getElementById('edit-eq-doc-id').value; const eName = document.getElementById('eq-name').value.trim(); const eType = document.getElementById('eq-type').value; const eComp = document.getElementById('eq-company').value; const btn = document.getElementById('save-eq-btn'); if(!eName) return; btn.innerText = "Kaydediliyor..."; try { if(docId === "new") { await db.collection('equipments').add({ name: eName, type: eType, company: eComp, order: dbEquipments.length }); } else { await db.collection('equipments').doc(docId).update({ name: eName, type: eType, company: eComp }); } btn.innerText = "Kaydet"; closeModal('equipment-modal'); await fetchEquipmentsFromFirebase(); renderAllLists(); } catch(e) { console.error(e); btn.innerText = "Kaydet"; } }
-    async function deleteEquipment(docId) { if(confirm("Ekipmanı silmek istediğinize emin misiniz?")) { await db.collection('equipments').doc(docId).delete(); await fetchEquipmentsFromFirebase(); renderAllLists(); } }
+    function openEditCompany(docId) {
+        const c = dbCompanies.find(x => x.docId === docId); if (!c) return;
+        document.getElementById('edit-comp-doc-id').value = docId; document.getElementById('edit-comp-name').value = c.name || ""; document.getElementById('edit-comp-owner').value = c.sahibi || ""; document.getElementById('edit-comp-drive').value = c.drive || ""; document.getElementById('edit-comp-ads').checked = c.showInAds || false;
+        let userOptions = `<option value="">Sorumlu Seçiniz</option>`; dbUsers.forEach(u => { let fullName = `${u.name} ${u.surname || ''}`.trim(); let selected = (c.sorumlu === fullName) ? "selected" : ""; userOptions += `<option value="${fullName}" ${selected}>${fullName}</option>`; }); document.getElementById('edit-comp-resp').innerHTML = userOptions;
+        openModal('company-modal');
+    }
+
+    async function saveEditedCompany() {
+        const docId = document.getElementById('edit-comp-doc-id').value; const cName = document.getElementById('edit-comp-name').value.trim(); const cOwner = document.getElementById('edit-comp-owner').value.trim(); const cResp = document.getElementById('edit-comp-resp').value; const cDrive = document.getElementById('edit-comp-drive').value.trim(); const cAds = document.getElementById('edit-comp-ads').checked; const btn = document.getElementById('save-comp-btn');
+        if(!cName) return; btn.innerText = "Kaydediliyor...";
+        try {
+            await db.collection('companies').doc(docId).update({ name: cName, sahibi: cOwner, sorumlu: cResp, drive: cDrive, showInAds: cAds });
+            btn.innerText = "Kaydet"; closeModal('company-modal'); await fetchCompaniesFromFirebase(); loadAdminSettings(); 
+        } catch(e) { console.error(e); alert("Kaydedilemedi, lütfen tekrar deneyin."); btn.innerText = "Kaydet"; }
+    }
+
+    async function deleteCompany(docId) { if(confirm("Bu firmayı silmek istediğinize emin misiniz?")) { await db.collection('companies').doc(docId).delete(); await fetchCompaniesFromFirebase(); loadAdminSettings(); } }
 </script>
 </body>
 </html>
