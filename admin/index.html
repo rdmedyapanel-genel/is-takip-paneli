@@ -9,13 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="css/style.css">
     
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
     <style>
-        /* Katmanlı Modal Düzeneği */
         .master-modal { z-index: 1000; }
         .sub-modal { z-index: 1100; }
         
@@ -26,6 +25,7 @@
         
         .list-container-box { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 300px; overflow-y: auto; margin-top: 10px; }
         .perm-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 5px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .section-header { font-size: 11px; font-weight: 700; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
     </style>
 </head>
 <body>
@@ -81,13 +81,18 @@
         <div style="background:#f8fafc; padding:15px; border-radius:10px; border:1px solid #e2e8f0; margin-bottom:15px; display:flex; flex-direction:column; gap:10px;">
             <input type="hidden" id="role-doc-id" value="new">
             <div class="input-group" style="margin:0;"><label>UNVAN / ROL ADI</label><input type="text" id="role-name" placeholder="Örn: Tasarımcı, Videographer, Stajyer" autocomplete="off"></div>
-            <div class="input-group" style="margin:0;">
-                <label>BU UNVANIN GÖREBİLECEĞİ SAYFALAR (YETKİLER)</label>
-                <div class="perm-grid" id="role-pages-grid"></div>
+            
+            <div class="input-group" style="margin:0; margin-top: 10px;">
+                <div class="section-header" style="color: var(--primary-red); border-color: #fecaca;"><i class="fa-solid fa-layer-group"></i> GİRİŞ EKRANI YETKİLERİ</div>
+                <div class="perm-grid" id="role-pages-grid-main" style="margin-bottom: 15px;"></div>
+
+                <div class="section-header" style="color: var(--task-purple); border-color: #e9d5ff;"><i class="fa-solid fa-clapperboard"></i> MEDYA PANELİ YETKİLERİ</div>
+                <div class="perm-grid" id="role-pages-grid-medya"></div>
             </div>
-            <div style="display:flex; gap:10px; margin-top:5px;">
-                <button type="button" class="login-btn btn-purple" style="flex:1; margin:0;" onclick="saveRole()">Unvanı / Yetkileri Kaydet</button>
-                <button type="button" class="login-btn btn-gray" id="cancel-role-edit-btn" style="display:none; width:auto; margin:0;" onclick="clearRoleForm()">Vazgeç</button>
+
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button type="button" class="login-btn btn-purple" id="save-role-btn" style="flex:1; margin:0;" onclick="saveRole()">Unvanı / Yetkileri Kaydet</button>
+                <button type="button" class="login-btn btn-gray" id="cancel-role-edit-btn" style="display:none; width:auto; margin:0;" onclick="clearRoleForm()">Düzenlemeden Çık</button>
             </div>
         </div>
 
@@ -108,7 +113,6 @@
         </div>
     </div>
 </div>
-
 
 <div class="modal-overlay sub-modal" id="user-modal">
     <div class="modal-content">
@@ -196,7 +200,6 @@
     </div>
 </div>
 
-
 <div class="slide-container" id="dashboard-screen" style="display: flex;">
     <div class="dashboard-layout">
         <div class="sidebar" id="app-sidebar">
@@ -210,9 +213,7 @@
                 </div>
                 <button type="button" class="action-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" style="padding: 8px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-left: 5px;"><i class="fa-solid fa-bars"></i></button>
             </div>
-            
             <button type="button" class="back-to-company" onclick="backToCompanySelection()"><i class="fa-solid fa-arrow-left"></i> <span>Şube Seçimine Dön</span></button>
-            
             <div class="menu-category" style="font-size: 10px; font-weight: 700; color:#94a3b8; margin-bottom: 8px; letter-spacing: 1px;">MENÜ</div>
             <ul class="menu-list" id="sidebar-menu">
                 <li class="menu-item active"><i class="fa-solid fa-gear"></i> <span>Yönetim Paneli</span></li>
@@ -253,30 +254,31 @@
     </div>
 </div>
 
-<script src="../js/firebase-config.js"></script>
+<script src="js/firebase-config.js"></script>
 
 <script>
     let dbUsers = []; let dbCompanies = []; let dbEquipments = []; let dbRoles = [];
     let dbVersionInfo = { version: "RDGRUP V.1.5", notes: "" }; let currentUser = null; let isSidebarCollapsed = false;
 
     const holdingCompanies = ["RDGRUP MEDYA", "ANKARA MEZUNİYET", "TÜRKİYE MEZUNİYET"];
-    const systemPages = ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Reklamlar", "Ekipmanlar", "Raporlar"];
+    
+    // SAYFALAR İKİYE BÖLÜNDÜ
+    const mainPages = ["Tüm İşler", "Tüm Ekipmanlar", "Yönetim Paneli"];
+    const medyaPages = ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Reklamlar", "Ekipmanlar", "Raporlar"];
 
     window.onload = async function() {
         const savedUser = localStorage.getItem('rdgrup_user');
-        if (!savedUser) { window.location.href = '../index.html'; return; }
+        if (!savedUser) { window.location.href = 'index.html'; return; }
         currentUser = JSON.parse(savedUser);
         const role = (currentUser.role || "").toLowerCase();
-        if(role !== 'admin' && currentUser.id !== 'alperen') { alert("Bu sayfayı görüntüleme yetkiniz yok!"); window.location.href = '../index.html'; return; }
+        if(role !== 'admin' && currentUser.id !== 'alperen') { alert("Bu sayfayı görüntüleme yetkiniz yok!"); window.location.href = 'index.html'; return; }
         
         document.getElementById('logged-user-name').innerText = currentUser.name || "Kullanıcı"; document.getElementById('logged-user-role').innerText = currentUser.role || "Bilinmiyor"; document.getElementById('logged-avatar').innerText = (currentUser.name || "?").charAt(0).toUpperCase();
         await initializeSystem();
     };
 
-    // HATA KORUMALI BAŞLATMA
     async function initializeSystem() {
         document.getElementById('init-loader').style.display = 'flex';
-        
         try { const doc = await db.collection('settings').doc('system').get(); if (doc.exists) dbVersionInfo = doc.data(); document.getElementById('admin-version').value = dbVersionInfo.version || ""; document.getElementById('admin-notes').value = dbVersionInfo.notes || ""; } catch(e) { console.error("Sistem ayarı çekilemedi:", e); }
         try { await fetchRolesFromFirebase(); } catch(e) { console.error("Roller çekilemedi:", e); }
         try { await fetchUsersFromFirebase(); } catch(e) { console.error("Kullanıcılar çekilemedi:", e); }
@@ -292,10 +294,8 @@
     }
 
     function toggleSidebar() { isSidebarCollapsed = !isSidebarCollapsed; const sb = document.getElementById('app-sidebar'); if (isSidebarCollapsed) { sb.classList.add('collapsed'); } else { sb.classList.remove('collapsed'); } }
-    
-    function logout() { localStorage.removeItem('rdgrup_user'); window.location.href = '../index.html'; }
-    function backToCompanySelection() { window.location.href = '../index.html'; }
-    
+    function logout() { localStorage.removeItem('rdgrup_user'); window.location.href = 'index.html'; }
+    function backToCompanySelection() { window.location.href = 'index.html'; }
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -310,9 +310,10 @@
         
         if(dbRoles.length === 0) {
             const defaultRoles = [
-                { name: "Admin", pages: systemPages }, { name: "Yönetici", pages: systemPages },
-                { name: "Tasarımcı", pages: ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
-                { name: "Fotoğrafçı", pages: ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Çekim Takvimi", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
+                { name: "Admin", pages: [...mainPages, ...medyaPages] }, 
+                { name: "Yönetici", pages: [...mainPages, ...medyaPages] },
+                { name: "Tasarımcı", pages: ["Tüm İşler", "Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
+                { name: "Fotoğrafçı", pages: ["Tüm İşler", "Anasayfa", "Kendi İşlerim", "Genel Takvim", "Çekim Takvimi", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
                 { name: "Asistan", pages: ["Anasayfa", "Genel Takvim", "Genel Ajanda", "Kişisel Ajanda", "Checklist"] },
                 { name: "Stajyer", pages: ["Anasayfa", "Kendi İşlerim", "Genel Ajanda", "Kişisel Ajanda"] }
             ];
@@ -321,10 +322,15 @@
         dbRoles.sort((a,b) => (a.name || "").localeCompare(b.name || ""));
     }
 
+    // İKİYE BÖLÜNMÜŞ YETKİ KUTUCUKLARI
     function renderPermissionCheckboxes() {
-        let html = '';
-        systemPages.forEach(p => { html += `<label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500;"><input type="checkbox" value="${p}" class="role-perm-cb"> <span>${p}</span></label>`; });
-        document.getElementById('role-pages-grid').innerHTML = html;
+        let htmlMain = '';
+        mainPages.forEach(p => { htmlMain += `<label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500;"><input type="checkbox" value="${p}" class="role-perm-cb"> <span>${p}</span></label>`; });
+        document.getElementById('role-pages-grid-main').innerHTML = htmlMain;
+
+        let htmlMedya = '';
+        medyaPages.forEach(p => { htmlMedya += `<label style="display:flex; align-items:center; gap:6px; font-size:12px; font-weight:500;"><input type="checkbox" value="${p}" class="role-perm-cb"> <span>${p}</span></label>`; });
+        document.getElementById('role-pages-grid-medya').innerHTML = htmlMedya;
     }
 
     function renderAllLists() {
@@ -360,10 +366,55 @@
     async function updateVersionTexts() { const btn = document.getElementById('save-version-btn'); btn.innerText = "Kaydediliyor..."; dbVersionInfo.version = document.getElementById('admin-version').value; dbVersionInfo.notes = document.getElementById('admin-notes').value; await db.collection('settings').doc('system').set(dbVersionInfo); btn.innerText = "Uygula & Kaydet"; alert("Sürüm notları kaydedildi!"); closeModal('master-system-modal'); }
     function toggleUserCompanies() { document.getElementById('u-chk-companies-wrapper').style.display = document.getElementById('u-chk-visible').checked ? 'block' : 'none'; }
     
-    // --- UNVAN & YETKİ MODÜLÜ ---
-    function clearRoleForm() { document.getElementById('role-doc-id').value = "new"; document.getElementById('role-name').value = ""; document.querySelectorAll('.role-perm-cb').forEach(cb => cb.checked = false); document.getElementById('cancel-role-edit-btn').style.display = 'none'; }
-    function openEditRole(docId) { let r = dbRoles.find(x => x.docId === docId); if(!r) return; document.getElementById('role-doc-id').value = docId; document.getElementById('role-name').value = r.name || ""; let allowedPages = r.pages || []; document.querySelectorAll('.role-perm-cb').forEach(cb => { cb.checked = allowedPages.includes(cb.value); }); document.getElementById('cancel-role-edit-btn').style.display = 'inline-block'; }
-    async function saveRole() { let docId = document.getElementById('role-doc-id').value; let rName = document.getElementById('role-name').value.trim(); if(!rName) { alert("Lütfen bir unvan adı girin!"); return; } let checkedPages = []; document.querySelectorAll('.role-perm-cb:checked').forEach(cb => { checkedPages.push(cb.value); }); let data = { name: rName, pages: checkedPages }; try { if(docId === "new") { await db.collection('roles').add(data); } else { await db.collection('roles').doc(docId).update(data); } clearRoleForm(); await fetchRolesFromFirebase(); renderAllLists(); alert("Unvan başarıyla güncellendi!"); } catch(e) { console.error(e); } }
+    // --- YENİLENMİŞ VE HATASIZ UNVAN & YETKİ MODÜLÜ ---
+    function clearRoleForm() { 
+        document.getElementById('role-doc-id').value = "new"; 
+        document.getElementById('role-name').value = ""; 
+        document.querySelectorAll('.role-perm-cb').forEach(cb => cb.checked = false); 
+        document.getElementById('cancel-role-edit-btn').style.display = 'none'; 
+        document.getElementById('save-role-btn').innerText = "Unvanı / Yetkileri Kaydet"; 
+    }
+
+    function openEditRole(docId) { 
+        let r = dbRoles.find(x => x.docId === docId); if(!r) return; 
+        document.getElementById('role-doc-id').value = docId; 
+        document.getElementById('role-name').value = r.name || ""; 
+        let allowedPages = r.pages || []; 
+        document.querySelectorAll('.role-perm-cb').forEach(cb => { 
+            cb.checked = allowedPages.includes(cb.value); 
+        }); 
+        document.getElementById('cancel-role-edit-btn').style.display = 'inline-block'; 
+        document.getElementById('save-role-btn').innerText = "Değişiklikleri Güncelle"; 
+    }
+
+    async function saveRole() { 
+        let docId = document.getElementById('role-doc-id').value; 
+        let rName = document.getElementById('role-name').value.trim(); 
+        let btn = document.getElementById('save-role-btn');
+        if(!rName) { alert("Lütfen bir unvan adı girin!"); return; } 
+        btn.innerText = "Kaydediliyor...";
+        
+        let checkedPages = []; 
+        document.querySelectorAll('.role-perm-cb:checked').forEach(cb => { checkedPages.push(cb.value); }); 
+        
+        let data = { name: rName, pages: checkedPages }; 
+        try { 
+            if(docId === "new") { 
+                await db.collection('roles').add(data); 
+            } else { 
+                await db.collection('roles').doc(docId).update(data); 
+            } 
+            clearRoleForm(); 
+            await fetchRolesFromFirebase(); 
+            renderAllLists(); 
+            alert("Unvan başarıyla kaydedildi!"); 
+        } catch(e) { 
+            console.error(e); 
+        } finally {
+            btn.innerText = "Unvanı / Yetkileri Kaydet";
+        }
+    }
+
     async function deleteRole(docId) { if(confirm("Bu unvanı silmek istediğinize emin misiniz?")) { await db.collection('roles').doc(docId).delete(); await fetchRolesFromFirebase(); renderAllLists(); } }
 
     // --- KULLANICI MODAL TETİKLEYİCİLERİ ---
