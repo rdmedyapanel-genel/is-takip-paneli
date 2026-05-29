@@ -73,6 +73,40 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="equipment-modal">
+    <div class="modal-content" style="width: 450px;">
+        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('equipment-modal')"></i>
+        <h3 class="modal-title" id="eq-modal-title">Ekipman Düzenle</h3>
+        <input type="hidden" id="edit-eq-doc-id" value="">
+        <div class="input-group"><label>EKİPMAN İSMİ</label><input type="text" id="eq-name" placeholder="Örn: Sony A7 IV" autocomplete="off"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="input-group">
+                <label>TÜR</label>
+                <select id="eq-type">
+                    <option value="Kamera">Kamera</option>
+                    <option value="Lens">Lens</option>
+                    <option value="Işık">Işık</option>
+                    <option value="Ses/Mikrofon">Ses / Mikrofon</option>
+                    <option value="Fon">Fon / Perde</option>
+                    <option value="Diğer">Diğer</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>ŞİRKET</label>
+                <select id="eq-company">
+                    <option value="RDGRUP MEDYA">RDGrup Medya</option>
+                    <option value="ANKARA MEZUNİYET">Ankara Mezuniyet</option>
+                    <option value="TÜRKİYE MEZUNİYET">Türkiye Mezuniyet</option>
+                </select>
+            </div>
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 15px;">
+            <button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('equipment-modal')">İptal</button>
+            <button type="button" class="login-btn btn-purple" id="save-eq-btn" style="flex: 1;" onclick="saveEditedEquipment()">Kaydet</button>
+        </div>
+    </div>
+</div>
+
 <div class="slide-container" id="dashboard-screen" style="display: flex;">
     <div class="dashboard-layout">
         <div class="sidebar" id="app-sidebar">
@@ -101,7 +135,7 @@
 
 <script src="../js/firebase-config.js"></script>
 <script>
-    let dbUsers = []; let dbCompanies = []; let dbVersionInfo = { version: "RDGRUP V.1.5", notes: "" }; let currentUser = null; let isSidebarCollapsed = false;
+    let dbUsers = []; let dbCompanies = []; let dbEquipments = []; let dbVersionInfo = { version: "RDGRUP V.1.5", notes: "" }; let currentUser = null; let isSidebarCollapsed = false;
     const holdingCompanies = ["RDGRUP MEDYA", "ANKARA MEZUNİYET", "TÜRKİYE MEZUNİYET"];
 
     window.onload = async function() {
@@ -117,11 +151,10 @@
     async function initializeSystem() {
         try {
             const settingsRef = db.collection('settings').doc('system'); const doc = await settingsRef.get(); if (doc.exists) dbVersionInfo = doc.data();
-            await fetchUsersFromFirebase(); await fetchCompaniesFromFirebase(); loadAdminSettings();
+            await fetchUsersFromFirebase(); await fetchCompaniesFromFirebase(); await fetchEquipmentsFromFirebase(); loadAdminSettings();
         } catch (error) { 
             console.error("Hata:", error); 
         } finally {
-            // Yükleme ekranını gizle
             document.getElementById('init-loader').style.display = 'none';
         }
     }
@@ -134,6 +167,7 @@
 
     async function fetchUsersFromFirebase() { const snapshot = await db.collection('users').get(); dbUsers = []; snapshot.forEach(doc => { dbUsers.push({ docId: doc.id, ...doc.data() }); }); dbUsers.sort((a, b) => (a.order || 0) - (b.order || 0)); }
     async function fetchCompaniesFromFirebase() { const snapshot = await db.collection('companies').get(); dbCompanies = []; snapshot.forEach(doc => { dbCompanies.push({ docId: doc.id, ...doc.data() }); }); dbCompanies.sort((a, b) => (a.order || 0) - (b.order || 0)); }
+    async function fetchEquipmentsFromFirebase() { const snapshot = await db.collection('equipments').get(); dbEquipments = []; snapshot.forEach(doc => { dbEquipments.push({ docId: doc.id, ...doc.data() }); }); dbEquipments.sort((a, b) => (a.order || 0) - (b.order || 0)); }
 
     function populateUserModalCompanies() {
         const cList = document.getElementById('u-chk-companies-list'); const rList = document.getElementById('u-rep-companies-list');
@@ -146,22 +180,50 @@
 
     function loadAdminSettings() {
         let usersHtml = ''; dbUsers.forEach((u, index) => { const safeRole = (u.role || "").toLowerCase() === 'admin' || u.id === 'alperen' ? 'Admin' : (u.role || 'Bilinmiyor'); const roleColor = safeRole === 'Admin' ? 'background: #fee2e2; color: var(--primary-red);' : 'background: #e2e8f0; color: var(--bg-dark);'; const safeName = u.name || "İsimsiz"; const safeSurname = u.surname || ""; const safeId = u.id || "id_yok"; const firstChar = safeName.charAt(0).toUpperCase(); usersHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><div style="width: 26px; height: 26px; background: var(--bg-dark); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">${firstChar}</div><div><div style="font-weight: 600; color: var(--bg-dark);">${safeName} ${safeSurname}</div><div style="font-size: 10px; color: var(--text-muted);">@${safeId}</div></div></div><div style="display: flex; align-items: center; gap: 10px;"><span style="${roleColor} padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700;">${safeRole}</span><button type="button" class="action-btn" onclick="openEditUser('${u.docId}')"><i class="fa-solid fa-pen"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('users', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('users', ${index}, 1)" ${index===dbUsers.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
+        
         let companiesHtml = ''; dbCompanies.forEach((c, index) => { const safeCName = c.name || "İsimsiz Firma"; companiesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-building" style="margin-right:6px; color:var(--text-muted);"></i>${safeCName}</div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditCompany('${c.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteCompany('${c.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, 1)" ${index===dbCompanies.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
         let userOptions = `<option value="">Sorumlu Seçiniz</option>`; dbUsers.forEach(u => { userOptions += `<option value="${u.name} ${u.surname || ''}">${u.name} ${u.surname || ''}</option>`; });
 
-        document.getElementById('main-content').innerHTML = `<h2 class="content-title">Yönetim Paneli (Admin)</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;"><div class="content-card" style="margin-bottom:0;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-users" style="color: var(--primary-red);"></i> Kullanıcılar</h3><button type="button" class="login-btn" style="width: auto; padding: 6px 12px; font-size: 11px; margin: 0;" onclick="openAddUser()">+ Yeni Ekle</button></div><div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 250px; overflow-y: auto;">${usersHtml}</div></div><div class="content-card" style="margin-bottom:0;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-building" style="color: var(--primary-red);"></i> Firmalar</h3></div>
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
-            <input type="text" id="admin-new-company" placeholder="Firma Adı" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;" autocomplete="off">
-            <input type="text" id="admin-new-company-owner" placeholder="Firma Sahibi" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;" autocomplete="off">
-            <select id="admin-new-company-responsible" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;">${userOptions}</select>
-            <input type="text" id="admin-new-company-drive" placeholder="Dosyalar (Drive) Linki" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;" autocomplete="off">
-            <div class="checkbox-group" style="margin-bottom: 5px;"><label><input type="checkbox" id="admin-new-company-ads"> Reklam Sayfasında Görünsün</label></div>
-            <button type="button" class="login-btn" style="padding: 8px 15px;" onclick="addCompany()">Firmayı Ekle</button>
-        </div>
-        <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 200px; overflow-y: auto;">${companiesHtml !== '' ? companiesHtml : '<div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 11px;">Firma eklenmemiş.</div>'}</div></div><div class="content-card" style="grid-column: span 2;"><h3 style="color: var(--bg-dark); border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; font-size: 14px;"><i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Giriş Ekranı Yazıları</h3><div class="input-group"><label>SÜRÜM BİLGİSİ</label><input type="text" id="admin-version" value="${dbVersionInfo.version || ''}" autocomplete="off"></div><div class="input-group"><label>EKLENEN ÖZELLİKLER</label><textarea id="admin-notes" rows="3" autocomplete="off">${dbVersionInfo.notes || ''}</textarea></div><button type="button" class="login-btn" style="padding: 10px; width: 150px;" id="save-version-btn" onclick="updateVersionTexts()">Uygula & Kaydet</button></div></div>`;
+        let eqHtml = ''; dbEquipments.forEach((e, index) => { eqHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-toolbox" style="margin-right:6px; color:var(--task-purple);"></i>${e.name || "İsimsiz"} <span style="color:var(--text-muted); font-size:10px; font-weight:400; margin-left:5px;">(${e.company})</span></div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditEquipment('${e.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteEquipment('${e.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('equipments', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('equipments', ${index}, 1)" ${index===dbEquipments.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
+
+        document.getElementById('main-content').innerHTML = `
+        <h2 class="content-title">Yönetim Paneli (Admin)</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+            
+            <div class="content-card" style="margin-bottom:0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-users" style="color: var(--primary-red);"></i> Kullanıcılar</h3><button type="button" class="login-btn" style="width: auto; padding: 6px 12px; font-size: 11px; margin: 0;" onclick="openAddUser()">+ Yeni Ekle</button></div>
+                <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 250px; overflow-y: auto;">${usersHtml}</div>
+            </div>
+
+            <div class="content-card" style="margin-bottom:0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-building" style="color: var(--primary-red);"></i> Firmalar</h3></div>
+                <div style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;">
+                    <input type="text" id="admin-new-company" placeholder="Firma Adı" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;" autocomplete="off">
+                    <input type="text" id="admin-new-company-owner" placeholder="Firma Sahibi" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;" autocomplete="off">
+                    <select id="admin-new-company-responsible" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;">${userOptions}</select>
+                    <input type="text" id="admin-new-company-drive" placeholder="Dosyalar (Drive) Linki" style="padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0; font-family: 'Poppins', sans-serif;" autocomplete="off">
+                    <div class="checkbox-group" style="margin-bottom: 5px;"><label><input type="checkbox" id="admin-new-company-ads"> Reklam Sayfasında Görünsün</label></div>
+                    <button type="button" class="login-btn" style="padding: 8px 15px;" onclick="addCompany()">Firmayı Ekle</button>
+                </div>
+                <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 200px; overflow-y: auto;">${companiesHtml !== '' ? companiesHtml : '<div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 11px;">Firma eklenmemiş.</div>'}</div>
+            </div>
+
+            <div class="content-card" style="margin-bottom:0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px;"><h3 style="color: var(--bg-dark); font-size: 14px;"><i class="fa-solid fa-toolbox" style="color: var(--task-purple);"></i> Ekipmanlar</h3><button type="button" class="login-btn btn-purple" style="width: auto; padding: 6px 12px; font-size: 11px; margin: 0;" onclick="openAddEquipment()">+ Yeni Ekle</button></div>
+                <div style="border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; max-height: 250px; overflow-y: auto;">${eqHtml !== '' ? eqHtml : '<div style="padding: 10px; text-align: center; color: var(--text-muted); font-size: 11px;">Ekipman eklenmemiş.</div>'}</div>
+            </div>
+
+            <div class="content-card" style="margin-bottom:0;">
+                <h3 style="color: var(--bg-dark); border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 10px; font-size: 14px;"><i class="fa-solid fa-pen-to-square" style="color: var(--primary-red);"></i> Giriş Ekranı Yazıları</h3>
+                <div class="input-group"><label>SÜRÜM BİLGİSİ</label><input type="text" id="admin-version" value="${dbVersionInfo.version || ''}" autocomplete="off"></div>
+                <div class="input-group"><label>EKLENEN ÖZELLİKLER</label><textarea id="admin-notes" rows="3" autocomplete="off">${dbVersionInfo.notes || ''}</textarea></div>
+                <button type="button" class="login-btn" style="padding: 10px; width: 150px;" id="save-version-btn" onclick="updateVersionTexts()">Uygula & Kaydet</button>
+            </div>
+            
+        </div>`;
     }
 
-    async function moveItem(type, index, direction) { let arr = type === 'users' ? dbUsers : dbCompanies; if(index + direction < 0 || index + direction >= arr.length) return; let item1 = arr[index]; let item2 = arr[index + direction]; let tempOrder = item1.order || index; item1.order = item2.order || (index + direction); item2.order = tempOrder; await db.collection(type).doc(item1.docId).update({ order: item1.order }); await db.collection(type).doc(item2.docId).update({ order: item2.order }); if(type === 'users') await fetchUsersFromFirebase(); else await fetchCompaniesFromFirebase(); loadAdminSettings(); }
+    async function moveItem(type, index, direction) { let arr = type === 'users' ? dbUsers : (type === 'companies' ? dbCompanies : dbEquipments); if(index + direction < 0 || index + direction >= arr.length) return; let item1 = arr[index]; let item2 = arr[index + direction]; let tempOrder = item1.order || index; item1.order = item2.order || (index + direction); item2.order = tempOrder; await db.collection(type).doc(item1.docId).update({ order: item1.order }); await db.collection(type).doc(item2.docId).update({ order: item2.order }); if(type === 'users') await fetchUsersFromFirebase(); else if (type === 'companies') await fetchCompaniesFromFirebase(); else await fetchEquipmentsFromFirebase(); loadAdminSettings(); }
     async function updateVersionTexts() { const btn = document.getElementById('save-version-btn'); btn.innerText = "Kaydediliyor..."; dbVersionInfo.version = document.getElementById('admin-version').value; dbVersionInfo.notes = document.getElementById('admin-notes').value; await db.collection('settings').doc('system').set(dbVersionInfo); btn.innerText = "Uygula & Kaydet"; alert("Sürüm notları kaydedildi!"); }
     function toggleUserCompanies() { document.getElementById('u-chk-companies-wrapper').style.display = document.getElementById('u-chk-visible').checked ? 'block' : 'none'; }
     
@@ -194,6 +256,52 @@
     }
 
     async function deleteCompany(docId) { if(confirm("Bu firmayı silmek istediğinize emin misiniz?")) { await db.collection('companies').doc(docId).delete(); await fetchCompaniesFromFirebase(); loadAdminSettings(); } }
+
+    // EKİPMAN FONKSİYONLARI
+    function openAddEquipment() {
+        document.getElementById('edit-eq-doc-id').value = "new";
+        document.getElementById('eq-modal-title').innerText = "Yeni Ekipman Ekle";
+        document.getElementById('eq-name').value = "";
+        document.getElementById('eq-type').value = "Kamera";
+        document.getElementById('eq-company').value = "RDGRUP MEDYA";
+        openModal('equipment-modal');
+    }
+
+    function openEditEquipment(docId) {
+        const e = dbEquipments.find(x => x.docId === docId); if(!e) return;
+        document.getElementById('edit-eq-doc-id').value = docId;
+        document.getElementById('eq-modal-title').innerText = "Ekipmanı Düzenle";
+        document.getElementById('eq-name').value = e.name || "";
+        document.getElementById('eq-type').value = e.type || "Kamera";
+        document.getElementById('eq-company').value = e.company || "RDGRUP MEDYA";
+        openModal('equipment-modal');
+    }
+
+    async function saveEditedEquipment() {
+        const docId = document.getElementById('edit-eq-doc-id').value;
+        const eName = document.getElementById('eq-name').value.trim();
+        const eType = document.getElementById('eq-type').value;
+        const eComp = document.getElementById('eq-company').value;
+        const btn = document.getElementById('save-eq-btn');
+        if(!eName) return;
+        
+        btn.innerText = "Kaydediliyor...";
+        try {
+            if(docId === "new") {
+                await db.collection('equipments').add({ name: eName, type: eType, company: eComp, order: dbEquipments.length });
+            } else {
+                await db.collection('equipments').doc(docId).update({ name: eName, type: eType, company: eComp });
+            }
+            btn.innerText = "Kaydet"; closeModal('equipment-modal'); await fetchEquipmentsFromFirebase(); loadAdminSettings();
+        } catch(e) { console.error(e); btn.innerText = "Kaydet"; }
+    }
+
+    async function deleteEquipment(docId) {
+        if(confirm("Ekipmanı silmek istediğinize emin misiniz?")) { 
+            await db.collection('equipments').doc(docId).delete(); 
+            await fetchEquipmentsFromFirebase(); loadAdminSettings(); 
+        }
+    }
 </script>
 </body>
 </html>
