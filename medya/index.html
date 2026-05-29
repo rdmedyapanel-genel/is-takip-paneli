@@ -27,145 +27,30 @@
         .reklam-input { width: 100%; min-width: 65px; padding: 8px; font-size: 12px; text-align: center; border: 1px solid #e2e8f0; border-radius: 6px; font-family: 'Poppins', sans-serif; background: #ffffff; color: #1e293b; font-weight: 500; transition: all 0.2s; }
         .reklam-input:focus { border-color: var(--task-purple); outline: none; box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1); }
         .reklam-readonly { background: transparent; font-weight: 700; color: var(--primary-red); border-color: transparent; font-size: 13px;}
-        
-        .eq-status-badge { padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; }
-        .eq-status-bosta { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
-        .eq-status-kullanimda { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-        .eq-plan-item { padding: 10px; border-bottom: 1px dashed #e2e8f0; font-size: 13px; color: var(--bg-dark); display: flex; align-items: center; gap: 10px;}
     </style>
 </head>
 <body>
 
-<div class="modal-overlay" id="task-modal">
-    <div class="modal-content">
-        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('task-modal')"></i>
-        <h3 class="modal-title" id="task-modal-title">Paylaşım Görevi Ekle</h3>
-        <input type="hidden" id="task-doc-id" value="">
-        <input type="hidden" id="task-category" value="rdgrup_paylasim">
-        <div class="input-group"><label>Firma:</label><select id="t-firma"><option value="">Firmalar Yükleniyor...</option></select></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="input-group"><label>İçerik Türü:</label><select id="t-tur"><option value="Video">Video</option><option value="Tasarım">Tasarım</option><option value="Fotoğraf">Fotoğraf</option></select></div>
-            <div class="input-group"><label>Adet:</label><input type="number" id="t-adet" value="1" min="1" autocomplete="off"></div>
-        </div>
-        <div class="input-group"><label>Hazırlayacak Kişi:</label><select id="t-hazirlayan"></select></div>
-        <div class="input-group"><label>Paylaşacak Kişi:</label><select id="t-paylasan"></select></div>
-        <div class="input-group"><label>Tarih:</label><input type="text" id="t-tarih" placeholder="Tarih(ler) seçin..." autocomplete="off"></div>
-        <div class="input-group"><label>Not:</label><textarea id="t-not" rows="2" placeholder="Görev ile ilgili ek notlar..." autocomplete="off"></textarea></div>
-        <div class="checkbox-group" id="t-status-group" style="display: none;"><label><input type="checkbox" id="t-hazirlandi"> Hazırlandı</label><label><input type="checkbox" id="t-paylasildi"> Paylaşıldı</label></div>
-        <div style="display: flex; gap: 10px; margin-top: 15px;" id="task-buttons">
-            <button type="button" class="login-btn btn-purple" id="save-task-btn" style="flex: 1;" onclick="saveTask()">Kaydet</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="shoot-modal">
-    <div class="modal-content">
-        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('shoot-modal')"></i>
-        <h3 class="modal-title" id="shoot-modal-title">Çekim Ekle</h3>
-        <input type="hidden" id="sh-doc-id" value="">
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="input-group"><label>Firma Seç:</label><select id="sh-firma"><option value="">Firmalar Yükleniyor...</option></select></div>
-            <div class="input-group"><label>Tarih:</label><input type="text" id="sh-tarih" placeholder="Tarih seçin..." autocomplete="off"></div>
-            <div class="input-group" style="grid-column: span 2;"><label>Saat:</label><input type="time" id="sh-saat" style="font-family: 'Poppins';" autocomplete="off"></div>
-        </div>
-        <div class="input-group"><label>Çekimi Yapanlar:</label><div class="multi-checkbox-list" id="sh-kisi-list"></div></div>
-        
-        <div class="input-group">
-            <label>Kullanılacak Ekipmanlar:</label>
-            <div class="multi-checkbox-list" id="sh-eq-list"></div>
-        </div>
-
-        <div class="input-group"><label>Çekim Notu:</label><textarea id="sh-not" rows="2" placeholder="Mekan, konsept vb. detaylar..." autocomplete="off"></textarea></div>
-        
-        <div id="shoot-extra-fields" style="display: none;">
-            <h4 style="font-size: 13px; color: var(--bg-dark); margin: 15px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Yedek ve Teslimat Süreci</h4>
-            <div class="checkbox-group">
-                <label><input type="checkbox" id="sh-cekildi"> Çekim yapıldı</label><label><input type="checkbox" id="sh-teslim"> Yedek Teslim Edildi</label>
-                <label><input type="checkbox" id="sh-hdd"> Yedek HDD'ye Alındı</label><label><input type="checkbox" id="sh-drive"> Yedek Drive'a Alındı</label>
-            </div>
-            <div class="input-group" style="margin-top: 10px;">
-                <label>Yedek Linki:</label><div style="display: flex; gap: 10px;"><input type="text" id="sh-link" placeholder="Drive, WeTransfer vb. link" style="flex: 1;" autocomplete="off"><button type="button" class="login-btn btn-light" style="width: auto; padding: 10px 15px;" onclick="goToShootLink()" title="Linke Git"><i class="fa-solid fa-arrow-up-right-from-square"></i></button></div>
-            </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
-                <div class="input-group"><label>Toplam Boyut:</label><input type="text" id="sh-boyut" placeholder="Örn: 45 GB" autocomplete="off"></div>
-                <div class="input-group"><label>Foto Sayısı:</label><input type="number" id="sh-foto" value="0" min="0" autocomplete="off"></div>
-                <div class="input-group"><label>Video Sayısı:</label><input type="number" id="sh-video" value="0" min="0" autocomplete="off"></div>
-            </div>
-        </div>
-        <div style="display: flex; gap: 10px; margin-top: 15px;" id="shoot-buttons"><button type="button" class="login-btn btn-orange" id="save-shoot-btn" style="flex: 1;" onclick="saveShoot()">Kaydet</button></div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="ga-modal">
-    <div class="modal-content">
-        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('ga-modal')"></i>
-        <h3 class="modal-title" id="ga-modal-title">Genel Ajanda - Görev Ekle</h3>
-        <input type="hidden" id="ga-doc-id" value="new">
-        <input type="hidden" id="ga-status" value="0">
-        <div class="input-group"><label>GÖREV BAŞLIĞI</label><input type="text" id="ga-title" placeholder="Ateşbey Gayrimenkul, Festival vs." autocomplete="off"></div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="input-group"><label>FİRMA SEÇ</label><select id="ga-firma"></select></div>
-            <div class="input-group"><label>TESLİM TARİHİ</label><input type="text" id="ga-tarih" placeholder="Tarih seçin..." autocomplete="off"></div>
-            <div class="input-group"><label>SORUMLU KİŞİ</label><select id="ga-sorumlu"></select></div>
-            <div class="input-group"><label>EKLEYEN</label><input type="text" id="ga-ekleyen" disabled></div>
-            <div class="input-group"><label>VİDEO SAYISI</label><input type="number" id="ga-video" value="0" min="0" autocomplete="off"></div>
-            <div class="input-group"><label>TASARIM SAYISI</label><input type="number" id="ga-tasarim" value="0" min="0" autocomplete="off"></div>
-        </div>
-        <div class="input-group">
-            <label>NOT İÇERİĞİ</label>
-            <div class="rt-toolbar">
-                <button type="button" class="rt-btn" onclick="execCmd('bold')" title="Kalın"><b>B</b></button>
-                <button type="button" class="rt-btn" onclick="execCmd('italic')" title="İtalik"><i>I</i></button>
-                <button type="button" class="rt-btn" onclick="execCmd('insertUnorderedList')" title="Madde İşareti"><i class="fa-solid fa-list-ul"></i></button>
-                <button type="button" class="rt-btn" onclick="insertCheckbox()" title="Checkbox Ekle"><i class="fa-regular fa-square-check"></i></button>
-            </div>
-            <div id="ga-not" class="rt-editor" contenteditable="true" placeholder="Notları buraya yazınız..."></div>
-        </div>
-        <div style="display: flex; gap: 10px; margin-top: 15px;" id="ga-buttons"><button type="button" class="login-btn btn-purple" id="save-ga-btn" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button></div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="company-note-modal">
-    <div class="modal-content" style="width: 500px;">
-        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('company-note-modal')"></i>
-        <h3 class="modal-title" id="comp-note-title">Firma Notu</h3>
-        <input type="hidden" id="comp-note-doc-id" value="">
-        <textarea id="comp-note-text" class="chk-textarea" placeholder="Bu firma ile ilgili önemli notlar, briefler veya stratejiler..." style="min-height: 150px;" autocomplete="off"></textarea>
-        <div style="display: flex; gap: 10px; margin-top: 15px;">
-            <button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('company-note-modal')">Kapat</button>
-            <button type="button" class="login-btn btn-purple" id="save-comp-note-btn" style="flex: 1;" onclick="saveCompanyNote()">Notu Kaydet</button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="eq-plan-modal">
-    <div class="modal-content" style="width: 500px;">
-        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('eq-plan-modal')"></i>
-        <h3 class="modal-title" id="eq-plan-title">Haftalık Plan</h3>
-        <div id="eq-plan-content" style="max-height: 350px; overflow-y: auto; margin-top:15px;"></div>
-        <div style="margin-top: 15px;"><button type="button" class="login-btn btn-gray" style="width:100%;" onclick="closeModal('eq-plan-modal')">Kapat</button></div>
-    </div>
-</div>
+<div class="modal-overlay" id="task-modal"><div class="modal-content"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('task-modal')"></i><h3 class="modal-title" id="task-modal-title">Paylaşım Görevi Ekle</h3><input type="hidden" id="task-doc-id" value=""><input type="hidden" id="task-category" value="rdgrup_paylasim"><div class="input-group"><label>Firma:</label><select id="t-firma"><option value="">Firmalar Yükleniyor...</option></select></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"><div class="input-group"><label>İçerik Türü:</label><select id="t-tur"><option value="Video">Video</option><option value="Tasarım">Tasarım</option><option value="Fotoğraf">Fotoğraf</option></select></div><div class="input-group"><label>Adet:</label><input type="number" id="t-adet" value="1" min="1" autocomplete="off"></div></div><div class="input-group"><label>Hazırlayacak Kişi:</label><select id="t-hazirlayan"></select></div><div class="input-group"><label>Paylaşacak Kişi:</label><select id="t-paylasan"></select></div><div class="input-group"><label>Tarih:</label><input type="text" id="t-tarih" placeholder="Tarih(ler) seçin..." autocomplete="off"></div><div class="input-group"><label>Not:</label><textarea id="t-not" rows="2" placeholder="Görev ile ilgili ek notlar..." autocomplete="off"></textarea></div><div class="checkbox-group" id="t-status-group" style="display: none;"><label><input type="checkbox" id="t-hazirlandi"> Hazırlandı</label><label><input type="checkbox" id="t-paylasildi"> Paylaşıldı</label></div><div style="display: flex; gap: 10px; margin-top: 15px;" id="task-buttons"><button type="button" class="login-btn btn-purple" id="save-task-btn" style="flex: 1;" onclick="saveTask()">Kaydet</button></div></div></div>
+<div class="modal-overlay" id="shoot-modal"><div class="modal-content"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('shoot-modal')"></i><h3 class="modal-title" id="shoot-modal-title">Çekim Ekle</h3><input type="hidden" id="sh-doc-id" value=""><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"><div class="input-group"><label>Firma Seç:</label><select id="sh-firma"><option value="">Firmalar Yükleniyor...</option></select></div><div class="input-group"><label>Tarih:</label><input type="text" id="sh-tarih" placeholder="Tarih seçin..." autocomplete="off"></div><div class="input-group" style="grid-column: span 2;"><label>Saat:</label><input type="time" id="sh-saat" style="font-family: 'Poppins';" autocomplete="off"></div></div><div class="input-group"><label>Çekimi Yapanlar:</label><div class="multi-checkbox-list" id="sh-kisi-list"></div></div><div class="input-group"><label>Kullanılacak Ekipmanlar:</label><div class="multi-checkbox-list" id="sh-eq-list"></div></div><div class="input-group"><label>Çekim Notu:</label><textarea id="sh-not" rows="2" placeholder="Mekan, konsept vb. detaylar..." autocomplete="off"></textarea></div><div id="shoot-extra-fields" style="display: none;"><h4 style="font-size: 13px; color: var(--bg-dark); margin: 15px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">Yedek ve Teslimat Süreci</h4><div class="checkbox-group"><label><input type="checkbox" id="sh-cekildi"> Çekim yapıldı</label><label><input type="checkbox" id="sh-teslim"> Yedek Teslim Edildi</label><label><input type="checkbox" id="sh-hdd"> Yedek HDD'ye Alındı</label><label><input type="checkbox" id="sh-drive"> Yedek Drive'a Alındı</label></div><div class="input-group" style="margin-top: 10px;"><label>Yedek Linki:</label><div style="display: flex; gap: 10px;"><input type="text" id="sh-link" placeholder="Drive, WeTransfer vb. link" style="flex: 1;" autocomplete="off"><button type="button" class="login-btn btn-light" style="width: auto; padding: 10px 15px;" onclick="goToShootLink()" title="Linke Git"><i class="fa-solid fa-arrow-up-right-from-square"></i></button></div></div><div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;"><div class="input-group"><label>Toplam Boyut:</label><input type="text" id="sh-boyut" placeholder="Örn: 45 GB" autocomplete="off"></div><div class="input-group"><label>Foto Sayısı:</label><input type="number" id="sh-foto" value="0" min="0" autocomplete="off"></div><div class="input-group"><label>Video Sayısı:</label><input type="number" id="sh-video" value="0" min="0" autocomplete="off"></div></div></div><div style="display: flex; gap: 10px; margin-top: 15px;" id="shoot-buttons"><button type="button" class="login-btn btn-orange" id="save-shoot-btn" style="flex: 1;" onclick="saveShoot()">Kaydet</button></div></div></div>
+<div class="modal-overlay" id="ga-modal"><div class="modal-content"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('ga-modal')"></i><h3 class="modal-title" id="ga-modal-title">Genel Ajanda - Görev Ekle</h3><input type="hidden" id="ga-doc-id" value="new"><input type="hidden" id="ga-status" value="0"><div class="input-group"><label>GÖREV BAŞLIĞI</label><input type="text" id="ga-title" placeholder="Ateşbey Gayrimenkul, Festival vs." autocomplete="off"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"><div class="input-group"><label>FİRMA SEÇ</label><select id="ga-firma"></select></div><div class="input-group"><label>TESLİM TARİHİ</label><input type="text" id="ga-tarih" placeholder="Tarih seçin..." autocomplete="off"></div><div class="input-group"><label>SORUMLU KİŞİ</label><select id="ga-sorumlu"></select></div><div class="input-group"><label>EKLEYEN</label><input type="text" id="ga-ekleyen" disabled></div><div class="input-group"><label>VİDEO SAYISI</label><input type="number" id="ga-video" value="0" min="0" autocomplete="off"></div><div class="input-group"><label>TASARIM SAYISI</label><input type="number" id="ga-tasarim" value="0" min="0" autocomplete="off"></div></div><div class="input-group"><label>NOT İÇERİĞİ</label><div class="rt-toolbar"><button type="button" class="rt-btn" onclick="execCmd('bold')" title="Kalın"><b>B</b></button><button type="button" class="rt-btn" onclick="execCmd('italic')" title="İtalik"><i>I</i></button><button type="button" class="rt-btn" onclick="execCmd('insertUnorderedList')" title="Madde İşareti"><i class="fa-solid fa-list-ul"></i></button><button type="button" class="rt-btn" onclick="insertCheckbox()" title="Checkbox Ekle"><i class="fa-regular fa-square-check"></i></button></div><div id="ga-not" class="rt-editor" contenteditable="true" placeholder="Notları buraya yazınız..."></div></div><div style="display: flex; gap: 10px; margin-top: 15px;" id="ga-buttons"><button type="button" class="login-btn btn-purple" id="save-ga-btn" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button></div></div></div>
+<div class="modal-overlay" id="company-note-modal"><div class="modal-content" style="width: 500px;"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('company-note-modal')"></i><h3 class="modal-title" id="comp-note-title">Firma Notu</h3><input type="hidden" id="comp-note-doc-id" value=""><textarea id="comp-note-text" class="chk-textarea" placeholder="Bu firma ile ilgili önemli notlar, briefler veya stratejiler..." style="min-height: 150px;" autocomplete="off"></textarea><div style="display: flex; gap: 10px; margin-top: 15px;"><button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('company-note-modal')">Kapat</button><button type="button" class="login-btn btn-purple" id="save-comp-note-btn" style="flex: 1;" onclick="saveCompanyNote()">Notu Kaydet</button></div></div></div>
+<div class="modal-overlay" id="eq-plan-modal"><div class="modal-content" style="width: 500px;"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('eq-plan-modal')"></i><h3 class="modal-title" id="eq-plan-title">Haftalık Plan</h3><div id="eq-plan-content" style="max-height: 350px; overflow-y: auto; margin-top:15px;"></div><div style="margin-top: 15px;"><button type="button" class="login-btn btn-gray" style="width:100%;" onclick="closeModal('eq-plan-modal')">Kapat</button></div></div></div>
 
 <div class="slide-container" id="dashboard-screen" style="display: flex;"> <div class="dashboard-layout">
         <div class="sidebar" id="app-sidebar">
             <div id="sidebar-top-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <div class="sidebar-profile" onclick="loadProfileView()">
                     <div class="avatar" id="logged-avatar">A</div>
-                    <div class="profile-texts">
-                        <div style="font-weight: 700; color: var(--bg-dark); font-size: 14px;" id="logged-user-name">Kullanıcı</div>
-                        <div style="font-size: 11px; color: var(--text-muted);" id="logged-user-role">Rol</div>
-                    </div>
+                    <div class="profile-texts"><div style="font-weight: 700; color: var(--bg-dark); font-size: 14px;" id="logged-user-name">Kullanıcı</div><div style="font-size: 11px; color: var(--text-muted);" id="logged-user-role">Rol</div></div>
                 </div>
                 <button type="button" class="action-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" style="padding: 8px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-left: 5px;"><i class="fa-solid fa-bars"></i></button>
             </div>
-            
             <button type="button" class="back-to-company" onclick="backToCompanySelection()"><i class="fa-solid fa-arrow-left"></i> <span>Şube Seçimine Dön</span></button>
             <div class="menu-category" style="font-size: 10px; font-weight: 700; color:#94a3b8; margin-bottom: 8px; letter-spacing: 1px;">MENÜ</div>
             <ul class="menu-list" id="sidebar-menu"></ul>
             <button type="button" class="logout-item" onclick="logout()"><i class="fa-solid fa-power-off"></i> <span>Çıkış Yap</span></button>
         </div>
-        
         <div class="main-panel" id="main-content">
             <div class="full-loader" id="init-loader" style="display: flex; background: transparent;"><div class="spinner"></div><p style="margin-top: 15px; font-weight: 600; font-size:12px; color: var(--text-muted);">Sistem Yükleniyor...</p></div>
         </div>
@@ -173,42 +58,29 @@
 </div>
 
 <script src="../js/firebase-config.js"></script>
-
 <script>
-    let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = []; let dbAds = []; let dbEquipments = [];
+    let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = []; let dbAds = []; let dbEquipments = []; let dbSpecialDays = [];
     let currentUser = null; let currentCompany = "RDGRUP MEDYA"; 
     let activePage = ""; let showArchivedGA = false; let reportDate = new Date(); let reklamDate = new Date();
     let taskDatePicker, shootDatePicker, chkDatePicker, gaDatePicker;
     let calDate = new Date(); let currentCalView = 'month'; let currentChecklistDate = formatDate(new Date()); let isSidebarCollapsed = false;
 
     const normalizeStr = (str) => (str || "").replace(/\s+/g, '').toLowerCase();
-
-    function formatDate(dateObj) {
-        let d = new Date(dateObj), month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
-        if (month.length < 2) month = '0' + month; if (day.length < 2) day = '0' + day;
-        return [year, month, day].join('-');
-    }
-
+    function formatDate(dateObj) { let d = new Date(dateObj), month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear(); if (month.length < 2) month = '0' + month; if (day.length < 2) day = '0' + day; return [year, month, day].join('-'); }
     function formatDateTR(dateString) { if(!dateString) return ""; return new Date(dateString).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'short' }); }
     function calculateDaysPassed(dateString) { if (!dateString) return null; const targetDate = new Date(dateString); const today = new Date(); targetDate.setHours(0,0,0,0); today.setHours(0,0,0,0); const diffTime = today - targetDate; const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); return diffDays >= 0 ? diffDays : 0; }
 
     window.onload = async function() {
-        const savedUser = localStorage.getItem('rdgrup_user');
-        if (!savedUser) { window.location.href = '../index.html'; return; }
-        currentUser = JSON.parse(savedUser);
-        document.getElementById('logged-user-name').innerText = currentUser.name || "Kullanıcı"; document.getElementById('logged-user-role').innerText = currentUser.role || "Bilinmiyor"; document.getElementById('logged-avatar').innerText = (currentUser.name || "?").charAt(0).toUpperCase();
+        const savedUser = localStorage.getItem('rdgrup_user'); if (!savedUser) { window.location.href = '../index.html'; return; }
+        currentUser = JSON.parse(savedUser); document.getElementById('logged-user-name').innerText = currentUser.name || "Kullanıcı"; document.getElementById('logged-user-role').innerText = currentUser.role || "Bilinmiyor"; document.getElementById('logged-avatar').innerText = (currentUser.name || "?").charAt(0).toUpperCase();
         await initializeSystem();
     };
 
     async function initializeSystem() {
         try {
-            await fetchCompaniesFromFirebase(); await fetchUsersFromFirebase(); await fetchEquipmentsFromFirebase(); await fetchTasksFromFirebase(); await fetchShootsFromFirebase(); await fetchAgendaFromFirebase(); await fetchGenelAgendaFromFirebase(); await fetchAdsFromFirebase();
+            await fetchCompaniesFromFirebase(); await fetchUsersFromFirebase(); await fetchEquipmentsFromFirebase(); await fetchTasksFromFirebase(); await fetchShootsFromFirebase(); await fetchAgendaFromFirebase(); await fetchGenelAgendaFromFirebase(); await fetchAdsFromFirebase(); await fetchSpecialDaysFromFirebase();
             loadSidebarMenu();
-        } catch (error) { 
-            console.error("Bağlantı hatası: ", error); 
-        } finally {
-            document.getElementById('init-loader').style.display = 'none';
-        }
+        } catch (error) { console.error("Bağlantı hatası: ", error); } finally { document.getElementById('init-loader').style.display = 'none'; }
     }
 
     function logout() { localStorage.removeItem('rdgrup_user'); window.location.href = '../index.html'; }
@@ -226,6 +98,7 @@
     async function fetchGenelAgendaFromFirebase() { const snapshot = await db.collection('genel_agenda').get(); dbGenelAgenda = []; snapshot.forEach(doc => { dbGenelAgenda.push({ docId: doc.id, ...doc.data() }); }); }
     async function fetchPersonalAgendaFromFirebase() { if(!currentUser) return; const snapshot = await db.collection('personal_agenda').where('userId', '==', currentUser.id).get(); dbPersonalAgenda = []; snapshot.forEach(doc => { dbPersonalAgenda.push({ docId: doc.id, ...doc.data() }); }); }
     async function fetchAdsFromFirebase() { const snapshot = await db.collection('ads_data').get(); dbAds = []; snapshot.forEach(doc => { dbAds.push({ docId: doc.id, ...doc.data() }); }); }
+    async function fetchSpecialDaysFromFirebase() { const snapshot = await db.collection('special_days').get(); dbSpecialDays = []; snapshot.forEach(doc => { dbSpecialDays.push({ docId: doc.id, ...doc.data() }); }); }
 
     function populateUserDropdowns() {
         const hSelect = document.getElementById('t-hazirlayan'), pSelect = document.getElementById('t-paylasan'); const sSelect = document.getElementById('sh-kisi-list'), gaSelect = document.getElementById('ga-sorumlu');
@@ -246,19 +119,8 @@
 
     function loadSidebarMenu() {
         const sidebarMenu = document.getElementById('sidebar-menu'); sidebarMenu.innerHTML = ''; 
-        const items = [
-            { icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' },
-            { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' },
-            { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' },
-            { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' },
-            { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, 
-            { icon: 'fa-bullhorn', name: 'Reklamlar' },
-            { icon: 'fa-toolbox', name: 'Ekipmanlar' }, // YENİ EKLENDİ
-            { icon: 'fa-chart-bar', name: 'Raporlar' }
-        ];
-
+        const items = [{ icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' }, { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' }, { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' }, { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' }, { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, { icon: 'fa-bullhorn', name: 'Reklamlar' }, { icon: 'fa-toolbox', name: 'Ekipmanlar' }, { icon: 'fa-chart-bar', name: 'Raporlar' }];
         const role = (currentUser.role || "").toLowerCase(); const isAdminOrYonetici = role === 'admin' || role === 'yönetici' || currentUser.id === 'alperen';
-
         items.forEach((item) => {
             if ((item.name === 'Raporlar' || item.name === 'Reklamlar') && !isAdminOrYonetici) return; 
             const li = document.createElement('li'); li.className = 'menu-item';
@@ -272,107 +134,32 @@
 
     function loadPageView(pageName) {
         activePage = pageName; const mainContent = document.getElementById('main-content');
-        if (pageName === 'Raporlar') { reportDate = new Date(); loadRaporlarPage(); }
-        else if (pageName === 'Reklamlar') { reklamDate = new Date(); loadReklamlarPage(); } 
-        else if (pageName === 'Ekipmanlar') { loadEkipmanlarPage(); } // YENİ EKLENDİ
-        else if (pageName === 'Firmalar') loadFirmalarPage();
-        else if (pageName === 'Checklist') loadChecklistPage(currentChecklistDate);
-        else if (pageName === 'Genel Ajanda') loadGenelAgenda();
-        else if (pageName === 'Kişisel Ajanda') loadPersonalAgenda();
-        else if (pageName === 'Anasayfa' || pageName === 'Kendi İşlerim') mainContent.innerHTML = renderDashboardHome(pageName);
-        else if (pageName.includes('Takvim')) { mainContent.innerHTML = renderCalendarView(pageName); initCalendar(); }
+        if (pageName === 'Raporlar') { reportDate = new Date(); loadRaporlarPage(); } else if (pageName === 'Reklamlar') { reklamDate = new Date(); loadReklamlarPage(); } else if (pageName === 'Ekipmanlar') { loadEkipmanlarPage(); } else if (pageName === 'Firmalar') loadFirmalarPage(); else if (pageName === 'Checklist') loadChecklistPage(currentChecklistDate); else if (pageName === 'Genel Ajanda') loadGenelAgenda(); else if (pageName === 'Kişisel Ajanda') loadPersonalAgenda(); else if (pageName === 'Anasayfa' || pageName === 'Kendi İşlerim') mainContent.innerHTML = renderDashboardHome(pageName); else if (pageName.includes('Takvim')) { mainContent.innerHTML = renderCalendarView(pageName); initCalendar(); }
     }
 
-    // --- YENİ: EKİPMANLAR SAYFASI ---
     function loadEkipmanlarPage() {
-        let todayStr = formatDate(new Date());
-        let tDate = new Date(); tDate.setDate(tDate.getDate() + 1); let tomorrowStr = formatDate(tDate);
-        
+        let todayStr = formatDate(new Date()); let tDate = new Date(); tDate.setDate(tDate.getDate() + 1); let tomorrowStr = formatDate(tDate);
         let compEqs = dbEquipments.filter(e => e.company === currentCompany);
-
-        let html = `
-            <div class="content-card" style="padding: 20px;">
-                <h2 class="content-title">${currentCompany} - Ekipman Listesi</h2>
-        `;
-
-        if (compEqs.length === 0) {
-            html += `<div style="text-align:center; color:var(--text-muted); padding:30px;">Bu şirkete ait ekipman bulunamadı. Admin panelinden ekleme yapabilirsiniz.</div></div>`;
-            document.getElementById('main-content').innerHTML = html;
-            return;
-        }
-
-        html += `
-            <table class="reklam-table">
-                <thead>
-                    <tr>
-                        <th style="text-align:left;">Ekipman Adı</th>
-                        <th>Tür</th>
-                        <th>Bugün Durumu</th>
-                        <th>Yarın Durumu</th>
-                        <th>Haftalık Plan</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
+        let html = `<div class="content-card" style="padding: 20px;"><h2 class="content-title">${currentCompany} - Ekipman Listesi</h2>`;
+        if (compEqs.length === 0) { html += `<div style="text-align:center; color:var(--text-muted); padding:30px;">Bu şirkete ait ekipman bulunamadı. Admin panelinden ekleme yapabilirsiniz.</div></div>`; document.getElementById('main-content').innerHTML = html; return; }
+        html += `<table class="reklam-table"><thead><tr><th style="text-align:left;">Ekipman Adı</th><th>Tür</th><th>Bugün Durumu</th><th>Yarın Durumu</th><th>Haftalık Plan</th></tr></thead><tbody>`;
         compEqs.forEach(eq => {
-            // Bugün ve Yarın için çekim araması
-            let todayShoots = dbShoots.filter(s => s.tarih === todayStr && s.equipments && s.equipments.includes(eq.docId));
-            let tomorrowShoots = dbShoots.filter(s => s.tarih === tomorrowStr && s.equipments && s.equipments.includes(eq.docId));
-
+            let todayShoots = dbShoots.filter(s => s.tarih === todayStr && s.equipments && s.equipments.includes(eq.docId)); let tomorrowShoots = dbShoots.filter(s => s.tarih === tomorrowStr && s.equipments && s.equipments.includes(eq.docId));
             let todayStatus = todayShoots.length > 0 ? `<span class="eq-status-badge eq-status-kullanimda"><i class="fa-solid fa-camera"></i> Kullanımda</span>` : `<span class="eq-status-badge eq-status-bosta"><i class="fa-solid fa-check"></i> Boşta</span>`;
             let tomorrowStatus = tomorrowShoots.length > 0 ? `<span class="eq-status-badge eq-status-kullanimda"><i class="fa-solid fa-camera"></i> Kullanımda</span>` : `<span class="eq-status-badge eq-status-bosta"><i class="fa-solid fa-check"></i> Boşta</span>`;
-
-            let icon = 'fa-toolbox';
-            if(eq.type === 'Kamera') icon = 'fa-camera';
-            if(eq.type === 'Lens') icon = 'fa-circle-dot';
-            if(eq.type === 'Işık') icon = 'fa-lightbulb';
-            if(eq.type === 'Ses/Mikrofon') icon = 'fa-microphone';
-            if(eq.type === 'Fon') icon = 'fa-image';
-
-            html += `
-                <tr>
-                    <td style="font-weight:600; text-align:left; color:var(--bg-dark);"><i class="fa-solid ${icon}" style="margin-right:8px; color:var(--task-purple);"></i>${eq.name}</td>
-                    <td style="color:var(--text-muted); font-size:11px;">${eq.type}</td>
-                    <td>${todayStatus}</td>
-                    <td>${tomorrowStatus}</td>
-                    <td><button type="button" class="login-btn btn-light" style="margin:0; padding:6px 12px; font-size:11px; width:auto;" onclick="openEquipmentPlan('${eq.docId}')"><i class="fa-regular fa-calendar-days" style="margin-right:4px;"></i> Planı Gör</button></td>
-                </tr>
-            `;
+            let icon = 'fa-toolbox'; if(eq.type === 'Kamera') icon = 'fa-camera'; if(eq.type === 'Lens') icon = 'fa-circle-dot'; if(eq.type === 'Işık') icon = 'fa-lightbulb'; if(eq.type === 'Ses/Mikrofon') icon = 'fa-microphone'; if(eq.type === 'Fon') icon = 'fa-image';
+            html += `<tr><td style="font-weight:600; text-align:left; color:var(--bg-dark);"><i class="fa-solid ${icon}" style="margin-right:8px; color:var(--task-purple);"></i>${eq.name}</td><td style="color:var(--text-muted); font-size:11px;">${eq.type}</td><td>${todayStatus}</td><td>${tomorrowStatus}</td><td><button type="button" class="login-btn btn-light" style="margin:0; padding:6px 12px; font-size:11px; width:auto;" onclick="openEquipmentPlan('${eq.docId}')"><i class="fa-regular fa-calendar-days" style="margin-right:4px;"></i> Planı Gör</button></td></tr>`;
         });
-
-        html += `</tbody></table></div>`;
-        document.getElementById('main-content').innerHTML = html;
+        html += `</tbody></table></div>`; document.getElementById('main-content').innerHTML = html;
     }
 
     function openEquipmentPlan(eqId) {
-        const eq = dbEquipments.find(x => x.docId === eqId); if(!eq) return;
-        document.getElementById('eq-plan-title').innerText = `${eq.name} - Haftalık Plan`;
-        
-        let todayStr = formatDate(new Date());
-        let upcomingShoots = dbShoots.filter(s => s.tarih >= todayStr && s.equipments && s.equipments.includes(eqId));
-        upcomingShoots.sort((a,b) => new Date(a.tarih) - new Date(b.tarih));
-
-        let html = '';
-        if(upcomingShoots.length === 0) {
-            html = `<div style="text-align:center; color:var(--text-muted); padding:20px;">Gelecek günlerde planlanmış bir çekim yok.</div>`;
-        } else {
-            upcomingShoots.forEach(s => {
-                let kisiStr = Array.isArray(s.kisi) ? s.kisi.join(', ') : s.kisi;
-                html += `
-                    <div class="eq-plan-item">
-                        <div style="font-weight:700; color:var(--task-purple); min-width:120px;"><i class="fa-regular fa-calendar"></i> ${formatDateTR(s.tarih)}</div>
-                        <div style="flex:1;"><b>${s.firma}</b> çekiminde</div>
-                        <div style="color:var(--text-muted); font-size:11px;"><i class="fa-solid fa-user"></i> ${kisiStr}</div>
-                    </div>
-                `;
-            });
-        }
-        document.getElementById('eq-plan-content').innerHTML = html;
-        openModal('eq-plan-modal');
+        const eq = dbEquipments.find(x => x.docId === eqId); if(!eq) return; document.getElementById('eq-plan-title').innerText = `${eq.name} - Haftalık Plan`;
+        let todayStr = formatDate(new Date()); let upcomingShoots = dbShoots.filter(s => s.tarih >= todayStr && s.equipments && s.equipments.includes(eqId)); upcomingShoots.sort((a,b) => new Date(a.tarih) - new Date(b.tarih));
+        let html = ''; if(upcomingShoots.length === 0) { html = `<div style="text-align:center; color:var(--text-muted); padding:20px;">Gelecek günlerde planlanmış bir çekim yok.</div>`; } else { upcomingShoots.forEach(s => { let kisiStr = Array.isArray(s.kisi) ? s.kisi.join(', ') : s.kisi; html += `<div class="eq-plan-item"><div style="font-weight:700; color:var(--task-purple); min-width:120px;"><i class="fa-regular fa-calendar"></i> ${formatDateTR(s.tarih)}</div><div style="flex:1;"><b>${s.firma}</b> çekiminde</div><div style="color:var(--text-muted); font-size:11px;"><i class="fa-solid fa-user"></i> ${kisiStr}</div></div>`; }); }
+        document.getElementById('eq-plan-content').innerHTML = html; openModal('eq-plan-modal');
     }
 
-    // --- REKLAMLAR SAYFASI ---
     function loadReklamlarPage() {
         let y = reklamDate.getFullYear(); let m = reklamDate.getMonth() + 1; let monthStr = `${y}-${m < 10 ? '0'+m : m}`; let displayMonth = reklamDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' }); let targetComps = dbCompanies.filter(c => c.showInAds === true);
         let html = `<div class="content-card" style="padding: 20px; overflow-x: auto;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Reklam Yönetimi</h2></div><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; background: #f8fafc; padding: 10px 15px; border-radius: 10px; border: 1px solid #e2e8f0;"><div style="display: flex; gap: 8px; align-items: center;"><button type="button" class="action-btn" onclick="changeReklamMonth(-1)"><i class="fa-solid fa-chevron-left"></i></button><button type="button" class="action-btn" onclick="changeReklamMonth(1)"><i class="fa-solid fa-chevron-right"></i></button><button type="button" class="login-btn btn-light" style="width: auto; padding: 5px 12px; font-size: 11px; margin:0;" onclick="reklamDate = new Date(); loadReklamlarPage();">Bu Ay</button></div><h3 style="font-size: 16px; color: var(--bg-dark); font-weight: 700; margin: 0; text-transform:uppercase;">${displayMonth}</h3><div style="width: 100px;"></div></div>`;
@@ -416,6 +203,7 @@
     function dragTask(ev, docId) { ev.dataTransfer.setData("text/plain", docId); } function allowDrop(ev) { ev.preventDefault(); }
     async function dropTask(ev, newDateStr) { ev.preventDefault(); const docId = ev.dataTransfer.getData("text/plain"); if(!docId || !newDateStr) return; let isTask = dbTasks.find(x => x.docId === docId); let isShoot = dbShoots.find(x => x.docId === docId); if(isTask) { await db.collection('tasks').doc(docId).update({ tarih: newDateStr }); await fetchTasksFromFirebase(); } else if(isShoot) { await db.collection('shoots').doc(docId).update({ tarih: newDateStr }); await fetchShootsFromFirebase(); } loadPageView(activePage); }
 
+    // --- YENİ EKLENEN ÖZEL GÜNLER BÖLÜMÜ ---
     function initCalendar() {
         const grid = document.getElementById('calendar-wrapper'); const monthYearText = document.getElementById('calendar-month-year'); grid.innerHTML = '';
         let y = calDate.getFullYear(); let m = calDate.getMonth();
@@ -438,9 +226,36 @@
             }); html += '</div>'; return html;
         }
 
-        if(currentCalView === 'month') { grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`; let firstDay = new Date(y, m, 1).getDay() - 1; if(firstDay === -1) firstDay = 6; let daysInMonth = new Date(y, m + 1, 0).getDate(); for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day padding"></div>`; for(let i=1; i<=daysInMonth; i++) { let cellDate = new Date(y, m, i); let dateStr = formatDate(cellDate); let isToday = (i === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear()); grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div>${getTasksForDateHTML(dateStr)}</div>`; } } 
-        else if (currentCalView === 'week') { grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`; let dayOfWeek = calDate.getDay() - 1; if(dayOfWeek === -1) dayOfWeek = 6; let startOfWeek = new Date(calDate); startOfWeek.setDate(calDate.getDate() - dayOfWeek); for(let i=0; i<7; i++) { let currentDay = new Date(startOfWeek); currentDay.setDate(startOfWeek.getDate() + i); let dateStr = formatDate(currentDay); let isToday = (currentDay.getDate() === new Date().getDate() && currentDay.getMonth() === new Date().getMonth() && currentDay.getFullYear() === new Date().getFullYear()); grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div>${getTasksForDateHTML(dateStr)}</div>`; } } 
-        else if (currentCalView === 'day') { grid.style.gridTemplateColumns = '1fr'; grid.innerHTML = `<div class="cal-header-day">${calDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>`; let isToday = (calDate.getDate() === new Date().getDate() && calDate.getMonth() === new Date().getMonth() && calDate.getFullYear() === new Date().getFullYear()); let dateStr = formatDate(calDate); let tasksHtml = getTasksForDateHTML(dateStr); grid.innerHTML += `<div class="cal-day" style="min-height: 300px; padding: 20px;" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 15px; font-size: 24px;">${calDate.getDate()}</div><div style="margin-top: 5px;">${tasksHtml !== '' ? tasksHtml : '<div style="color:var(--text-muted); font-size:14px;">Kayıt bulunmuyor.</div>'}</div></div>`; }
+        if(currentCalView === 'month') { 
+            grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; 
+            grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`; 
+            let firstDay = new Date(y, m, 1).getDay() - 1; if(firstDay === -1) firstDay = 6; let daysInMonth = new Date(y, m + 1, 0).getDate(); 
+            for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day padding"></div>`; 
+            for(let i=1; i<=daysInMonth; i++) { 
+                let cellDate = new Date(y, m, i); let dateStr = formatDate(cellDate); let isToday = (i === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear()); 
+                let spDay = dbSpecialDays.find(sd => sd.date === dateStr);
+                let spHtml = spDay ? `<div style="font-size:9px; background:#fdf2f8; color:#db2777; padding:2px 6px; border-radius:4px; margin-bottom:0; font-weight:600; display:inline-block; border:1px solid #fce7f3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80%;" title="${spDay.title}">${spDay.title}</div>` : '<div></div>';
+                grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:5px; width:100%;">${spHtml}<div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div></div>${getTasksForDateHTML(dateStr)}</div>`; 
+            } 
+        } 
+        else if (currentCalView === 'week') { 
+            grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; 
+            grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`; 
+            let dayOfWeek = calDate.getDay() - 1; if(dayOfWeek === -1) dayOfWeek = 6; let startOfWeek = new Date(calDate); startOfWeek.setDate(calDate.getDate() - dayOfWeek); 
+            for(let i=0; i<7; i++) { 
+                let currentDay = new Date(startOfWeek); currentDay.setDate(startOfWeek.getDate() + i); let dateStr = formatDate(currentDay); let isToday = (currentDay.getDate() === new Date().getDate() && currentDay.getMonth() === new Date().getMonth() && currentDay.getFullYear() === new Date().getFullYear()); 
+                let spDay = dbSpecialDays.find(sd => sd.date === dateStr);
+                let spHtml = spDay ? `<div style="font-size:9px; background:#fdf2f8; color:#db2777; padding:2px 6px; border-radius:4px; margin-bottom:0; font-weight:600; display:inline-block; border:1px solid #fce7f3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:70%;" title="${spDay.title}">${spDay.title}</div>` : '<div></div>';
+                grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:5px; width:100%;">${spHtml}<div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div></div>${getTasksForDateHTML(dateStr)}</div>`; 
+            } 
+        } 
+        else if (currentCalView === 'day') { 
+            grid.style.gridTemplateColumns = '1fr'; grid.innerHTML = `<div class="cal-header-day">${calDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>`; 
+            let isToday = (calDate.getDate() === new Date().getDate() && calDate.getMonth() === new Date().getMonth() && calDate.getFullYear() === new Date().getFullYear()); let dateStr = formatDate(calDate); let tasksHtml = getTasksForDateHTML(dateStr); 
+            let spDay = dbSpecialDays.find(sd => sd.date === dateStr);
+            let spHtml = spDay ? `<div style="font-size:12px; background:#fdf2f8; color:#db2777; padding:4px 8px; border-radius:6px; font-weight:600; display:inline-block; border:1px solid #fce7f3; margin-left:15px;">${spDay.title}</div>` : '';
+            grid.innerHTML += `<div class="cal-day" style="min-height: 300px; padding: 20px;" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div style="display:flex; align-items:center; margin-bottom: 15px;"><div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; font-size: 24px; margin:0;">${calDate.getDate()}</div>${spHtml}</div><div style="margin-top: 5px;">${tasksHtml !== '' ? tasksHtml : '<div style="color:var(--text-muted); font-size:14px;">Kayıt bulunmuyor.</div>'}</div></div>`; 
+        }
     }
 
     function loadFirmalarPage() {
@@ -556,20 +371,182 @@
     function loadProfileView() { document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); document.getElementById('main-content').innerHTML = `<div class="content-card" style="max-width: 600px;"><h2 class="content-title">Profil Bilgileri</h2><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;"><div class="input-group"><label>İSİM</label><input type="text" value="${currentUser.name || ""}" disabled></div><div class="input-group"><label>SOYİSİM</label><input type="text" value="${currentUser.surname || ""}" disabled></div></div><h3 style="font-size: 15px; margin-bottom: 15px; color: var(--bg-dark);">Şifre Değiştir</h3><div class="input-group"><label>YENİ ŞİFRE</label><input type="password" id="new-profile-pass" autocomplete="new-password"></div><button type="button" class="login-btn" onclick="updateOwnPassword()">Şifreyi Güncelle</button></div>`; }
     async function updateOwnPassword() { const newPass = document.getElementById('new-profile-pass').value; if(newPass) { currentUser.pass = newPass; await db.collection('users').doc(currentUser.docId).update({ pass: newPass }); await fetchUsersFromFirebase(); alert('Şifreniz güncellendi!'); } }
 
-    async function loadPersonalAgenda() { await fetchPersonalAgendaFromFirebase(); let html = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">Kişisel Ajanda</h2></div><div class="checklist-info-bar" style="border-color:#f59e0b; background:#fffdf5; color:#b45309;"><i class="fa-solid fa-lock"></i> Bu alana eklediğiniz notlar sadece sizin tarafınızdan görülür.</div><div class="content-card" style="margin-bottom:20px;"><textarea id="pa-new-note" class="chk-textarea" placeholder="Yeni bir özel not ekleyin..." style="min-height:80px;" autocomplete="off"></textarea><div style="text-align:right;"><button type="button" class="login-btn btn-orange" style="width:auto; padding:6px 15px;" onclick="addPersonalNote()">Notu Kaydet</button></div></div><div>`; dbPersonalAgenda.sort((a,b) => b.timestamp - a.timestamp).forEach(p => { html += `<div class="pa-note-card"><div><div class="pa-content">${p.note}</div><div class="pa-date">${formatDateTR(p.dateStr)}</div></div><button type="button" class="action-btn" onclick="deletePersonalNote('${p.docId}')"><i class="fa-solid fa-trash"></i></button></div>`; }); html += `</div>`; document.getElementById('main-content').innerHTML = html; }
-    async function addPersonalNote() { const text = document.getElementById('pa-new-note').value.trim(); if(!text) return; await db.collection('personal_agenda').add({ userId: currentUser.id, note: text, timestamp: Date.now(), dateStr: formatDate(new Date()) }); loadPersonalAgenda(); }
-    async function deletePersonalNote(docId) { if(confirm("Notu silmek istiyor musunuz?")) { await db.collection('personal_agenda').doc(docId).delete(); loadPersonalAgenda(); } }
+    async function loadPersonalAgenda() {
+        await fetchPersonalAgendaFromFirebase();
+        let html = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">Kişisel Ajanda</h2>
+            </div>
+            <div class="checklist-info-bar" style="border-color:#f59e0b; background:#fffdf5; color:#b45309;">
+                <i class="fa-solid fa-lock"></i> Bu alana eklediğiniz notlar sadece sizin tarafınızdan görülür.
+            </div>
+            <div class="content-card" style="margin-bottom:20px;">
+                <textarea id="pa-new-note" class="chk-textarea" placeholder="Yeni bir özel not ekleyin..." style="min-height:80px;" autocomplete="off"></textarea>
+                <div style="text-align:right;">
+                    <button type="button" class="login-btn btn-orange" style="width:auto; padding:6px 15px;" onclick="addPersonalNote()">Notu Kaydet</button>
+                </div>
+            </div><div>
+        `;
+        dbPersonalAgenda.sort((a,b) => b.timestamp - a.timestamp).forEach(p => {
+            html += `
+                <div class="pa-note-card">
+                    <div>
+                        <div class="pa-content">${p.note}</div>
+                        <div class="pa-date">${formatDateTR(p.dateStr)}</div>
+                    </div>
+                    <button type="button" class="action-btn" onclick="deletePersonalNote('${p.docId}')">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>`;
+        });
+        html += `</div>`; 
+        document.getElementById('main-content').innerHTML = html;
+    }
+    
+    async function addPersonalNote() { 
+        const text = document.getElementById('pa-new-note').value.trim(); 
+        if(!text) return; 
+        await db.collection('personal_agenda').add({ userId: currentUser.id, note: text, timestamp: Date.now(), dateStr: formatDate(new Date()) }); 
+        loadPersonalAgenda(); 
+    }
+    
+    async function deletePersonalNote(docId) { 
+        if(confirm("Notu silmek istiyor musunuz?")) { 
+            await db.collection('personal_agenda').doc(docId).delete(); 
+            loadPersonalAgenda(); 
+        } 
+    }
 
-    async function loadGenelAgenda() { await fetchGenelAgendaFromFirebase(); let html = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">Genel Ajanda</h2><button type="button" class="login-btn btn-light" style="width: auto; padding: 6px 15px; font-size:12px; margin:0;" onclick="toggleArchiveGA()"><i class="fa-solid fa-box-archive"></i> <span>${showArchivedGA ? 'Aktif Görevleri Göster' : 'Arşivi Göster'}</span></button></div><div class="checklist-info-bar" style="border-color:var(--task-purple); background:#f5f3ff; color:#5b21b6;"><i class="fa-solid fa-circle-info"></i> Bu sayfa tüm ekibe açıktır. Eklenen görevleri ve notları herkes görebilir.</div><div class="ga-grid">${!showArchivedGA ? `<div class="ga-card add-card" onclick="openAddGenelAgenda()"><i class="fa-solid fa-plus"></i></div>` : ''}`; let visibleAgenda = dbGenelAgenda.filter(g => showArchivedGA ? g.isArchived : !g.isArchived); visibleAgenda.sort((a,b) => new Date(a.tarih) - new Date(b.tarih)); visibleAgenda.forEach(g => { let badgeHtml = ''; if(g.video > 0) badgeHtml += `<div class="ga-badge video">${g.video} Video</div>`; if(g.tasarim > 0) badgeHtml += `<div class="ga-badge tasarim">${g.tasarim} Tasarım</div>`; let previewText = (g.not || "").replace(/<[^>]*>?/gm, ''); const isCompleted = g.status === 3; const cardClass = isCompleted ? 'ga-card completed-ga' : 'ga-card'; html += `<div class="${cardClass}"><div class="ga-header"><div class="ga-title">${g.title || ""}</div><div class="ga-badges">${badgeHtml}</div></div><div class="ga-date"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i> Teslim: ${formatDateTR(g.tarih)}</div><div class="ga-company"><i class="fa-solid fa-building"></i> ${g.firma || ""}</div><div class="ga-preview">"${previewText || 'Not eklenmemiş...'}"</div><button type="button" class="ga-view-btn" onclick="openEditGenelAgenda('${g.docId}')"><i class="fa-solid fa-magnifying-glass"></i> İçeriği ve Görevleri Gör</button><div class="ga-footer-info"><span>Ekleyen: <b>${g.ekleyen || ""}</b></span><span>Sorumlu: <b>${g.sorumlu || ""}</b></span></div>${!showArchivedGA ? `<div class="ga-status-btns"><button type="button" class="ga-s-btn ${g.status >= 1 ? 'active-1' : ''}" onclick="updateGAStatus('${g.docId}', 1)">Görüldü</button><button type="button" class="ga-s-btn ${g.status >= 2 ? 'active-2' : ''}" onclick="updateGAStatus('${g.docId}', 2)">Hazırlanıyor</button><button type="button" class="ga-s-btn ${isCompleted ? 'active-3' : ''}" onclick="updateGAStatus('${g.docId}', 3)">Tamamlandı</button></div>` : ''}<button type="button" class="ga-archive-btn" onclick="toggleArchiveStatusGA('${g.docId}')"><i class="fa-solid ${showArchivedGA ? 'fa-box-open' : 'fa-box-archive'}"></i> ${showArchivedGA ? 'Arşivden Çıkar' : 'Arşivle'}</button></div>`; }); html += `</div>`; document.getElementById('main-content').innerHTML = html; }
+    async function loadGenelAgenda() {
+        await fetchGenelAgendaFromFirebase();
+        let html = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">Genel Ajanda</h2>
+                <button type="button" class="login-btn btn-light" style="width: auto; padding: 6px 15px; font-size:12px; margin:0;" onclick="toggleArchiveGA()">
+                    <i class="fa-solid fa-box-archive"></i> <span>${showArchivedGA ? 'Aktif Görevleri Göster' : 'Arşivi Göster'}</span>
+                </button>
+            </div>
+            <div class="checklist-info-bar" style="border-color:var(--task-purple); background:#f5f3ff; color:#5b21b6;">
+                <i class="fa-solid fa-circle-info"></i> Bu sayfa tüm ekibe açıktır. Eklenen görevleri ve notları herkes görebilir.
+            </div>
+            <div class="ga-grid">
+                ${!showArchivedGA ? `<div class="ga-card add-card" onclick="openAddGenelAgenda()"><i class="fa-solid fa-plus"></i></div>` : ''}
+        `;
+
+        let visibleAgenda = dbGenelAgenda.filter(g => showArchivedGA ? g.isArchived : !g.isArchived);
+        visibleAgenda.sort((a,b) => new Date(a.tarih) - new Date(b.tarih));
+
+        visibleAgenda.forEach(g => {
+            let badgeHtml = '';
+            if(g.video > 0) badgeHtml += `<div class="ga-badge video">${g.video} Video</div>`;
+            if(g.tasarim > 0) badgeHtml += `<div class="ga-badge tasarim">${g.tasarim} Tasarım</div>`;
+            
+            let previewText = (g.not || "").replace(/<[^>]*>?/gm, '');
+            const isCompleted = g.status === 3;
+            const cardClass = isCompleted ? 'ga-card completed-ga' : 'ga-card';
+
+            html += `
+                <div class="${cardClass}">
+                    <div class="ga-header">
+                        <div class="ga-title">${g.title || ""}</div>
+                        <div class="ga-badges">${badgeHtml}</div>
+                    </div>
+                    <div class="ga-date"><i class="fa-regular fa-calendar" style="margin-right:4px;"></i> Teslim: ${formatDateTR(g.tarih)}</div>
+                    <div class="ga-company"><i class="fa-solid fa-building"></i> ${g.firma || ""}</div>
+                    <div class="ga-preview">"${previewText || 'Not eklenmemiş...'}"</div>
+                    <button type="button" class="ga-view-btn" onclick="openEditGenelAgenda('${g.docId}')">
+                        <i class="fa-solid fa-magnifying-glass"></i> İçeriği ve Görevleri Gör
+                    </button>
+                    <div class="ga-footer-info">
+                        <span>Ekleyen: <b>${g.ekleyen || ""}</b></span>
+                        <span>Sorumlu: <b>${g.sorumlu || ""}</b></span>
+                    </div>
+                    ${!showArchivedGA ? `
+                    <div class="ga-status-btns">
+                        <button type="button" class="ga-s-btn ${g.status >= 1 ? 'active-1' : ''}" onclick="updateGAStatus('${g.docId}', 1)">Görüldü</button>
+                        <button type="button" class="ga-s-btn ${g.status >= 2 ? 'active-2' : ''}" onclick="updateGAStatus('${g.docId}', 2)">Hazırlanıyor</button>
+                        <button type="button" class="ga-s-btn ${isCompleted ? 'active-3' : ''}" onclick="updateGAStatus('${g.docId}', 3)">Tamamlandı</button>
+                    </div>
+                    ` : ''}
+                    <button type="button" class="ga-archive-btn" onclick="toggleArchiveStatusGA('${g.docId}')">
+                        <i class="fa-solid ${showArchivedGA ? 'fa-box-open' : 'fa-box-archive'}"></i> ${showArchivedGA ? 'Arşivden Çıkar' : 'Arşivle'}
+                    </button>
+                </div>
+            `;
+        });
+        html += `</div>`; document.getElementById('main-content').innerHTML = html;
+    }
+
     function toggleArchiveGA() { showArchivedGA = !showArchivedGA; loadGenelAgenda(); }
     async function updateGAStatus(docId, newStatus) { await db.collection('genel_agenda').doc(docId).update({ status: newStatus }); loadGenelAgenda(); }
     async function toggleArchiveStatusGA(docId) { let g = dbGenelAgenda.find(x => x.docId === docId); if(!g) return; await db.collection('genel_agenda').doc(docId).update({ isArchived: !g.isArchived }); loadGenelAgenda(); }
-    function execCmd(command) { document.execCommand(command, false, null); } function insertCheckbox() { document.execCommand('insertHTML', false, '&#8203;<input type="checkbox">&#8203; '); }
-    function openAddGenelAgenda() { document.getElementById('ga-modal-title').innerText = "Genel Ajanda - Görev Ekle"; document.getElementById('ga-doc-id').value = "new"; document.getElementById('ga-status').value = 0; document.getElementById('ga-title').value = ""; document.getElementById('ga-video').value = 0; document.getElementById('ga-tasarim').value = 0; document.getElementById('ga-not').innerHTML = ""; document.getElementById('ga-ekleyen').value = currentUser.name; if(gaDatePicker) gaDatePicker.destroy(); gaDatePicker = flatpickr("#ga-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: new Date(), altInput: true, altFormat: "j F Y" }); document.getElementById('ga-buttons').innerHTML = `<button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('ga-modal')">Kapat</button><button type="button" class="login-btn btn-purple" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button>`; openModal('ga-modal'); }
-    function openEditGenelAgenda(docId) { let g = dbGenelAgenda.find(x => x.docId === docId); if(!g) return; document.getElementById('ga-modal-title').innerText = "Genel Ajanda - Düzenle"; document.getElementById('ga-doc-id').value = docId; document.getElementById('ga-status').value = g.status || 0; document.getElementById('ga-title').value = g.title || ""; document.getElementById('ga-firma').value = g.firma || ""; document.getElementById('ga-sorumlu').value = g.sorumlu || ""; document.getElementById('ga-video').value = g.video || 0; document.getElementById('ga-tasarim').value = g.tasarim || 0; document.getElementById('ga-ekleyen').value = g.ekleyen || ""; document.getElementById('ga-not').innerHTML = g.not || ""; if(gaDatePicker) gaDatePicker.destroy(); gaDatePicker = flatpickr("#ga-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: g.tarih, altInput: true, altFormat: "j F Y" }); document.getElementById('ga-buttons').innerHTML = `<button type="button" class="login-btn btn-purple" style="flex: 1;" onclick="saveGenelAgenda()">Kaydet</button><button type="button" class="login-btn" style="flex: 1; background: var(--primary-red);" onclick="deleteGenelAgenda('${docId}')">Sil</button><button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('ga-modal')">Kapat</button>`; openModal('ga-modal'); }
-    async function saveGenelAgenda() { const docId = document.getElementById('ga-doc-id').value; const data = { holding: currentCompany, title: document.getElementById('ga-title').value, firma: document.getElementById('ga-firma').value, tarih: document.getElementById('ga-tarih').value, sorumlu: document.getElementById('ga-sorumlu').value, video: parseInt(document.getElementById('ga-video').value) || 0, tasarim: parseInt(document.getElementById('ga-tasarim').value) || 0, not: document.getElementById('ga-not').innerHTML, ekleyen: document.getElementById('ga-ekleyen').value, isArchived: false, status: parseInt(document.getElementById('ga-status').value) || 0 }; try { if(docId === "new") await db.collection('genel_agenda').add(data); else { delete data.isArchived; await db.collection('genel_agenda').doc(docId).update(data); } closeModal('ga-modal'); loadGenelAgenda(); } catch (error) { console.error("Kayıt hatası:", error); alert("Kaydedilirken bir hata oluştu."); } }
-    async function deleteGenelAgenda(docId) { if(confirm("Bu kartı silmek istediğinize emin misiniz?")) { await db.collection('genel_agenda').doc(docId).delete(); closeModal('ga-modal'); loadGenelAgenda(); } }
-
+    function execCmd(command) { document.execCommand(command, false, null); } 
+    function insertCheckbox() { document.execCommand('insertHTML', false, '&#8203;<input type="checkbox">&#8203; '); }
+    
+    function openAddGenelAgenda() { 
+        document.getElementById('ga-modal-title').innerText = "Genel Ajanda - Görev Ekle"; 
+        document.getElementById('ga-doc-id').value = "new"; 
+        document.getElementById('ga-status').value = 0; 
+        document.getElementById('ga-title').value = ""; 
+        document.getElementById('ga-video').value = 0; 
+        document.getElementById('ga-tasarim').value = 0; 
+        document.getElementById('ga-not').innerHTML = ""; 
+        document.getElementById('ga-ekleyen').value = currentUser.name; 
+        if(gaDatePicker) gaDatePicker.destroy(); 
+        gaDatePicker = flatpickr("#ga-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: new Date(), altInput: true, altFormat: "j F Y" }); 
+        document.getElementById('ga-buttons').innerHTML = `<button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('ga-modal')">Kapat</button><button type="button" class="login-btn btn-purple" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button>`; 
+        openModal('ga-modal'); 
+    }
+    
+    function openEditGenelAgenda(docId) { 
+        let g = dbGenelAgenda.find(x => x.docId === docId); 
+        if(!g) return; 
+        document.getElementById('ga-modal-title').innerText = "Genel Ajanda - Düzenle"; 
+        document.getElementById('ga-doc-id').value = docId; 
+        document.getElementById('ga-status').value = g.status || 0; 
+        document.getElementById('ga-title').value = g.title || ""; 
+        document.getElementById('ga-firma').value = g.firma || ""; 
+        document.getElementById('ga-sorumlu').value = g.sorumlu || ""; 
+        document.getElementById('ga-video').value = g.video || 0; 
+        document.getElementById('ga-tasarim').value = g.tasarim || 0; 
+        document.getElementById('ga-ekleyen').value = g.ekleyen || ""; 
+        document.getElementById('ga-not').innerHTML = g.not || ""; 
+        if(gaDatePicker) gaDatePicker.destroy(); 
+        gaDatePicker = flatpickr("#ga-tarih", { dateFormat: "Y-m-d", locale: "tr", defaultDate: g.tarih, altInput: true, altFormat: "j F Y" }); 
+        document.getElementById('ga-buttons').innerHTML = `<button type="button" class="login-btn btn-purple" style="flex: 1;" onclick="saveGenelAgenda()">Kaydet</button><button type="button" class="login-btn" style="flex: 1; background: var(--primary-red);" onclick="deleteGenelAgenda('${docId}')">Sil</button><button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('ga-modal')">Kapat</button>`; 
+        openModal('ga-modal'); 
+    }
+    
+    async function saveGenelAgenda() { 
+        const docId = document.getElementById('ga-doc-id').value; 
+        const data = { 
+            holding: currentCompany, 
+            title: document.getElementById('ga-title').value, 
+            firma: document.getElementById('ga-firma').value, 
+            tarih: document.getElementById('ga-tarih').value, 
+            sorumlu: document.getElementById('ga-sorumlu').value, 
+            video: parseInt(document.getElementById('ga-video').value) || 0, 
+            tasarim: parseInt(document.getElementById('ga-tasarim').value) || 0, 
+            not: document.getElementById('ga-not').innerHTML, 
+            ekleyen: document.getElementById('ga-ekleyen').value, 
+            isArchived: false, 
+            status: parseInt(document.getElementById('ga-status').value) || 0 
+        }; 
+        try { 
+            if(docId === "new") await db.collection('genel_agenda').add(data); 
+            else { delete data.isArchived; await db.collection('genel_agenda').doc(docId).update(data); } 
+            closeModal('ga-modal'); loadGenelAgenda(); 
+        } catch (error) { 
+            console.error("Kayıt hatası:", error); alert("Kaydedilirken bir hata oluştu."); 
+        } 
+    }
+    
+    async function deleteGenelAgenda(docId) { 
+        if(confirm("Bu kartı silmek istediğinize emin misiniz?")) { 
+            await db.collection('genel_agenda').doc(docId).delete(); 
+            closeModal('ga-modal'); loadGenelAgenda(); 
+        } 
+    }
 </script>
 </body>
 </html>
