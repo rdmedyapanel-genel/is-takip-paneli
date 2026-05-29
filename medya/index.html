@@ -4,16 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RDGRUP MEDYA - İş Takip Paneli</title>
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/tr.js"></script>
+
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <link rel="stylesheet" href="../css/style.css">
     <style>
         /* YENİ MODERN REKLAM TABLOSU TASARIMI */
@@ -151,6 +155,7 @@
 </div>
 
 <script src="../js/firebase-config.js"></script>
+
 <script>
     let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = []; let dbAds = [];
     let currentUser = null; let currentCompany = "RDGRUP MEDYA"; 
@@ -184,7 +189,7 @@
         } catch (error) { 
             console.error("Bağlantı hatası: ", error); 
         } finally {
-            // İŞTE EKSİK OLAN KOD BURASI: Yükleme ekranını gizle
+            // YÜKLEME EKRANI BURADA KAPANIR
             document.getElementById('init-loader').style.display = 'none';
         }
     }
@@ -229,7 +234,7 @@
             { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' },
             { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' },
             { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, 
-            { icon: 'fa-bullhorn', name: 'Reklamlar' }, // REKLAMLAR EKLENDİ
+            { icon: 'fa-bullhorn', name: 'Reklamlar' },
             { icon: 'fa-chart-bar', name: 'Raporlar' }
         ];
 
@@ -249,7 +254,7 @@
     function loadPageView(pageName) {
         activePage = pageName; const mainContent = document.getElementById('main-content');
         if (pageName === 'Raporlar') { reportDate = new Date(); loadRaporlarPage(); }
-        else if (pageName === 'Reklamlar') { reklamDate = new Date(); loadReklamlarPage(); } // REKLAMLAR YÖNLENDİRMESİ
+        else if (pageName === 'Reklamlar') { reklamDate = new Date(); loadReklamlarPage(); } 
         else if (pageName === 'Firmalar') loadFirmalarPage();
         else if (pageName === 'Checklist') loadChecklistPage(currentChecklistDate);
         else if (pageName === 'Genel Ajanda') loadGenelAgenda();
@@ -258,7 +263,7 @@
         else if (pageName.includes('Takvim')) { mainContent.innerHTML = renderCalendarView(pageName); initCalendar(); }
     }
 
-    // --- YENİLENMİŞ MODERN REKLAMLAR SAYFASI ---
+    // --- REKLAMLAR SAYFASI ---
     function loadReklamlarPage() {
         let y = reklamDate.getFullYear(); let m = reklamDate.getMonth() + 1; 
         let monthStr = `${y}-${m < 10 ? '0'+m : m}`; 
@@ -343,21 +348,133 @@
         targetComps.forEach(c => calcReklam(c.docId));
     }
 
+    function changeReklamMonth(direction) { reklamDate.setMonth(reklamDate.getMonth() + direction); loadReklamlarPage(); }
 
-    // --- WP GÖRSEL İNDİRME BUTONLU CHECKLIST ---
-    async function loadChecklistPage(dateStr) {
-        currentChecklistDate = dateStr || formatDate(new Date());
-        let dateObj = new Date(currentChecklistDate); let displayDate = dateObj.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric', weekday:'long' });
+    function calcReklam(docId) {
+        let compBudg = parseFloat(document.getElementById(`r_compBudg_${docId}`).value) || 0;
+        let compKdv = compBudg * 1.20;
+        document.getElementById(`r_compKdv_${docId}`).value = compKdv.toFixed(2);
+
+        let a1 = parseFloat(document.getElementById(`r_act1_${docId}`).value) || 0;
+        let a2 = parseFloat(document.getElementById(`r_act2_${docId}`).value) || 0;
+        let a3 = parseFloat(document.getElementById(`r_act3_${docId}`).value) || 0;
+        let a4 = parseFloat(document.getElementById(`r_act4_${docId}`).value) || 0;
+        let a5 = parseFloat(document.getElementById(`r_act5_${docId}`).value) || 0;
         
-        let docId = `chk_${currentCompany}_${currentChecklistDate}`;
-        let doc = await db.collection('checklists').doc(docId).get();
-        let docData = doc.exists ? doc.data() : {}; let checklistData = docData.notes || {};
+        let actTotalKdv = (a1 + a2 + a3 + a4 + a5) * 1.20;
+        document.getElementById(`r_actTotalKdv_${docId}`).value = actTotalKdv.toFixed(2);
 
-        let targetUsers = dbUsers.filter(u => u.chkVisible === true && u.chkCompanies && u.chkCompanies.includes(currentCompany));
-        let todayStr = formatDate(new Date()); let isPast = currentChecklistDate < todayStr; 
-        let role = (currentUser.role || "").toLowerCase(); let isAdmin = role === 'admin' || currentUser.id === 'alperen';
+        let totalSpent = compKdv + actTotalKdv;
+        document.getElementById(`r_totalSpent_${docId}`).value = totalSpent.toFixed(2);
 
-        // BUTON BURADA: Görseli İndir (WP)
+        let totalBudg = parseFloat(document.getElementById(`r_totalBudg_${docId}`).value) || 0;
+        let remaining = totalBudg - totalSpent;
+        document.getElementById(`r_remaining_${docId}`).value = remaining.toFixed(2);
+    }
+
+    async function saveAllReklam() {
+        let btn = document.getElementById('save-reklam-btn'); btn.innerText = "Kaydediliyor...";
+        let y = reklamDate.getFullYear(); let m = reklamDate.getMonth() + 1; let monthStr = `${y}-${m < 10 ? '0'+m : m}`; 
+        let targetComps = dbCompanies.filter(c => c.showInAds === true);
+        try {
+            for (let c of targetComps) {
+                let docIdStr = `${c.docId}_${monthStr}`;
+                let data = {
+                    companyId: c.docId, month: monthStr,
+                    count: parseInt(document.getElementById(`r_count_${c.docId}`).value) || 0,
+                    compBudg: parseFloat(document.getElementById(`r_compBudg_${c.docId}`).value) || 0,
+                    act1: parseFloat(document.getElementById(`r_act1_${c.docId}`).value) || 0,
+                    act2: parseFloat(document.getElementById(`r_act2_${c.docId}`).value) || 0,
+                    act3: parseFloat(document.getElementById(`r_act3_${docId}`).value) || 0,
+                    act4: parseFloat(document.getElementById(`r_act4_${docId}`).value) || 0,
+                    act5: parseFloat(document.getElementById(`r_act5_${docId}`).value) || 0,
+                    totalBudg: parseFloat(document.getElementById(`r_totalBudg_${c.docId}`).value) || 0
+                };
+                await db.collection('ads_data').doc(docIdStr).set(data);
+            }
+            await fetchAdsFromFirebase();
+            btn.innerText = "Değişiklikler Kaydedildi!"; btn.style.background = "#10b981";
+            setTimeout(() => { btn.innerText = "Tüm Değişiklikleri Kaydet"; btn.style.background = "var(--task-purple)"; }, 2000);
+        } catch (error) { console.error("Reklam Kayıt Hatası:", error); alert("Kaydedilirken hata oluştu!"); btn.innerText = "Tüm Değişiklikleri Kaydet"; }
+    }
+
+    function renderDashboardHome(pageName) {
+        let todayStr = formatDate(new Date()); let tomorrowStr = new Date(); tomorrowStr.setDate(tomorrowStr.getDate() + 1); tomorrowStr = formatDate(tomorrowStr);
+        let myTasksOnly = (pageName === 'Kendi İşlerim');
+        let validTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(currentCompany));
+        let validShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany));
+        let allItems = [...validTasks.map(t => ({...t, itemType: 'task', isDone: (t.hazirlandi && t.paylasildi)})), ...validShoots.map(s => { let kisiStr = Array.isArray(s.kisi) ? s.kisi.join(', ') : s.kisi; return {...s, itemType: 'shoot', tur: 'Çekim', hazirlayan: kisiStr, paylasan: '-', isDone: (s.cekildi && s.teslim && s.hdd && s.drive)}; })];
+        let gecikenler = allItems.filter(t => t.tarih < todayStr && !t.isDone); let bugun = allItems.filter(t => t.tarih === todayStr); let yarin = allItems.filter(t => t.tarih === tomorrowStr);
+        if (myTasksOnly) { gecikenler = gecikenler.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name); bugun = bugun.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name); yarin = yarin.filter(t => (t.hazirlayan && t.hazirlayan.includes(currentUser.name)) || t.paylasan === currentUser.name); }
+        const renderMiniCard = (t) => { const extraClass = t.itemType === 'shoot' ? 'shoot' : ''; const clickFn = t.itemType === 'shoot' ? `openEditShoot('${t.docId}')` : `openEditTask('${t.docId}')`; const indexStr = t.itemType === 'task' ? ` - ${getTaskIndex(t)}` : ''; return `<div class="task-card ${extraClass} ${t.isDone ? 'completed' : ''}" onclick="${clickFn}" style="color:white; cursor:pointer;"><b>${t.firma || ""}</b> - ${t.tur || ""}${indexStr} (K:${t.hazirlayan || ""})</div>`; };
+        let myAgenda = dbAgenda.filter(a => a.company === currentCompany || a.company === 'Tümü'); let agendaHtml = myAgenda.length > 0 ? myAgenda.map(a => `<div class="agenda-item"><span>${a.text || ""}</span> <button type="button" class="action-btn" onclick="deleteAgenda('${a.docId}')"><i class="fa-solid fa-check"></i></button></div>`).join('') : `<div class="dash-empty-state">Aktif not bulunmuyor.</div>`;
+        return `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h2 class="content-title" style="margin-bottom: 0; border: none;">${currentCompany} - ${pageName}</h2><div style="color: var(--text-muted); font-size: 13px;">${new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div></div><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;"><div class="dash-card"><div class="dash-card-header"><i class="fa-solid fa-clock-rotate-left" style="color: var(--primary-red);"></i> Geciken İşler</div><div class="dash-task-list">${gecikenler.length > 0 ? gecikenler.map(renderMiniCard).join('') : '<div class="dash-empty-state">Geciken iş bulunmuyor.</div>'}</div></div><div class="dash-card"><div class="dash-card-header"><i class="fa-solid fa-calendar-day" style="color: #f59e0b;"></i> Bugünün İşleri</div><div class="dash-task-list">${bugun.length > 0 ? bugun.map(renderMiniCard).join('') : '<div class="dash-empty-state">Bugün için kayıtlı iş yok.</div>'}</div></div><div class="dash-card"><div class="dash-card-header"><i class="fa-solid fa-calendar-plus" style="color: #10b981;"></i> Yarının İşleri</div><div class="dash-task-list">${yarin.length > 0 ? yarin.map(renderMiniCard).join('') : '<div class="dash-empty-state">Yarına ait kayıtlı iş yok.</div>'}</div></div></div><div class="content-card" style="margin-top: 15px; padding: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;"><h3 style="color: var(--bg-dark); font-size: 15px;"><i class="fa-solid fa-book-open" style="color: var(--task-purple); margin-right:5px;"></i> Aktif Ajanda Notları</h3></div><div style="display:flex; gap:10px; margin-bottom: 15px;"><input type="text" id="new-agenda-note" placeholder="Hızlı not ekle..." style="flex:1; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-family:'Poppins';" autocomplete="off"><button type="button" class="login-btn" style="width: auto; padding: 8px 15px; font-size:12px;" onclick="addAgendaNote()">Ekle</button></div><div>${agendaHtml}</div></div>`;
+    }
+
+    async function addAgendaNote() { const text = document.getElementById('new-agenda-note').value.trim(); if(!text) return; await db.collection('agenda').add({ text: text, company: currentCompany, date: formatDate(new Date()) }); await fetchAgendaFromFirebase(); loadPageView(activePage); }
+    async function deleteAgenda(docId) { await db.collection('agenda').doc(docId).delete(); await fetchAgendaFromFirebase(); loadPageView(activePage); }
+
+    function renderCalendarView(pageName) {
+        let headerAction = ''; if (pageName === 'Paylaşım Takvimi') headerAction = `<button type="button" class="login-btn btn-purple" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddTask()"><i class="fa-solid fa-plus"></i> <span>Paylaşım Ekle</span></button>`; else if (pageName === 'Çekim Takvimi') headerAction = `<button type="button" class="login-btn btn-orange" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddShoot()"><i class="fa-solid fa-plus"></i> <span>Çekim Ekle</span></button>`; else if (pageName === 'Genel Takvim') headerAction = `<div style="font-size:11px; color:var(--text-muted); font-style:italic;">* Yalnızca Görüntüleme</div>`;
+        return `<div class="content-card" style="padding: 20px; display: flex; flex-direction: column;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - ${pageName}</h2>${headerAction}</div><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: #f8fafc; padding: 8px 15px; border-radius: 10px; border: 1px solid #e2e8f0;"><div style="display: flex; gap: 8px; align-items: center;"><button type="button" class="action-btn" onclick="changeCalNav(-1)"><i class="fa-solid fa-chevron-left"></i></button><button type="button" class="action-btn" onclick="changeCalNav(1)"><i class="fa-solid fa-chevron-right"></i></button><button type="button" class="login-btn" style="width: auto; padding: 5px 12px; font-size: 11px; margin:0;" onclick="resetToToday()">Bugün</button></div><h3 id="calendar-month-year" style="font-size: 15px; color: var(--bg-dark); font-weight: 700; margin: 0; text-transform:uppercase;">Yükleniyor...</h3><div style="display: flex; gap: 10px;"><button type="button" class="action-btn active" id="btn-view-month" onclick="changeCalView('month')">Aylık</button><button type="button" class="action-btn" id="btn-view-week" onclick="changeCalView('week')">Haftalık</button><button type="button" class="action-btn" id="btn-view-day" onclick="changeCalView('day')">Günlük</button></div></div><div class="cal-grid" id="calendar-wrapper"></div></div>`;
+    }
+    function changeCalView(view) { currentCalView = view; ['month', 'week', 'day'].forEach(v => document.getElementById('btn-view-'+v).classList.remove('active')); document.getElementById('btn-view-' + view).classList.add('active'); initCalendar(); }
+    function changeCalNav(direction) { if(currentCalView === 'month') calDate.setMonth(calDate.getMonth() + direction); if(currentCalView === 'week') calDate.setDate(calDate.getDate() + (direction * 7)); if(currentCalView === 'day') calDate.setDate(calDate.getDate() + direction); initCalendar(); }
+    function resetToToday() { calDate = new Date(); initCalendar(); }
+    function getTaskIndex(task) { const taskMonth = (task.tarih || "").substring(0, 7); let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(task.firma) && (t.tarih || "").startsWith(taskMonth)); monthlyTasks.sort((a, b) => a.tarih !== b.tarih ? (a.tarih || "").localeCompare(b.tarih || "") : a.docId.localeCompare(b.docId)); const index = monthlyTasks.findIndex(t => t.docId === task.docId); return index !== -1 ? index + 1 : '?'; }
+    function dragTask(ev, docId) { ev.dataTransfer.setData("text/plain", docId); } function allowDrop(ev) { ev.preventDefault(); }
+    async function dropTask(ev, newDateStr) { ev.preventDefault(); const docId = ev.dataTransfer.getData("text/plain"); if(!docId || !newDateStr) return; let isTask = dbTasks.find(x => x.docId === docId); let isShoot = dbShoots.find(x => x.docId === docId); if(isTask) { await db.collection('tasks').doc(docId).update({ tarih: newDateStr }); await fetchTasksFromFirebase(); } else if(isShoot) { await db.collection('shoots').doc(docId).update({ tarih: newDateStr }); await fetchShootsFromFirebase(); } loadPageView(activePage); }
+
+    function initCalendar() {
+        const grid = document.getElementById('calendar-wrapper'); const monthYearText = document.getElementById('calendar-month-year'); grid.innerHTML = '';
+        let y = calDate.getFullYear(); let m = calDate.getMonth();
+        if(currentCalView === 'day') monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }); else monthYearText.innerText = calDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
+        let validTasks = dbTasks.filter(t => normalizeStr(t.holding || t.firma) === normalizeStr(currentCompany)); let validShoots = dbShoots.filter(s => normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany)); let visibleItems = [];
+        if (activePage === 'Paylaşım Takvimi') visibleItems = validTasks.map(t => ({...t, itemType: 'task'})); else if (activePage === 'Çekim Takvimi') visibleItems = validShoots.map(s => ({...s, itemType: 'shoot'})); else visibleItems = [...validTasks.map(t => ({...t, itemType: 'task'})), ...validShoots.map(s => ({...s, itemType: 'shoot'}))];
+
+        function getTasksForDateHTML(dateString) {
+            const dayItems = visibleItems.filter(t => t.tarih === dateString); if(dayItems.length === 0) return '';
+            let html = '<div class="cal-tasks">';
+            dayItems.forEach(t => {
+                const isReadOnly = (activePage === 'Genel Takvim');
+                if(t.itemType === 'task') {
+                    const isCompleted = t.hazirlandi && t.paylasildi; const tIndex = getTaskIndex(t);
+                    html += `<div class="task-card ${isCompleted ? 'completed' : ''}" draggable="${!isReadOnly}" ondragstart="dragTask(event, '${t.docId}')" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}"><div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div><div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div><div class="task-text"><div class="task-line">${t.firma || ""} (<strong>${t.tur || ""}</strong>) - <b>${tIndex}</b></div><div class="task-line">H: <strong>${t.hazirlayan || ""}</strong>, P: ${t.paylasan || ""}</div></div></div>`;
+                } else {
+                    const isCompleted = t.cekildi && t.teslim && t.hdd && t.drive; let kisiDisplay = Array.isArray(t.kisi) ? t.kisi.join(', ') : t.kisi;
+                    html += `<div class="task-card shoot ${isCompleted ? 'completed' : ''}" draggable="${!isReadOnly}" ondragstart="dragTask(event, '${t.docId}')" onclick="${isReadOnly ? '' : `openEditShoot('${t.docId}')`}"><i class="fa-solid fa-camera" style="margin-right:2px;"></i><div class="task-text">${t.saat ? t.saat+' ' : ''}${t.firma || ""} - ${kisiDisplay}</div></div>`;
+                }
+            }); html += '</div>'; return html;
+        }
+
+        if(currentCalView === 'month') { grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`; let firstDay = new Date(y, m, 1).getDay() - 1; if(firstDay === -1) firstDay = 6; let daysInMonth = new Date(y, m + 1, 0).getDate(); for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day padding"></div>`; for(let i=1; i<=daysInMonth; i++) { let cellDate = new Date(y, m, i); let dateStr = formatDate(cellDate); let isToday = (i === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear()); grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div>${getTasksForDateHTML(dateStr)}</div>`; } } 
+        else if (currentCalView === 'week') { grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`; let dayOfWeek = calDate.getDay() - 1; if(dayOfWeek === -1) dayOfWeek = 6; let startOfWeek = new Date(calDate); startOfWeek.setDate(calDate.getDate() - dayOfWeek); for(let i=0; i<7; i++) { let currentDay = new Date(startOfWeek); currentDay.setDate(startOfWeek.getDate() + i); let dateStr = formatDate(currentDay); let isToday = (currentDay.getDate() === new Date().getDate() && currentDay.getMonth() === new Date().getMonth() && currentDay.getFullYear() === new Date().getFullYear()); grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div>${getTasksForDateHTML(dateStr)}</div>`; } } 
+        else if (currentCalView === 'day') { grid.style.gridTemplateColumns = '1fr'; grid.innerHTML = `<div class="cal-header-day">${calDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>`; let isToday = (calDate.getDate() === new Date().getDate() && calDate.getMonth() === new Date().getMonth() && calDate.getFullYear() === new Date().getFullYear()); let dateStr = formatDate(calDate); let tasksHtml = getTasksForDateHTML(dateStr); grid.innerHTML += `<div class="cal-day" style="min-height: 300px; padding: 20px;" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 15px; font-size: 24px;">${calDate.getDate()}</div><div style="margin-top: 5px;">${tasksHtml !== '' ? tasksHtml : '<div style="color:var(--text-muted); font-size:14px;">Kayıt bulunmuyor.</div>'}</div></div>`; }
+    }
+
+    function loadFirmalarPage() {
+        let html = '<div class="company-grid" style="margin-top:15px;">';
+        if(dbCompanies.length === 0) { html += '<p style="color: var(--text-muted); width: 100%; text-align: center;">Henüz sisteme eklenmiş firma yok.</p>'; } else {
+            let today = new Date(); let y = today.getFullYear(); let m = today.getMonth() + 1; let currentMonthStr = `${y}-${m < 10 ? '0'+m : m}`; 
+            dbCompanies.forEach(c => {
+                const compName = c.name || "İsimsiz"; const compOwner = c.sahibi || "Belirtilmemiş"; const compResp = c.sorumlu || "Atanmamış";
+                let compTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && t.paylasildi === true); compTasks.sort((a, b) => new Date(b.tarih) - new Date(a.tarih)); let lastShareDate = compTasks.length > 0 ? compTasks[0].tarih : null; let lastShareStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Paylaşım Yok</span>"; if (lastShareDate) { let diff = calculateDaysPassed(lastShareDate); lastShareStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShareDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`; }
+                let compShoots = dbShoots.filter(s => normalizeStr(s.firma) === normalizeStr(compName) && s.cekildi === true); compShoots.sort((a, b) => new Date(b.tarih) - new Date(a.tarih)); let lastShootDate = compShoots.length > 0 ? compShoots[0].tarih : null; let lastShootStr = "<span style='color:#ef4444; font-weight:500;'>Henüz Çekim Yok</span>"; if (lastShootDate) { let diff = calculateDaysPassed(lastShootDate); lastShootStr = `<span style="font-weight:600; color:var(--bg-dark);">${formatDateTR(lastShootDate)}</span> <span style="font-size:10px; color:var(--text-muted);">(kaç gün geçti: <b>${diff}</b>)</span>`; }
+                let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr) && t.paylasildi === true); let videoCount = monthlyTasks.filter(t => t.tur === 'Video').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0); let tasarimCount = monthlyTasks.filter(t => t.tur === 'Tasarım').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
+                let driveBtnAttr = c.drive && c.drive.trim() !== "" ? `onclick="window.open('${c.drive}', '_blank')"` : `disabled style="opacity:0.5; cursor:not-allowed;"`;
+
+                html += `<div class="company-card" style="padding: 20px; text-align: left; cursor: default; display:flex; flex-direction:column; gap:12px; background: white;"><div style="display:flex; align-items:center; gap:10px; border-bottom: 2px solid #f1f5f9; padding-bottom:12px;"><div style="width: 40px; height: 40px; background: #fee2e2; border-radius: 10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fa-solid fa-building" style="font-size: 18px; color: var(--primary-red); margin:0;"></i></div><h3 style="font-size: 15px; margin:0; color: var(--bg-dark); font-weight:700;">${compName}</h3></div><div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted); font-weight:600;">Firma Sahibi:</span><span style="font-weight:700; color:var(--bg-dark); background:#f8fafc; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0;">${compOwner}</span></div><div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted); font-weight:600;">Sorumlu Personel:</span><span style="font-weight:700; color:var(--task-purple); background:#f5f3ff; padding:3px 8px; border-radius:6px; border:1px solid #ede9fe;">${compResp}</span></div></div><div style="background: #f8fafc; border-radius: 8px; padding: 12px; display:flex; flex-direction:column; gap:10px; border:1px solid #e2e8f0;"><div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-share-nodes" style="font-size: 12px; color:var(--primary-red); margin:0;"></i> Son Paylaşım Günü:</span><span style="padding-left: 18px;">${lastShareStr}</span></div><div style="width:100%; height:1px; background:#e2e8f0;"></div><div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-camera" style="font-size: 12px; color:#10b981; margin:0;"></i> Son Çekim Günü:</span><span style="padding-left: 18px;">${lastShootStr}</span></div></div><div style="display:flex; justify-content:space-between; gap: 8px;"><button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" ${driveBtnAttr}><i class="fa-brands fa-google-drive" style="color:#10b981; font-size:14px; margin-right:4px;"></i> Dosyalar</button><button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" onclick="openCompanyNote('${c.docId}')"><i class="fa-solid fa-note-sticky" style="color:var(--shoot-orange); font-size:14px; margin-right:4px;"></i> Firma Notu</button></div><div style="display:flex; justify-content:space-between; gap: 8px; margin-top: auto;"><div style="font-size: 11px; background:#fff7ed; color:#c2410c; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan videolar"><i class="fa-solid fa-video" style="font-size: 12px; margin:0; color:#ea580c;"></i> Video: <b style="font-size:13px;">${videoCount}</b></div><div style="font-size: 11px; background:#fdf2f8; color:#be185d; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #fce7f3; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan tasarımlar"><i class="fa-solid fa-pen-nib" style="font-size: 12px; margin:0; color:#db2777;"></i> Tasarım: <b style="font-size:13px;">${tasarimCount}</b></div></div></div>`;
+            });
+        }
+        html += '</div>'; document.getElementById('main-content').innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Firma Analiz Kartları</h2></div>${html}`;
+    }
+
+    function openCompanyNote(docId) { let c = dbCompanies.find(x => x.docId === docId); if(!c) return; document.getElementById('comp-note-doc-id').value = docId; document.getElementById('comp-note-title').innerText = `${c.name} - Firma Notu`; document.getElementById('comp-note-text').value = c.notlar || ""; openModal('company-note-modal'); }
+    async function saveCompanyNote() { let docId = document.getElementById('comp-note-doc-id').value; let text = document.getElementById('comp-note-text').value; let btn = document.getElementById('save-comp-note-btn'); btn.innerText = "Kaydediliyor..."; try { await db.collection('companies').doc(docId).update({ notlar: text }); await fetchCompaniesFromFirebase(); btn.innerText = "Kaydedildi!"; setTimeout(() => { btn.innerText = "Notu Kaydet"; closeModal('company-note-modal'); loadFirmalarPage(); }, 1000); } catch(e) { console.error(e); alert("Not kaydedilirken bir hata oluştu."); btn.innerText = "Notu Kaydet"; } }
+
+    async function loadChecklistPage(dateStr) {
+        currentChecklistDate = dateStr || formatDate(new Date()); let dateObj = new Date(currentChecklistDate); let displayDate = dateObj.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric', weekday:'long' }); let docId = `chk_${currentCompany}_${currentChecklistDate}`; let doc = await db.collection('checklists').doc(docId).get(); let docData = doc.exists ? doc.data() : {}; let checklistData = docData.notes || {}; let targetUsers = dbUsers.filter(u => u.chkVisible === true && u.chkCompanies && u.chkCompanies.includes(currentCompany)); let todayStr = formatDate(new Date()); let isPast = currentChecklistDate < todayStr; let role = (currentUser.role || "").toLowerCase(); let isAdmin = role === 'admin' || currentUser.id === 'alperen';
+        
         let html = `
             <div class="checklist-container">
                 <div class="checklist-header">
@@ -375,21 +492,12 @@
                     </div>
                 </div>
                 <div class="checklist-info-bar"><i class="fa-solid fa-circle-info"></i> Checklist her gece 00:00'da otomatik olarak yeni güne geçer. Okları veya takvimi kullanarak geçmiş ve gelecek günlere bakabilirsiniz.</div>
-                
-                <div id="checklist-export-area" class="checklist-export-wrapper">
-                    <div class="checklist-export-title">${displayDate} Checklisti</div>
+                <div id="checklist-export-area" class="checklist-export-wrapper"><div class="checklist-export-title">${displayDate} Checklisti</div>
         `;
 
         if(targetUsers.length === 0) html += `<div style="text-align:center; padding: 30px; color: var(--text-muted);">Bu şirketin checklistinde görünecek kullanıcı bulunamadı.</div>`;
-
-        targetUsers.forEach(u => {
-            let noteContent = checklistData[u.id] || ""; let canEdit = isAdmin || (!isPast && u.id === currentUser.id); let disabledAttr = canEdit ? "" : "disabled";
-            html += `<div class="chk-user-card"><span class="chk-user-title">${u.name || "İsimsiz"}</span><textarea class="chk-textarea" id="chk-txt-${u.id}" placeholder="Buraya notlarınızı yazın... Kaydettiğinizde otomatik olarak numaralandırılacaktır." ${disabledAttr} autocomplete="off">${noteContent}</textarea>${canEdit ? `<div style="text-align: right;"><button type="button" class="login-btn btn-green" style="width: auto; padding: 6px 15px;" onclick="saveChecklist('${u.id}')">Listeyi Kaydet / Sırala</button></div>` : ''}</div>`;
-        });
-        html += `</div></div>`; document.getElementById('main-content').innerHTML = html;
-
-        if(chkDatePicker) chkDatePicker.destroy(); 
-        chkDatePicker = flatpickr("#chk-date-picker", { dateFormat: "Y-m-d", locale: "tr", defaultDate: currentChecklistDate, altInput: true, altFormat: "j F Y", onChange: function(selectedDates, dateStr) { loadChecklistPage(dateStr); } });
+        targetUsers.forEach(u => { let noteContent = checklistData[u.id] || ""; let canEdit = isAdmin || (!isPast && u.id === currentUser.id); let disabledAttr = canEdit ? "" : "disabled"; html += `<div class="chk-user-card"><span class="chk-user-title">${u.name || "İsimsiz"}</span><textarea class="chk-textarea" id="chk-txt-${u.id}" placeholder="Buraya notlarınızı yazın... Kaydettiğinizde otomatik olarak numaralandırılacaktır." ${disabledAttr} autocomplete="off">${noteContent}</textarea>${canEdit ? `<div style="text-align: right;"><button type="button" class="login-btn btn-green" style="width: auto; padding: 6px 15px;" onclick="saveChecklist('${u.id}')">Listeyi Kaydet / Sırala</button></div>` : ''}</div>`; }); html += `</div></div>`; document.getElementById('main-content').innerHTML = html;
+        if(chkDatePicker) chkDatePicker.destroy(); chkDatePicker = flatpickr("#chk-date-picker", { dateFormat: "Y-m-d", locale: "tr", defaultDate: currentChecklistDate, altInput: true, altFormat: "j F Y", onChange: function(selectedDates, dateStr) { loadChecklistPage(dateStr); } });
     }
     function changeChecklistDate(direction) { let d = new Date(currentChecklistDate); d.setDate(d.getDate() + direction); loadChecklistPage(formatDate(d)); }
     async function saveChecklist(userId) { let btn = event.target; btn.innerText = "Kaydediliyor..."; try { let txtArea = document.getElementById(`chk-txt-${userId}`); let rawText = txtArea.value; let lines = rawText.split('\n'); let counter = 1; let formattedText = lines.map(line => { let cleanLine = line.replace(/^\d+[\-\.)]\s*/, '').trim(); if(cleanLine === "") return ""; return `${counter++}- ${cleanLine}`; }).filter(l => l !== "").join('\n'); txtArea.value = formattedText; let docId = `chk_${currentCompany}_${currentChecklistDate}`; let docRef = db.collection('checklists').doc(docId); await docRef.set({ notes: { [userId]: formattedText }, company: currentCompany, date: currentChecklistDate }, { merge: true }); let oldText = "Listeyi Kaydet / Sırala"; btn.innerText = "Kaydedildi!"; btn.style.backgroundColor = "#16a34a"; setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 2000); } catch (error) { console.error("Checklist Kayıt Hatası: ", error); alert("Kaydedilemedi, bağlantınızı kontrol edin."); btn.innerText = "Listeyi Kaydet / Sırala"; } }
