@@ -118,7 +118,12 @@
         try {
             const settingsRef = db.collection('settings').doc('system'); const doc = await settingsRef.get(); if (doc.exists) dbVersionInfo = doc.data();
             await fetchUsersFromFirebase(); await fetchCompaniesFromFirebase(); loadAdminSettings();
-        } catch (error) { console.error("Hata:", error); }
+        } catch (error) { 
+            console.error("Hata:", error); 
+        } finally {
+            // Yükleme ekranını gizle
+            document.getElementById('init-loader').style.display = 'none';
+        }
     }
 
     function toggleSidebar() { isSidebarCollapsed = !isSidebarCollapsed; const sb = document.getElementById('app-sidebar'); if (isSidebarCollapsed) { sb.classList.add('collapsed'); } else { sb.classList.remove('collapsed'); } }
