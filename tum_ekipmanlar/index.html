@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tüm Ekipmanlar - RDGRUP</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .reklam-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1000px; font-size: 12px; }
+        .reklam-table th { background: #f8fafc; color: #64748b; padding: 14px 8px; text-align: center; border-bottom: 2px solid #e2e8f0; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .reklam-table td { padding: 10px 6px; border-bottom: 1px solid #f1f5f9; text-align: center; background: white; transition: background 0.2s; }
+        .reklam-table tr:hover td { background: #f8fafc; }
+        
+        .eq-status-badge { padding: 6px 12px; border-radius: 8px; font-weight: 600; font-size: 11px; display: inline-flex; align-items: center; gap: 6px; }
+        .eq-status-bosta { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
+        .eq-status-kullanimda { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+        .eq-plan-item { padding: 10px; border-bottom: 1px dashed #e2e8f0; font-size: 13px; color: var(--bg-dark); display: flex; align-items: center; gap: 10px;}
+    </style>
+</head>
+<body>
+
+<div class="modal-overlay" id="eq-plan-modal">
+    <div class="modal-content" style="width: 500px;">
+        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('eq-plan-modal')"></i>
+        <h3 class="modal-title" id="eq-plan-title">Haftalık Plan</h3>
+        <div id="eq-plan-content" style="max-height: 350px; overflow-y: auto; margin-top:15px;"></div>
+        <div style="margin-top: 15px;"><button type="button" class="login-btn btn-gray" style="width:100%;" onclick="closeModal('eq-plan-modal')">Kapat</button></div>
+    </div>
+</div>
+
+<div class="slide-container" id="dashboard-screen" style="display: flex;"> 
+    <div class="dashboard-layout">
+        <div class="sidebar" id="app-sidebar">
+            <div id="sidebar-top-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div class="sidebar-profile">
+                    <div class="avatar" id="logged-avatar">A</div>
+                    <div class="profile-texts">
+                        <div style="font-weight: 700; color: var(--bg-dark); font-size: 14px;" id="logged-user-name">Kullanıcı</div>
+                        <div style="font-size: 11px; color: var(--text-muted);" id="logged-user-role">Rol</div>
+                    </div>
+                </div>
+                <button type="button" class="action-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" style="padding: 8px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-left: 5px;"><i class="fa-solid fa-bars"></i></button>
+            </div>
+            
+            <button type="button" class="back-to-company" onclick="window.location.href='../index.html'"><i class="fa-solid fa-arrow-left"></i> <span>Şube Seçimine Dön</span></button>
+            <div class="menu-category" style="font-size: 10px; font-weight: 700; color:#94a3b8; margin-bottom: 8px; letter-spacing: 1px;">GENEL GÖRÜNÜM</div>
+            <ul class="menu-list" id="sidebar-menu">
+                <li class="menu-item active"><i class="fa-solid fa-toolbox"></i> <span>Tüm Ekipmanlar</span></li>
+            </ul>
+            <button type="button" class="logout-item" onclick="logout()"><i class="fa-solid fa-power-off"></i> <span>Çıkış Yap</span></button>
+        </div>
+        
+        <div class="main-panel" id="main-content">
+            <div class="full-loader" id="init-loader" style="display: flex; background: transparent;"><div class="spinner"></div><p style="margin-top: 15px; font-weight: 600; font-size:12px; color: var(--text-muted);">Sistem Yükleniyor...</p></div>
+        </div>
+    </div>
+</div>
+
+<script src="../js/firebase-config.js"></script>
+
+<script>
+    let dbEquipments = [];
+    let dbShoots = [];
+    let currentUser = null; 
+    let isSidebarCollapsed = false;
+
+    function formatDate(dateObj) {
+        let d = new Date(dateObj), month = '' + (d.getMonth() + 1), day = '' + d.getDate(), year = d.getFullYear();
+        if (month.length < 2) month = '0' + month; if (day.length < 2) day = '0' + day;
+        return [year, month, day].join('-');
+    }
+
+    function formatDateTR(dateString) { 
+        if(!dateString) return ""; 
+        return new Date(dateString).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric', weekday: 'short' }); 
+    }
+
+    window.onload = async function() {
+        const savedUser = localStorage.getItem('rdgrup_user');
+        if (!savedUser) { window.location.href = '../index.html'; return; }
+        
+        currentUser = JSON.parse(savedUser);
+        document.getElementById('logged-user-name').innerText = currentUser.name || "Kullanıcı";
+        document.getElementById('logged-user-role').innerText = currentUser.role || "Bilinmiyor";
+        document.getElementById('logged-avatar').innerText = (currentUser.name || "?").charAt(0).toUpperCase();
+
+        await initializeSystem();
+    };
+
+    async function initializeSystem() {
+        try {
+            await fetchEquipmentsFromFirebase();
+            await fetchShootsFromFirebase();
+            loadEkipmanlarPage();
+        } catch (error) { 
+            console.error("Bağlantı hatası: ", error); 
+        } finally {
+            document.getElementById('init-loader').style.display = 'none';
+        }
+    }
+
+    function logout() { localStorage.removeItem('rdgrup_user'); window.location.href = '../index.html'; }
+    function toggleSidebar() { isSidebarCollapsed = !isSidebarCollapsed; const sb = document.getElementById('app-sidebar'); if (isSidebarCollapsed) { sb.classList.add('collapsed'); } else { sb.classList.remove('collapsed'); } }
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    async function fetchEquipmentsFromFirebase() { 
+        const snapshot = await db.collection('equipments').get(); 
+        dbEquipments = []; 
+        snapshot.forEach(doc => { dbEquipments.push({ docId: doc.id, ...doc.data() }); }); 
+        dbEquipments.sort((a, b) => (a.order || 0) - (b.order || 0)); 
+    }
+    
+    async function fetchShootsFromFirebase() { 
+        const snapshot = await db.collection('shoots').get(); 
+        dbShoots = []; 
+        snapshot.forEach(doc => { dbShoots.push({ docId: doc.id, ...doc.data() }); }); 
+    }
+
+    function loadEkipmanlarPage() {
+        let todayStr = formatDate(new Date());
+        let tDate = new Date(); tDate.setDate(tDate.getDate() + 1); let tomorrowStr = formatDate(tDate);
+        
+        let html = `
+            <div class="content-card" style="padding: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;"><i class="fa-solid fa-toolbox" style="color:var(--task-purple); margin-right:8px;"></i> Holding Bünyesindeki Tüm Ekipmanlar</h2>
+                </div>
+        `;
+
+        if (dbEquipments.length === 0) {
+            html += `<div style="text-align:center; color:var(--text-muted); padding:30px;">Sisteme kayıtlı ekipman bulunamadı. Lütfen Admin panelinden ekleme yapın.</div></div>`;
+            document.getElementById('main-content').innerHTML = html;
+            return;
+        }
+
+        html += `
+            <div style="overflow-x: auto;">
+            <table class="reklam-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">Ekipman Adı</th>
+                        <th>Tür</th>
+                        <th>Ait Olduğu Şirket</th>
+                        <th>Bugün Durumu</th>
+                        <th>Yarın Durumu</th>
+                        <th>Haftalık Plan</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        dbEquipments.forEach(eq => {
+            // Bugün ve Yarın için TÜM ÇEKİMLERDE arama yapılıyor
+            let todayShoots = dbShoots.filter(s => s.tarih === todayStr && s.equipments && s.equipments.includes(eq.docId));
+            let tomorrowShoots = dbShoots.filter(s => s.tarih === tomorrowStr && s.equipments && s.equipments.includes(eq.docId));
+
+            let todayStatus = todayShoots.length > 0 ? `<span class="eq-status-badge eq-status-kullanimda"><i class="fa-solid fa-camera"></i> Kullanımda</span>` : `<span class="eq-status-badge eq-status-bosta"><i class="fa-solid fa-check"></i> Boşta</span>`;
+            let tomorrowStatus = tomorrowShoots.length > 0 ? `<span class="eq-status-badge eq-status-kullanimda"><i class="fa-solid fa-camera"></i> Kullanımda</span>` : `<span class="eq-status-badge eq-status-bosta"><i class="fa-solid fa-check"></i> Boşta</span>`;
+
+            let icon = 'fa-toolbox';
+            if(eq.type === 'Kamera') icon = 'fa-camera';
+            if(eq.type === 'Lens') icon = 'fa-circle-dot';
+            if(eq.type === 'Işık') icon = 'fa-lightbulb';
+            if(eq.type === 'Ses/Mikrofon') icon = 'fa-microphone';
+            if(eq.type === 'Fon') icon = 'fa-image';
+
+            // Şirketlere göre renkli etiket
+            let compColor = "background: #f8fafc; color: var(--bg-dark); border: 1px solid #e2e8f0;";
+            if(eq.company === 'RDGRUP MEDYA') compColor = "background: #f5f3ff; color: var(--task-purple); border: 1px solid #ede9fe;";
+            if(eq.company === 'ANKARA MEZUNİYET') compColor = "background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5;";
+            if(eq.company === 'TÜRKİYE MEZUNİYET') compColor = "background: #fdf2f8; color: #db2777; border: 1px solid #fce7f3;";
+
+            html += `
+                <tr>
+                    <td style="font-weight:600; text-align:left; color:var(--bg-dark); font-size: 13px;"><i class="fa-solid ${icon}" style="margin-right:8px; color:var(--text-muted);"></i>${eq.name}</td>
+                    <td style="color:var(--text-muted); font-size:11px;">${eq.type}</td>
+                    <td><span style="padding: 6px 10px; border-radius: 6px; font-size: 10px; font-weight: 700; ${compColor}">${eq.company || "Bilinmiyor"}</span></td>
+                    <td>${todayStatus}</td>
+                    <td>${tomorrowStatus}</td>
+                    <td><button type="button" class="login-btn btn-light" style="margin:0; padding:6px 12px; font-size:11px; width:auto;" onclick="openEquipmentPlan('${eq.docId}')"><i class="fa-regular fa-calendar-days" style="margin-right:4px;"></i> Planı Gör</button></td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table></div></div>`;
+        document.getElementById('main-content').innerHTML = html;
+    }
+
+    function openEquipmentPlan(eqId) {
+        const eq = dbEquipments.find(x => x.docId === eqId); if(!eq) return;
+        document.getElementById('eq-plan-title').innerText = `${eq.name} - Haftalık Plan`;
+        
+        let todayStr = formatDate(new Date());
+        
+        // Bu ekipmanın kullanıldığı tüm çekimler (Holding veya Medya fark etmeksizin)
+        let upcomingShoots = dbShoots.filter(s => s.tarih >= todayStr && s.equipments && s.equipments.includes(eqId));
+        upcomingShoots.sort((a,b) => new Date(a.tarih) - new Date(b.tarih));
+
+        let html = '';
+        if(upcomingShoots.length === 0) {
+            html = `<div style="text-align:center; color:var(--text-muted); padding:20px;">Gelecek günlerde planlanmış bir çekim yok.</div>`;
+        } else {
+            upcomingShoots.forEach(s => {
+                let kisiStr = Array.isArray(s.kisi) ? s.kisi.join(', ') : s.kisi;
+                
+                // Hangi şirketin çekimi olduğu bilgisi
+                let sCompColor = "color: var(--text-muted);";
+                if(s.holding === 'RDGRUP MEDYA') sCompColor = "color: var(--task-purple);";
+                if(s.holding === 'ANKARA MEZUNİYET') sCompColor = "color: #ea580c;";
+                if(s.holding === 'TÜRKİYE MEZUNİYET') sCompColor = "color: #db2777;";
+
+                html += `
+                    <div class="eq-plan-item">
+                        <div style="font-weight:700; color:var(--bg-dark); min-width:140px;"><i class="fa-regular fa-calendar"></i> ${formatDateTR(s.tarih)}</div>
+                        <div style="flex:1;">
+                            <span style="font-size: 10px; font-weight: 700; ${sCompColor}">${s.holding || ""}</span><br>
+                            <b>${s.firma || "Bilinmiyor"}</b> çekiminde
+                        </div>
+                        <div style="color:var(--text-muted); font-size:11px; text-align: right;"><i class="fa-solid fa-user"></i> ${kisiStr}</div>
+                    </div>
+                `;
+            });
+        }
+        document.getElementById('eq-plan-content').innerHTML = html;
+        openModal('eq-plan-modal');
+    }
+</script>
+</body>
+</html>
