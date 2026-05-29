@@ -24,6 +24,10 @@
         .eq-status-bosta { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
         .eq-status-kullanimda { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
         .eq-plan-item { padding: 10px; border-bottom: 1px dashed #e2e8f0; font-size: 13px; color: var(--bg-dark); display: flex; align-items: center; gap: 10px;}
+        
+        /* Filtre Select Tasarımı */
+        .filter-select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Poppins', sans-serif; font-size: 12px; color: var(--bg-dark); background-color: white; outline: none; transition: 0.2s; cursor: pointer; }
+        .filter-select:focus { border-color: var(--task-purple); box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.1); }
     </style>
 </head>
 <body>
@@ -130,15 +134,50 @@
         let todayStr = formatDate(new Date());
         let tDate = new Date(); tDate.setDate(tDate.getDate() + 1); let tomorrowStr = formatDate(tDate);
         
+        // FİLTRELERİ OKUMA
+        let typeFilter = document.getElementById('filter-type') ? document.getElementById('filter-type').value : 'Tümü';
+        let compFilter = document.getElementById('filter-comp') ? document.getElementById('filter-comp').value : 'Tümü';
+
+        // VERİLERİ FİLTRELEME
+        let filteredEqs = dbEquipments.filter(e => {
+            let matchType = typeFilter === 'Tümü' || e.type === typeFilter;
+            let matchComp = compFilter === 'Tümü' || e.company === compFilter;
+            return matchType && matchComp;
+        });
+        
         let html = `
             <div class="content-card" style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;"><i class="fa-solid fa-toolbox" style="color:var(--task-purple); margin-right:8px;"></i> Holding Bünyesindeki Tüm Ekipmanlar</h2>
                 </div>
+
+                <div style="display: flex; gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                    <div class="input-group" style="flex:1; margin:0;">
+                        <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block;"><i class="fa-solid fa-filter" style="margin-right: 4px;"></i> TÜR FİLTRESİ</label>
+                        <select id="filter-type" class="filter-select" onchange="loadEkipmanlarPage()">
+                            <option value="Tümü" ${typeFilter === 'Tümü' ? 'selected' : ''}>Tüm Türler</option>
+                            <option value="Kamera" ${typeFilter === 'Kamera' ? 'selected' : ''}>Kamera</option>
+                            <option value="Lens" ${typeFilter === 'Lens' ? 'selected' : ''}>Lens</option>
+                            <option value="Işık" ${typeFilter === 'Işık' ? 'selected' : ''}>Işık</option>
+                            <option value="Ses/Mikrofon" ${typeFilter === 'Ses/Mikrofon' ? 'selected' : ''}>Ses / Mikrofon</option>
+                            <option value="Fon" ${typeFilter === 'Fon' ? 'selected' : ''}>Fon / Perde</option>
+                            <option value="Diğer" ${typeFilter === 'Diğer' ? 'selected' : ''}>Diğer</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="flex:1; margin:0;">
+                        <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block;"><i class="fa-solid fa-building" style="margin-right: 4px;"></i> ŞİRKET FİLTRESİ</label>
+                        <select id="filter-comp" class="filter-select" onchange="loadEkipmanlarPage()">
+                            <option value="Tümü" ${compFilter === 'Tümü' ? 'selected' : ''}>Tüm Şirketler</option>
+                            <option value="RDGRUP MEDYA" ${compFilter === 'RDGRUP MEDYA' ? 'selected' : ''}>RDGrup Medya</option>
+                            <option value="ANKARA MEZUNİYET" ${compFilter === 'ANKARA MEZUNİYET' ? 'selected' : ''}>Ankara Mezuniyet</option>
+                            <option value="TÜRKİYE MEZUNİYET" ${compFilter === 'TÜRKİYE MEZUNİYET' ? 'selected' : ''}>Türkiye Mezuniyet</option>
+                        </select>
+                    </div>
+                </div>
         `;
 
-        if (dbEquipments.length === 0) {
-            html += `<div style="text-align:center; color:var(--text-muted); padding:30px;">Sisteme kayıtlı ekipman bulunamadı. Lütfen Admin panelinden ekleme yapın.</div></div>`;
+        if (filteredEqs.length === 0) {
+            html += `<div style="text-align:center; color:var(--text-muted); padding:40px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1;">Bu kriterlere uygun ekipman bulunamadı. Lütfen filtreleri değiştirin.</div></div>`;
             document.getElementById('main-content').innerHTML = html;
             return;
         }
@@ -159,7 +198,7 @@
                 <tbody>
         `;
 
-        dbEquipments.forEach(eq => {
+        filteredEqs.forEach(eq => {
             // Bugün ve Yarın için TÜM ÇEKİMLERDE arama yapılıyor
             let todayShoots = dbShoots.filter(s => s.tarih === todayStr && s.equipments && s.equipments.includes(eq.docId));
             let tomorrowShoots = dbShoots.filter(s => s.tarih === tomorrowStr && s.equipments && s.equipments.includes(eq.docId));
