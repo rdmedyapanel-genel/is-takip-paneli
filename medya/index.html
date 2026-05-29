@@ -181,7 +181,12 @@
         try {
             await fetchCompaniesFromFirebase(); await fetchUsersFromFirebase(); await fetchTasksFromFirebase(); await fetchShootsFromFirebase(); await fetchAgendaFromFirebase(); await fetchGenelAgendaFromFirebase(); await fetchAdsFromFirebase();
             loadSidebarMenu();
-        } catch (error) { console.error("Bağlantı hatası: ", error); }
+        } catch (error) { 
+            console.error("Bağlantı hatası: ", error); 
+        } finally {
+            // İŞTE EKSİK OLAN KOD BURASI: Yükleme ekranını gizle
+            document.getElementById('init-loader').style.display = 'none';
+        }
     }
 
     function logout() { localStorage.removeItem('rdgrup_user'); window.location.href = '../index.html'; }
