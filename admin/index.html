@@ -180,7 +180,7 @@
                 </select>
             </div>
             <div class="input-group">
-                <label>ŞİRKET</label>
+                <label>ŞİRKET</label>
                 <select id="eq-company">
                     <option value="RDGRUP MEDYA">RDGrup Medya</option>
                     <option value="ANKARA MEZUNİYET">Ankara Mezuniyet</option>
@@ -194,7 +194,6 @@
         </div>
     </div>
 </div>
-
 
 <div class="slide-container" id="dashboard-screen" style="display: flex;">
     <div class="dashboard-layout">
@@ -255,7 +254,6 @@
     let dbVersionInfo = { version: "RDGRUP V.1.5", notes: "" }; let currentUser = null; let isSidebarCollapsed = false;
 
     const holdingCompanies = ["RDGRUP MEDYA", "ANKARA MEZUNİYET", "TÜRKİYE MEZUNİYET"];
-    // Sistemdeki tüm alt menü sayfaları
     const systemPages = ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Reklamlar", "Ekipmanlar", "Raporlar"];
 
     window.onload = async function() {
@@ -299,7 +297,33 @@
     async function fetchUsersFromFirebase() { const snapshot = await db.collection('users').get(); dbUsers = []; snapshot.forEach(doc => { dbUsers.push({ docId: doc.id, ...doc.data() }); }); dbUsers.sort((a, b) => (a.order || 0) - (b.order || 0)); }
     async function fetchCompaniesFromFirebase() { const snapshot = await db.collection('companies').get(); dbCompanies = []; snapshot.forEach(doc => { dbCompanies.push({ docId: doc.id, ...doc.data() }); }); dbCompanies.sort((a, b) => (a.order || 0) - (b.order || 0)); }
     async function fetchEquipmentsFromFirebase() { const snapshot = await db.collection('equipments').get(); dbEquipments = []; snapshot.forEach(doc => { dbEquipments.push({ docId: doc.id, ...doc.data() }); }); dbEquipments.sort((a, b) => (a.order || 0) - (b.order || 0)); }
-    async function fetchRolesFromFirebase() { const snapshot = await db.collection('roles').get(); dbRoles = []; snapshot.forEach(doc => { dbRoles.push({ docId: doc.id, ...doc.data() }); }); }
+    
+    // --- YENİ EKLENEN OTOMATİK ROL TANIMLAMA SİSTEMİ ---
+    async function fetchRolesFromFirebase() { 
+        const snapshot = await db.collection('roles').get(); 
+        dbRoles = []; 
+        snapshot.forEach(doc => { dbRoles.push({ docId: doc.id, ...doc.data() }); }); 
+        
+        // EĞER SİSTEMDE HİÇ ROL YOKSA, VARSAYILANLARI OTOMATİK OLUŞTUR
+        if(dbRoles.length === 0) {
+            const defaultRoles = [
+                { name: "Admin", pages: systemPages },
+                { name: "Yönetici", pages: systemPages },
+                { name: "Tasarımcı", pages: ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
+                { name: "Fotoğrafçı", pages: ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Çekim Takvimi", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
+                { name: "Asistan", pages: ["Anasayfa", "Genel Takvim", "Genel Ajanda", "Kişisel Ajanda", "Checklist"] },
+                { name: "Stajyer", pages: ["Anasayfa", "Kendi İşlerim", "Genel Ajanda", "Kişisel Ajanda"] }
+            ];
+            
+            for(let r of defaultRoles) {
+                let docRef = await db.collection('roles').add(r);
+                dbRoles.push({ docId: docRef.id, ...r });
+            }
+        }
+        
+        // İsim sırasına göre diz
+        dbRoles.sort((a,b) => a.name.localeCompare(b.name));
+    }
 
     function renderPermissionCheckboxes() {
         let html = '';
@@ -310,26 +334,22 @@
     }
 
     function renderAllLists() {
-        // 1. Kullanıcı Listesi Çıktısı
         let usersHtml = ''; dbUsers.forEach((u, index) => { const safeRole = u.role || 'Bilinmiyor'; const safeName = u.name || "İsimsiz"; const safeSurname = u.surname || ""; usersHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="display: flex; align-items: center; gap: 8px;"><div style="width: 26px; height: 26px; background: var(--bg-dark); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">${safeName.charAt(0).toUpperCase()}</div><div><div style="font-weight: 600; color: var(--bg-dark);">${safeName} ${safeSurname}</div><div style="font-size: 10px; color: var(--text-muted);">@${u.id || ''}</div></div></div><div style="display: flex; align-items: center; gap: 10px;"><span style="background: #e2e8f0; color: var(--bg-dark); padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700;">${safeRole}</span><button type="button" class="action-btn" onclick="openEditUser('${u.docId}')"><i class="fa-solid fa-pen"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('users', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('users', ${index}, 1)" ${index===dbUsers.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
         document.getElementById('users-list-target').innerHTML = usersHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Kullanıcı bulunamadı.</div>';
 
-        // 2. Firma Listesi Çıktısı
         let companiesHtml = ''; dbCompanies.forEach((c, index) => { companiesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-building" style="margin-right:6px; color:var(--text-muted);"></i>${c.name || 'İsimsiz'}</div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditCompany('${c.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteCompany('${c.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('companies', ${index}, 1)" ${index===dbCompanies.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
         document.getElementById('companies-list-target').innerHTML = companiesHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Firma bulunamadı.</div>';
 
-        // 3. Ekipman Listesi Çıktısı
         let eqHtml = ''; dbEquipments.forEach((e, index) => { eqHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-toolbox" style="margin-right:6px; color:var(--task-purple);"></i>${e.name || "İsimsiz"} <span style="color:var(--text-muted); font-size:10px; font-weight:400; margin-left:5px;">(${e.company})</span></div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditEquipment('${e.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteEquipment('${e.docId}')"><i class="fa-solid fa-trash"></i></button><div class="sort-btn-group"><button type="button" class="sort-btn" onclick="moveItem('equipments', ${index}, -1)" ${index===0?'disabled':''}><i class="fa-solid fa-chevron-up"></i></button><button type="button" class="sort-btn" onclick="moveItem('equipments', ${index}, 1)" ${index===dbEquipments.length-1?'disabled':''}><i class="fa-solid fa-chevron-down"></i></button></div></div></div>`; });
         document.getElementById('equipments-list-target').innerHTML = eqHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Ekipman bulunamadı.</div>';
 
-        // 4. Unvan / Rol Listesi Çıktısı
+        // KAYITLI TÜM UNVANLARI LİSTEYE BASMA KISMI
         let rolesHtml = ''; dbRoles.forEach(r => { rolesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-user-shield" style="margin-right:6px; color:#6366f1;"></i>${r.name}</div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditRole('${r.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteRole('${r.docId}')"><i class="fa-solid fa-trash"></i></button></div></div>`; });
-        document.getElementById('roles-list-target').innerHTML = rolesHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Kayıtlı özel unvan bulunmuyor.</div>';
+        document.getElementById('roles-list-target').innerHTML = rolesHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Kayıtlı unvan bulunmuyor.</div>';
 
-        // Dropdown Seçeneklerini Güncelleme
+        // KULLANICI EKLEMEDEKİ ROL SEÇİM KUTUSUNU DOLDURMA
         let uRoleSelect = document.getElementById('u-role'); uRoleSelect.innerHTML = '';
         dbRoles.forEach(r => { uRoleSelect.add(new Option(r.name, r.name)); });
-        if(dbRoles.length === 0) { uRoleSelect.add(new Option("Admin", "Admin")); uRoleSelect.add(new Option("Yönetici", "Yönetici")); }
 
         let userOptions = `<option value="">Sorumlu Seçiniz</option>`; dbUsers.forEach(u => { userOptions += `<option value="${u.name} ${u.surname || ''}">${u.name} ${u.surname || ''}</option>`; });
         document.getElementById('admin-new-company-responsible').innerHTML = userOptions;
