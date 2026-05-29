@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="../css/style.css">
     
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -253,7 +253,7 @@
     </div>
 </div>
 
-<script src="js/firebase-config.js"></script>
+<script src="../js/firebase-config.js"></script>
 
 <script>
     let dbUsers = []; let dbCompanies = []; let dbEquipments = []; let dbRoles = [];
@@ -264,15 +264,16 @@
 
     window.onload = async function() {
         const savedUser = localStorage.getItem('rdgrup_user');
-        if (!savedUser) { window.location.href = 'index.html'; return; }
+        if (!savedUser) { window.location.href = '../index.html'; return; }
         currentUser = JSON.parse(savedUser);
         const role = (currentUser.role || "").toLowerCase();
-        if(role !== 'admin' && currentUser.id !== 'alperen') { alert("Bu sayfayı görüntüleme yetkiniz yok!"); window.location.href = 'index.html'; return; }
+        if(role !== 'admin' && currentUser.id !== 'alperen') { alert("Bu sayfayı görüntüleme yetkiniz yok!"); window.location.href = '../index.html'; return; }
         
         document.getElementById('logged-user-name').innerText = currentUser.name || "Kullanıcı"; document.getElementById('logged-user-role').innerText = currentUser.role || "Bilinmiyor"; document.getElementById('logged-avatar').innerText = (currentUser.name || "?").charAt(0).toUpperCase();
         await initializeSystem();
     };
 
+    // HATA KORUMALI BAŞLATMA
     async function initializeSystem() {
         document.getElementById('init-loader').style.display = 'flex';
         
@@ -292,8 +293,8 @@
 
     function toggleSidebar() { isSidebarCollapsed = !isSidebarCollapsed; const sb = document.getElementById('app-sidebar'); if (isSidebarCollapsed) { sb.classList.add('collapsed'); } else { sb.classList.remove('collapsed'); } }
     
-    function logout() { localStorage.removeItem('rdgrup_user'); window.location.href = 'index.html'; }
-    function backToCompanySelection() { window.location.href = 'index.html'; }
+    function logout() { localStorage.removeItem('rdgrup_user'); window.location.href = '../index.html'; }
+    function backToCompanySelection() { window.location.href = '../index.html'; }
     
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
