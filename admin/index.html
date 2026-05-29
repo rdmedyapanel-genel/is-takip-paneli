@@ -102,6 +102,18 @@
     </div>
 </div>
 
+<div class="modal-overlay master-modal" id="master-specialdays-modal">
+    <div class="modal-content" style="width: 600px;">
+        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('master-specialdays-modal')"></i>
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px;">
+            <h3 style="color: var(--bg-dark); font-size: 16px; margin:0;"><i class="fa-solid fa-calendar-star" style="color: #db2777; margin-right:6px;"></i> Özel Günler Listesi</h3>
+            <button type="button" class="login-btn btn-purple" style="width: auto; padding: 6px 12px; font-size: 11px; margin: 0; background:#db2777;" onclick="openAddSpecialDay()">+ Yeni Ekle</button>
+        </div>
+        <div class="list-container-box" id="specialdays-list-target"></div>
+        <button type="button" class="login-btn btn-gray" style="margin-top:15px; width:100%;" onclick="closeModal('master-specialdays-modal')">Kapat</button>
+    </div>
+</div>
+
 <div class="modal-overlay master-modal" id="master-system-modal">
     <div class="modal-content" style="width: 550px;">
         <i class="fa-solid fa-xmark modal-close" onclick="closeModal('master-system-modal')"></i>
@@ -114,6 +126,7 @@
         </div>
     </div>
 </div>
+
 
 <div class="modal-overlay sub-modal" id="user-modal">
     <div class="modal-content">
@@ -201,6 +214,20 @@
     </div>
 </div>
 
+<div class="modal-overlay sub-modal" id="specialday-modal">
+    <div class="modal-content" style="width: 450px;">
+        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('specialday-modal')"></i>
+        <h3 class="modal-title" id="sd-modal-title">Özel Gün Ekle</h3>
+        <input type="hidden" id="edit-sd-doc-id" value="">
+        <div class="input-group"><label>ÖZEL GÜN ADI</label><input type="text" id="sd-title" placeholder="Örn: 29 Ekim Cumhuriyet Bayramı" autocomplete="off"></div>
+        <div class="input-group"><label>TARİH</label><input type="date" id="sd-date" style="font-family:'Poppins'; padding:8px; border-radius:8px; border:1px solid #e2e8f0; width:100%; box-sizing:border-box;"></div>
+        <div style="display: flex; gap: 12px; margin-top: 15px;">
+            <button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('specialday-modal')">İptal</button>
+            <button type="button" class="login-btn" style="flex: 1; background:#db2777;" id="save-sd-btn" onclick="saveSpecialDay()">Kaydet</button>
+        </div>
+    </div>
+</div>
+
 <div class="slide-container" id="dashboard-screen" style="display: flex;">
     <div class="dashboard-layout">
         <div class="sidebar" id="app-sidebar">
@@ -247,11 +274,16 @@
                     <div class="admin-launcher-icon" style="background:#6366f1;"><i class="fa-solid fa-user-shield"></i></div>
                     <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Unvan & Sayfa Yetkileri</h4><span style="font-size:11px; color:var(--text-muted);">Dinamik rol ve menü sınırlandırma</span></div>
                 </div>
+                <div class="admin-launcher-card" onclick="openModal('master-specialdays-modal')">
+                    <div class="admin-launcher-icon" style="background:#db2777;"><i class="fa-solid fa-calendar-star"></i></div>
+                    <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Özel Günler</h4><span style="font-size:11px; color:var(--text-muted);">Takvimde görünecek günleri ekle</span></div>
+                </div>
                 <div class="admin-launcher-card" onclick="openModal('master-system-modal')">
                     <div class="admin-launcher-icon" style="background:#64748b;"><i class="fa-solid fa-pen-to-square"></i></div>
                     <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Giriş Ekranı & Sürüm</h4><span style="font-size:11px; color:var(--text-muted);">Sürüm bilgisini ve notları güncelle</span></div>
                 </div>
             </div>
+            
         </div>
     </div>
 </div>
@@ -259,12 +291,11 @@
 <script src="../js/firebase-config.js"></script>
 
 <script>
-    let dbUsers = []; let dbCompanies = []; let dbEquipments = []; let dbRoles = [];
+    let dbUsers = []; let dbCompanies = []; let dbEquipments = []; let dbRoles = []; let dbSpecialDays = [];
     let dbVersionInfo = { version: "RDGRUP V.1.5", notes: "" }; let currentUser = null; let isSidebarCollapsed = false;
 
     const holdingCompanies = ["RDGRUP MEDYA", "ANKARA MEZUNİYET", "TÜRKİYE MEZUNİYET"];
     
-    // SAYFALAR İKİYE BÖLÜNDÜ
     const mainPages = ["Tüm İşler", "Tüm Ekipmanlar", "Yönetim Paneli"];
     const medyaPages = ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Reklamlar", "Ekipmanlar", "Raporlar"];
 
@@ -286,6 +317,7 @@
         try { await fetchUsersFromFirebase(); } catch(e) { console.error("Kullanıcılar çekilemedi:", e); }
         try { await fetchCompaniesFromFirebase(); } catch(e) { console.error("Firmalar çekilemedi:", e); }
         try { await fetchEquipmentsFromFirebase(); } catch(e) { console.error("Ekipmanlar çekilemedi:", e); }
+        try { await fetchSpecialDaysFromFirebase(); } catch(e) { console.error("Özel günler çekilemedi:", e); }
         
         try {
             renderAllLists();
@@ -304,6 +336,7 @@
     async function fetchUsersFromFirebase() { const snapshot = await db.collection('users').get(); dbUsers = []; snapshot.forEach(doc => { dbUsers.push({ docId: doc.id, ...doc.data() }); }); dbUsers.sort((a, b) => (a.order || 0) - (b.order || 0)); }
     async function fetchCompaniesFromFirebase() { const snapshot = await db.collection('companies').get(); dbCompanies = []; snapshot.forEach(doc => { dbCompanies.push({ docId: doc.id, ...doc.data() }); }); dbCompanies.sort((a, b) => (a.order || 0) - (b.order || 0)); }
     async function fetchEquipmentsFromFirebase() { const snapshot = await db.collection('equipments').get(); dbEquipments = []; snapshot.forEach(doc => { dbEquipments.push({ docId: doc.id, ...doc.data() }); }); dbEquipments.sort((a, b) => (a.order || 0) - (b.order || 0)); }
+    async function fetchSpecialDaysFromFirebase() { const snapshot = await db.collection('special_days').get(); dbSpecialDays = []; snapshot.forEach(doc => { dbSpecialDays.push({ docId: doc.id, ...doc.data() }); }); dbSpecialDays.sort((a, b) => new Date(a.date) - new Date(b.date)); }
     
     async function fetchRolesFromFirebase() { 
         const snapshot = await db.collection('roles').get(); 
@@ -347,6 +380,13 @@
         let rolesHtml = ''; dbRoles.forEach(r => { rolesHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-user-shield" style="margin-right:6px; color:#6366f1;"></i>${r.name || 'İsimsiz'}</div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditRole('${r.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteRole('${r.docId}')"><i class="fa-solid fa-trash"></i></button></div></div>`; });
         document.getElementById('roles-list-target').innerHTML = rolesHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Kayıtlı unvan bulunmuyor.</div>';
 
+        // YENİ: ÖZEL GÜNLER LİSTESİ ÇIKTISI
+        let sdHtml = ''; dbSpecialDays.forEach((sd) => { 
+            let dStr = sd.date ? new Date(sd.date).toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'}) : "?"; 
+            sdHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px;"><div style="font-weight: 600; color: var(--bg-dark);"><i class="fa-solid fa-calendar-star" style="margin-right:6px; color:#db2777;"></i>${sd.title || "İsimsiz"} <span style="color:var(--text-muted); font-size:10px; font-weight:400; margin-left:5px;">(${dStr})</span></div><div style="display: flex; align-items: center; gap: 10px;"><button type="button" class="action-btn" onclick="openEditSpecialDay('${sd.docId}')"><i class="fa-solid fa-pen"></i></button><button type="button" class="action-btn" style="color: var(--primary-red);" onclick="deleteSpecialDay('${sd.docId}')"><i class="fa-solid fa-trash"></i></button></div></div>`; 
+        }); 
+        document.getElementById('specialdays-list-target').innerHTML = sdHtml || '<div style="padding:15px; text-align:center; color:var(--text-muted);">Özel gün bulunamadı.</div>';
+
         let uRoleSelect = document.getElementById('u-role'); uRoleSelect.innerHTML = '';
         dbRoles.forEach(r => { uRoleSelect.add(new Option(r.name || "Bilinmiyor", r.name || "Bilinmiyor")); });
 
@@ -367,54 +407,10 @@
     async function updateVersionTexts() { const btn = document.getElementById('save-version-btn'); btn.innerText = "Kaydediliyor..."; dbVersionInfo.version = document.getElementById('admin-version').value; dbVersionInfo.notes = document.getElementById('admin-notes').value; await db.collection('settings').doc('system').set(dbVersionInfo); btn.innerText = "Uygula & Kaydet"; alert("Sürüm notları kaydedildi!"); closeModal('master-system-modal'); }
     function toggleUserCompanies() { document.getElementById('u-chk-companies-wrapper').style.display = document.getElementById('u-chk-visible').checked ? 'block' : 'none'; }
     
-    function clearRoleForm() { 
-        document.getElementById('role-doc-id').value = "new"; 
-        document.getElementById('role-name').value = ""; 
-        document.querySelectorAll('.role-perm-cb').forEach(cb => cb.checked = false); 
-        document.getElementById('cancel-role-edit-btn').style.display = 'none'; 
-        document.getElementById('save-role-btn').innerText = "Unvanı / Yetkileri Kaydet"; 
-    }
-
-    function openEditRole(docId) { 
-        let r = dbRoles.find(x => x.docId === docId); if(!r) return; 
-        document.getElementById('role-doc-id').value = docId; 
-        document.getElementById('role-name').value = r.name || ""; 
-        let allowedPages = r.pages || []; 
-        document.querySelectorAll('.role-perm-cb').forEach(cb => { 
-            cb.checked = allowedPages.includes(cb.value); 
-        }); 
-        document.getElementById('cancel-role-edit-btn').style.display = 'inline-block'; 
-        document.getElementById('save-role-btn').innerText = "Değişiklikleri Güncelle"; 
-    }
-
-    async function saveRole() { 
-        let docId = document.getElementById('role-doc-id').value; 
-        let rName = document.getElementById('role-name').value.trim(); 
-        let btn = document.getElementById('save-role-btn');
-        if(!rName) { alert("Lütfen bir unvan adı girin!"); return; } 
-        btn.innerText = "Kaydediliyor...";
-        
-        let checkedPages = []; 
-        document.querySelectorAll('.role-perm-cb:checked').forEach(cb => { checkedPages.push(cb.value); }); 
-        
-        let data = { name: rName, pages: checkedPages }; 
-        try { 
-            if(docId === "new") { 
-                await db.collection('roles').add(data); 
-            } else { 
-                await db.collection('roles').doc(docId).update(data); 
-            } 
-            clearRoleForm(); 
-            await fetchRolesFromFirebase(); 
-            renderAllLists(); 
-            alert("Unvan başarıyla kaydedildi!"); 
-        } catch(e) { 
-            console.error(e); 
-        } finally {
-            btn.innerText = "Unvanı / Yetkileri Kaydet";
-        }
-    }
-
+    // --- UNVAN & YETKİ MODÜLÜ ---
+    function clearRoleForm() { document.getElementById('role-doc-id').value = "new"; document.getElementById('role-name').value = ""; document.querySelectorAll('.role-perm-cb').forEach(cb => cb.checked = false); document.getElementById('cancel-role-edit-btn').style.display = 'none'; document.getElementById('save-role-btn').innerText = "Unvanı / Yetkileri Kaydet"; }
+    function openEditRole(docId) { let r = dbRoles.find(x => x.docId === docId); if(!r) return; document.getElementById('role-doc-id').value = docId; document.getElementById('role-name').value = r.name || ""; let allowedPages = r.pages || []; document.querySelectorAll('.role-perm-cb').forEach(cb => { cb.checked = allowedPages.includes(cb.value); }); document.getElementById('cancel-role-edit-btn').style.display = 'inline-block'; document.getElementById('save-role-btn').innerText = "Değişiklikleri Güncelle"; }
+    async function saveRole() { let docId = document.getElementById('role-doc-id').value; let rName = document.getElementById('role-name').value.trim(); let btn = document.getElementById('save-role-btn'); if(!rName) { alert("Lütfen bir unvan adı girin!"); return; } btn.innerText = "Kaydediliyor..."; let checkedPages = []; document.querySelectorAll('.role-perm-cb:checked').forEach(cb => { checkedPages.push(cb.value); }); let data = { name: rName, pages: checkedPages }; try { if(docId === "new") { await db.collection('roles').add(data); } else { await db.collection('roles').doc(docId).update(data); } clearRoleForm(); await fetchRolesFromFirebase(); renderAllLists(); alert("Unvan başarıyla güncellendi!"); } catch(e) { console.error(e); } finally { btn.innerText = "Unvanı / Yetkileri Kaydet"; } }
     async function deleteRole(docId) { if(confirm("Bu unvanı silmek istediğinize emin misiniz?")) { await db.collection('roles').doc(docId).delete(); await fetchRolesFromFirebase(); renderAllLists(); } }
 
     function openAddUser() { populateUserModalCompanies(); document.getElementById('edit-doc-id').value = "new"; document.getElementById('user-modal-title').innerText = "Yeni Kullanıcı Ekle"; document.getElementById('u-name').value = ""; document.getElementById('u-surname').value = ""; document.getElementById('u-id').value = ""; document.getElementById('u-pass').value = ""; document.getElementById('u-chk-visible').checked = false; toggleUserCompanies(); document.querySelectorAll('.u-comp-cb').forEach(cb => cb.checked = false); document.querySelectorAll('.u-rep-cb').forEach(cb => cb.checked = false); document.getElementById('delete-user-btn').style.display = 'none'; openModal('user-modal'); }
@@ -431,6 +427,12 @@
     function openEditEquipment(docId) { const e = dbEquipments.find(x => x.docId === docId); if(!e) return; document.getElementById('edit-eq-doc-id').value = docId; document.getElementById('eq-modal-title').innerText = "Ekipmanı Düzenle"; document.getElementById('eq-name').value = e.name || ""; document.getElementById('eq-type').value = e.type || "Kamera"; document.getElementById('eq-company').value = e.company || "RDGRUP MEDYA"; openModal('equipment-modal'); }
     async function saveEditedEquipment() { const docId = document.getElementById('edit-eq-doc-id').value; const eName = document.getElementById('eq-name').value.trim(); const eType = document.getElementById('eq-type').value; const eComp = document.getElementById('eq-company').value; const btn = document.getElementById('save-eq-btn'); if(!eName) return; btn.innerText = "Kaydediliyor..."; try { if(docId === "new") { await db.collection('equipments').add({ name: eName, type: eType, company: eComp, order: dbEquipments.length }); } else { await db.collection('equipments').doc(docId).update({ name: eName, type: eType, company: eComp }); } btn.innerText = "Kaydet"; closeModal('equipment-modal'); await fetchEquipmentsFromFirebase(); renderAllLists(); } catch(e) { console.error(e); btn.innerText = "Kaydet"; } }
     async function deleteEquipment(docId) { if(confirm("Ekipmanı silmek istediğinize emin misiniz?")) { await db.collection('equipments').doc(docId).delete(); await fetchEquipmentsFromFirebase(); renderAllLists(); } }
+
+    // --- YENİ: ÖZEL GÜNLER CRUD İŞLEMLERİ ---
+    function openAddSpecialDay() { document.getElementById('edit-sd-doc-id').value = "new"; document.getElementById('sd-modal-title').innerText = "Yeni Özel Gün Ekle"; document.getElementById('sd-title').value = ""; document.getElementById('sd-date').value = ""; openModal('specialday-modal'); }
+    function openEditSpecialDay(docId) { const sd = dbSpecialDays.find(x => x.docId === docId); if(!sd) return; document.getElementById('edit-sd-doc-id').value = docId; document.getElementById('sd-modal-title').innerText = "Özel Günü Düzenle"; document.getElementById('sd-title').value = sd.title || ""; document.getElementById('sd-date').value = sd.date || ""; openModal('specialday-modal'); }
+    async function saveSpecialDay() { const docId = document.getElementById('edit-sd-doc-id').value; const title = document.getElementById('sd-title').value.trim(); const date = document.getElementById('sd-date').value; const btn = document.getElementById('save-sd-btn'); if(!title || !date) { alert("Lütfen ad ve tarih girin!"); return; } btn.innerText = "Kaydediliyor..."; try { if(docId === "new") { await db.collection('special_days').add({ title, date }); } else { await db.collection('special_days').doc(docId).update({ title, date }); } btn.innerText = "Kaydet"; closeModal('specialday-modal'); await fetchSpecialDaysFromFirebase(); renderAllLists(); } catch(e) { console.error(e); btn.innerText = "Kaydet"; } }
+    async function deleteSpecialDay(docId) { if(confirm("Bu özel günü silmek istediğinize emin misiniz?")) { await db.collection('special_days').doc(docId).delete(); await fetchSpecialDaysFromFirebase(); renderAllLists(); } }
 </script>
 </body>
 </html>
