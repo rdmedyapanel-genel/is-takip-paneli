@@ -91,9 +91,7 @@
         <h3 class="modal-title" id="ga-modal-title">Genel Ajanda - Görev Ekle</h3>
         <input type="hidden" id="ga-doc-id" value="new">
         <input type="hidden" id="ga-status" value="0">
-        
         <div class="input-group"><label>GÖREV BAŞLIĞI</label><input type="text" id="ga-title" placeholder="Ateşbey Gayrimenkul, Festival vs." autocomplete="off"></div>
-        
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="input-group"><label>FİRMA SEÇ</label><select id="ga-firma"></select></div>
             <div class="input-group"><label>TESLİM TARİHİ</label><input type="text" id="ga-tarih" placeholder="Tarih seçin..." autocomplete="off"></div>
@@ -102,7 +100,6 @@
             <div class="input-group"><label>VİDEO SAYISI</label><input type="number" id="ga-video" value="0" min="0" autocomplete="off"></div>
             <div class="input-group"><label>TASARIM SAYISI</label><input type="number" id="ga-tasarim" value="0" min="0" autocomplete="off"></div>
         </div>
-
         <div class="input-group">
             <label>NOT İÇERİĞİ</label>
             <div class="rt-toolbar">
@@ -113,9 +110,21 @@
             </div>
             <div id="ga-not" class="rt-editor" contenteditable="true" placeholder="Notları buraya yazınız..."></div>
         </div>
-
         <div style="display: flex; gap: 10px; margin-top: 15px;" id="ga-buttons">
             <button type="button" class="login-btn btn-purple" id="save-ga-btn" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="company-note-modal">
+    <div class="modal-content" style="width: 500px;">
+        <i class="fa-solid fa-xmark modal-close" onclick="closeModal('company-note-modal')"></i>
+        <h3 class="modal-title" id="comp-note-title">Firma Notu</h3>
+        <input type="hidden" id="comp-note-doc-id" value="">
+        <textarea id="comp-note-text" class="chk-textarea" placeholder="Bu firma ile ilgili önemli notlar, briefler veya stratejiler..." style="min-height: 150px;" autocomplete="off"></textarea>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+            <button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('company-note-modal')">Kapat</button>
+            <button type="button" class="login-btn btn-purple" id="save-comp-note-btn" style="flex: 1;" onclick="saveCompanyNote()">Notu Kaydet</button>
         </div>
     </div>
 </div>
@@ -150,10 +159,9 @@
 <script src="../js/firebase-config.js"></script>
 
 <script>
-    // --- GLOBAL DEĞİŞKENLER ---
     let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = [];
     let currentUser = null; 
-    let currentCompany = "RDGRUP MEDYA"; // Bu sayfa sadece Medya'ya ait!
+    let currentCompany = "RDGRUP MEDYA"; 
     let activePage = ""; let showArchivedGA = false; let reportDate = new Date();
     let taskDatePicker, shootDatePicker, chkDatePicker, gaDatePicker;
     let calDate = new Date(); let currentCalView = 'month'; let currentChecklistDate = formatDate(new Date()); let isSidebarCollapsed = false;
@@ -180,9 +188,7 @@
         return diffDays >= 0 ? diffDays : 0; 
     }
 
-    // --- SİSTEM BAŞLATICI ---
     window.onload = async function() {
-        // Oturum Kontrolü (Giriş yapılmamışsa ana sayfaya atar)
         const savedUser = localStorage.getItem('rdgrup_user');
         if (!savedUser) { window.location.href = '../index.html'; return; }
         
@@ -213,7 +219,6 @@
     function openModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-    // --- VERİ ÇEKME İŞLEMLERİ ---
     async function fetchUsersFromFirebase() { const snapshot = await db.collection('users').get(); dbUsers = []; snapshot.forEach(doc => { dbUsers.push({ docId: doc.id, ...doc.data() }); }); dbUsers.sort((a, b) => (a.order || 0) - (b.order || 0)); populateUserDropdowns(); }
     async function fetchCompaniesFromFirebase() { const snapshot = await db.collection('companies').get(); dbCompanies = []; snapshot.forEach(doc => { dbCompanies.push({ docId: doc.id, ...doc.data() }); }); dbCompanies.sort((a, b) => (a.order || 0) - (b.order || 0)); populateCompanyDropdown(); }
     async function fetchTasksFromFirebase() { const snapshot = await db.collection('tasks').get(); dbTasks = []; snapshot.forEach(doc => { dbTasks.push({ docId: doc.id, ...doc.data() }); }); }
@@ -240,11 +245,8 @@
         } else { dbCompanies.forEach(c => { const cName = c.name || "İsimsiz"; if(fSelect) fSelect.add(new Option(cName, cName)); if(shSelect) shSelect.add(new Option(cName, cName)); if(gaSelect) gaSelect.add(new Option(cName, cName)); }); }
     }
 
-    // --- MENÜ VE SAYFA YÜKLEME ---
     function loadSidebarMenu() {
         const sidebarMenu = document.getElementById('sidebar-menu'); sidebarMenu.innerHTML = ''; 
-        
-        // Bu sayfa sadece RDGRUP MEDYA olduğu için menü sabit:
         const items = [
             { icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' },
             { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' },
@@ -258,11 +260,9 @@
 
         items.forEach((item) => {
             if (item.name === 'Raporlar' && !isAdminOrYonetici) return; 
-
             const li = document.createElement('li');
             li.className = 'menu-item';
             if (sidebarMenu.children.length === 0) li.classList.add('active'); 
-            
             li.innerHTML = `<i class="fa-solid ${item.icon}"></i> <span>${item.name}</span>`;
             li.onclick = () => { document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); li.classList.add('active'); loadPageView(item.name); };
             sidebarMenu.appendChild(li);
@@ -282,7 +282,6 @@
         else if (pageName.includes('Takvim')) { mainContent.innerHTML = renderCalendarView(pageName); initCalendar(); }
     }
 
-    // --- ANASAYFA KARTLARI ---
     function renderDashboardHome(pageName) {
         let todayStr = formatDate(new Date()); let tomorrowStr = new Date(); tomorrowStr.setDate(tomorrowStr.getDate() + 1); tomorrowStr = formatDate(tomorrowStr);
         let myTasksOnly = (pageName === 'Kendi İşlerim');
@@ -333,7 +332,7 @@
     async function addAgendaNote() { const text = document.getElementById('new-agenda-note').value.trim(); if(!text) return; await db.collection('agenda').add({ text: text, company: currentCompany, date: formatDate(new Date()) }); await fetchAgendaFromFirebase(); loadPageView(activePage); }
     async function deleteAgenda(docId) { await db.collection('agenda').doc(docId).delete(); await fetchAgendaFromFirebase(); loadPageView(activePage); }
 
-    // --- TAKVİM VE NUMARALANDIRMA ---
+    // --- TAKVİM VE SÜRÜKLE BIRAK EKLENTİSİ ---
     function renderCalendarView(pageName) {
         let headerAction = '';
         if (pageName === 'Paylaşım Takvimi') headerAction = `<button type="button" class="login-btn btn-purple" style="width: auto; padding: 8px 15px; font-size: 12px; margin: 0;" onclick="openAddTask()"><i class="fa-solid fa-plus"></i> <span>Paylaşım Ekle</span></button>`;
@@ -364,6 +363,31 @@
         return index !== -1 ? index + 1 : '?'; 
     }
 
+    // DRAG AND DROP FONKSİYONLARI
+    function dragTask(ev, docId) {
+        ev.dataTransfer.setData("text/plain", docId);
+    }
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+    async function dropTask(ev, newDateStr) {
+        ev.preventDefault();
+        const docId = ev.dataTransfer.getData("text/plain");
+        if(!docId || !newDateStr) return;
+        
+        let isTask = dbTasks.find(x => x.docId === docId);
+        let isShoot = dbShoots.find(x => x.docId === docId);
+        
+        if(isTask) {
+            await db.collection('tasks').doc(docId).update({ tarih: newDateStr });
+            await fetchTasksFromFirebase();
+        } else if(isShoot) {
+            await db.collection('shoots').doc(docId).update({ tarih: newDateStr });
+            await fetchShootsFromFirebase();
+        }
+        loadPageView(activePage); 
+    }
+
     function initCalendar() {
         const grid = document.getElementById('calendar-wrapper'); const monthYearText = document.getElementById('calendar-month-year'); grid.innerHTML = '';
         let y = calDate.getFullYear(); let m = calDate.getMonth();
@@ -385,7 +409,8 @@
                 if(t.itemType === 'task') {
                     const isCompleted = t.hazirlandi && t.paylasildi; 
                     const tIndex = getTaskIndex(t);
-                    html += `<div class="task-card ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}">
+                    // EKLENDİ: draggable="true" ondragstart="dragTask..."
+                    html += `<div class="task-card ${isCompleted ? 'completed' : ''}" draggable="${!isReadOnly}" ondragstart="dragTask(event, '${t.docId}')" onclick="${isReadOnly ? '' : `openEditTask('${t.docId}')`}">
             <div class="hp-badge ${t.hazirlandi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'hazirlandi')`}">H</div>
             <div class="hp-badge ${t.paylasildi ? 'active' : ''}" onclick="event.stopPropagation(); ${isReadOnly ? '' : `toggleTaskStatus('${t.docId}', 'paylasildi')`}">P</div>
             <div class="task-text">
@@ -395,7 +420,7 @@
          </div>`;
                 } else {
                     const isCompleted = t.cekildi && t.teslim && t.hdd && t.drive; let kisiDisplay = Array.isArray(t.kisi) ? t.kisi.join(', ') : t.kisi;
-                    html += `<div class="task-card shoot ${isCompleted ? 'completed' : ''}" onclick="${isReadOnly ? '' : `openEditShoot('${t.docId}')`}"><i class="fa-solid fa-camera" style="margin-right:2px;"></i><div class="task-text">${t.saat ? t.saat+' ' : ''}${t.firma || ""} - ${kisiDisplay}</div></div>`;
+                    html += `<div class="task-card shoot ${isCompleted ? 'completed' : ''}" draggable="${!isReadOnly}" ondragstart="dragTask(event, '${t.docId}')" onclick="${isReadOnly ? '' : `openEditShoot('${t.docId}')`}"><i class="fa-solid fa-camera" style="margin-right:2px;"></i><div class="task-text">${t.saat ? t.saat+' ' : ''}${t.firma || ""} - ${kisiDisplay}</div></div>`;
                 }
             }); html += '</div>'; return html;
         }
@@ -404,22 +429,28 @@
             grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`;
             let firstDay = new Date(y, m, 1).getDay() - 1; if(firstDay === -1) firstDay = 6; let daysInMonth = new Date(y, m + 1, 0).getDate();
             for(let i=0; i<firstDay; i++) grid.innerHTML += `<div class="cal-day padding"></div>`;
-            for(let i=1; i<=daysInMonth; i++) { let cellDate = new Date(y, m, i); let dateStr = formatDate(cellDate); let isToday = (i === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear()); grid.innerHTML += `<div class="cal-day"><div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div>${getTasksForDateHTML(dateStr)}</div>`; }
+            for(let i=1; i<=daysInMonth; i++) { 
+                let cellDate = new Date(y, m, i); let dateStr = formatDate(cellDate); let isToday = (i === new Date().getDate() && m === new Date().getMonth() && y === new Date().getFullYear()); 
+                // EKLENDİ: ondragover ve ondrop
+                grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${i}</div>${getTasksForDateHTML(dateStr)}</div>`; 
+            }
         } else if (currentCalView === 'week') {
             grid.style.gridTemplateColumns = 'repeat(7, 1fr)'; grid.innerHTML = `<div class="cal-header-day">Pzt</div><div class="cal-header-day">Sal</div><div class="cal-header-day">Çar</div><div class="cal-header-day">Per</div><div class="cal-header-day">Cum</div><div class="cal-header-day">Cmt</div><div class="cal-header-day">Paz</div>`;
             let dayOfWeek = calDate.getDay() - 1; if(dayOfWeek === -1) dayOfWeek = 6; let startOfWeek = new Date(calDate); startOfWeek.setDate(calDate.getDate() - dayOfWeek);
-            for(let i=0; i<7; i++) { let currentDay = new Date(startOfWeek); currentDay.setDate(startOfWeek.getDate() + i); let dateStr = formatDate(currentDay); let isToday = (currentDay.getDate() === new Date().getDate() && currentDay.getMonth() === new Date().getMonth() && currentDay.getFullYear() === new Date().getFullYear()); grid.innerHTML += `<div class="cal-day"><div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div>${getTasksForDateHTML(dateStr)}</div>`; }
+            for(let i=0; i<7; i++) { 
+                let currentDay = new Date(startOfWeek); currentDay.setDate(startOfWeek.getDate() + i); let dateStr = formatDate(currentDay); let isToday = (currentDay.getDate() === new Date().getDate() && currentDay.getMonth() === new Date().getMonth() && currentDay.getFullYear() === new Date().getFullYear()); 
+                grid.innerHTML += `<div class="cal-day" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}">${currentDay.getDate()} ${currentDay.toLocaleDateString('tr-TR', {month:'short'})}</div>${getTasksForDateHTML(dateStr)}</div>`; 
+            }
         } else if (currentCalView === 'day') {
             grid.style.gridTemplateColumns = '1fr'; grid.innerHTML = `<div class="cal-header-day">${calDate.toLocaleDateString('tr-TR', { weekday: 'long' })}</div>`;
             let isToday = (calDate.getDate() === new Date().getDate() && calDate.getMonth() === new Date().getMonth() && calDate.getFullYear() === new Date().getFullYear()); let dateStr = formatDate(calDate); let tasksHtml = getTasksForDateHTML(dateStr);
-            grid.innerHTML += `<div class="cal-day" style="min-height: 300px; padding: 20px;"><div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 15px; font-size: 24px;">${calDate.getDate()}</div><div style="margin-top: 5px;">${tasksHtml !== '' ? tasksHtml : '<div style="color:var(--text-muted); font-size:14px;">Kayıt bulunmuyor.</div>'}</div></div>`;
+            grid.innerHTML += `<div class="cal-day" style="min-height: 300px; padding: 20px;" ondragover="allowDrop(event)" ondrop="dropTask(event, '${dateStr}')"><div class="cal-day-num ${isToday ? 'today' : ''}" style="float:none; display:inline-block; margin-bottom: 15px; font-size: 24px;">${calDate.getDate()}</div><div style="margin-top: 5px;">${tasksHtml !== '' ? tasksHtml : '<div style="color:var(--text-muted); font-size:14px;">Kayıt bulunmuyor.</div>'}</div></div>`;
         }
     }
 
-    // --- FİRMA ANALİZ SAYFASI ---
+    // --- FİRMA ANALİZ KARTLARI (YENİ DOSYA VE NOT BUTONLARI EKLENDİ) ---
     function loadFirmalarPage() {
         let html = '<div class="company-grid" style="margin-top:15px;">';
-        
         if(dbCompanies.length === 0) {
             html += '<p style="color: var(--text-muted); width: 100%; text-align: center;">Henüz sisteme eklenmiş firma yok.</p>';
         } else {
@@ -444,6 +475,8 @@
                 let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr) && t.paylasildi === true);
                 let videoCount = monthlyTasks.filter(t => t.tur === 'Video').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
                 let tasarimCount = monthlyTasks.filter(t => t.tur === 'Tasarım').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
+
+                let driveBtnAttr = c.drive && c.drive.trim() !== "" ? `onclick="window.open('${c.drive}', '_blank')"` : `disabled style="opacity:0.5; cursor:not-allowed;"`;
 
                 html += `
                     <div class="company-card" style="padding: 20px; text-align: left; cursor: default; display:flex; flex-direction:column; gap:12px; background: white;">
@@ -471,6 +504,15 @@
                             <div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-camera" style="font-size: 12px; color:#10b981; margin:0;"></i> Son Çekim Günü:</span><span style="padding-left: 18px;">${lastShootStr}</span></div>
                         </div>
                         
+                        <div style="display:flex; justify-content:space-between; gap: 8px;">
+                            <button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" ${driveBtnAttr}>
+                                <i class="fa-brands fa-google-drive" style="color:#10b981; font-size:14px; margin-right:4px;"></i> Dosyalar
+                            </button>
+                            <button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" onclick="openCompanyNote('${c.docId}')">
+                                <i class="fa-solid fa-note-sticky" style="color:var(--shoot-orange); font-size:14px; margin-right:4px;"></i> Firma Notu
+                            </button>
+                        </div>
+
                         <div style="display:flex; justify-content:space-between; gap: 8px; margin-top: auto;">
                             <div style="font-size: 11px; background:#fff7ed; color:#c2410c; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan videolar"><i class="fa-solid fa-video" style="font-size: 12px; margin:0; color:#ea580c;"></i> Video: <b style="font-size:13px;">${videoCount}</b></div>
                             <div style="font-size: 11px; background:#fdf2f8; color:#be185d; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #fce7f3; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan tasarımlar"><i class="fa-solid fa-pen-nib" style="font-size: 12px; margin:0; color:#db2777;"></i> Tasarım: <b style="font-size:13px;">${tasarimCount}</b></div>
@@ -481,6 +523,33 @@
         }
         html += '</div>';
         document.getElementById('main-content').innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Firma Analiz Kartları</h2></div>${html}`;
+    }
+
+    // FİRMA NOTU FONKSİYONLARI
+    function openCompanyNote(docId) {
+        let c = dbCompanies.find(x => x.docId === docId);
+        if(!c) return;
+        document.getElementById('comp-note-doc-id').value = docId;
+        document.getElementById('comp-note-title').innerText = `${c.name} - Firma Notu`;
+        document.getElementById('comp-note-text').value = c.notlar || "";
+        openModal('company-note-modal');
+    }
+
+    async function saveCompanyNote() {
+        let docId = document.getElementById('comp-note-doc-id').value;
+        let text = document.getElementById('comp-note-text').value;
+        let btn = document.getElementById('save-comp-note-btn');
+        btn.innerText = "Kaydediliyor...";
+        try {
+            await db.collection('companies').doc(docId).update({ notlar: text });
+            await fetchCompaniesFromFirebase(); // Sayfayı yenileyip veriyi çekelim ki tekrar tıkladığımızda gelsin
+            btn.innerText = "Kaydedildi!";
+            setTimeout(() => { btn.innerText = "Notu Kaydet"; closeModal('company-note-modal'); loadFirmalarPage(); }, 1000);
+        } catch(e) {
+            console.error(e);
+            alert("Not kaydedilirken bir hata oluştu.");
+            btn.innerText = "Notu Kaydet";
+        }
     }
 
     // --- CHECKLIST SAYFASI ---
