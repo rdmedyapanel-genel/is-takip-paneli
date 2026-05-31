@@ -36,7 +36,7 @@
 <div class="modal-overlay" id="ga-modal"><div class="modal-content"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('ga-modal')"></i><h3 class="modal-title" id="ga-modal-title">Genel Ajanda - Görev Ekle</h3><input type="hidden" id="ga-doc-id" value="new"><input type="hidden" id="ga-status" value="0"><div class="input-group"><label>GÖREV BAŞLIĞI</label><input type="text" id="ga-title" placeholder="Ateşbey Gayrimenkul, Festival vs." autocomplete="off"></div><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;"><div class="input-group"><label>FİRMA SEÇ</label><select id="ga-firma"></select></div><div class="input-group"><label>TESLİM TARİHİ</label><input type="text" id="ga-tarih" placeholder="Tarih seçin..." autocomplete="off"></div><div class="input-group"><label>SORUMLU KİŞİ</label><select id="ga-sorumlu"></select></div><div class="input-group"><label>EKLEYEN</label><input type="text" id="ga-ekleyen" disabled></div><div class="input-group"><label>VİDEO SAYISI</label><input type="number" id="ga-video" value="0" min="0" autocomplete="off"></div><div class="input-group"><label>TASARIM SAYISI</label><input type="number" id="ga-tasarim" value="0" min="0" autocomplete="off"></div></div><div class="input-group"><label>NOT İÇERİĞİ</label><div class="rt-toolbar"><button type="button" class="rt-btn" onclick="execCmd('bold')" title="Kalın"><b>B</b></button><button type="button" class="rt-btn" onclick="execCmd('italic')" title="İtalik"><i>I</i></button><button type="button" class="rt-btn" onclick="execCmd('insertUnorderedList')" title="Madde İşareti"><i class="fa-solid fa-list-ul"></i></button><button type="button" class="rt-btn" onclick="insertCheckbox()" title="Checkbox Ekle"><i class="fa-regular fa-square-check"></i></button></div><div id="ga-not" class="rt-editor" contenteditable="true" placeholder="Notları buraya yazınız..."></div></div><div style="display: flex; gap: 10px; margin-top: 15px;" id="ga-buttons"><button type="button" class="login-btn btn-purple" id="save-ga-btn" style="flex: 1;" onclick="saveGenelAgenda()">Ekle</button></div></div></div>
 <div class="modal-overlay" id="company-note-modal"><div class="modal-content" style="width: 500px;"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('company-note-modal')"></i><h3 class="modal-title" id="comp-note-title">Firma Notu</h3><input type="hidden" id="comp-note-doc-id" value=""><textarea id="comp-note-text" class="chk-textarea" placeholder="Bu firma ile ilgili önemli notlar, briefler veya stratejiler..." style="min-height: 150px;" autocomplete="off"></textarea><div style="display: flex; gap: 10px; margin-top: 15px;"><button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('company-note-modal')">Kapat</button><button type="button" class="login-btn btn-purple" id="save-comp-note-btn" style="flex: 1;" onclick="saveCompanyNote()">Notu Kaydet</button></div></div></div>
 <div class="modal-overlay" id="eq-plan-modal"><div class="modal-content" style="width: 500px;"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('eq-plan-modal')"></i><h3 class="modal-title" id="eq-plan-title">Haftalık Plan</h3><div id="eq-plan-content" style="max-height: 350px; overflow-y: auto; margin-top:15px;"></div><div style="margin-top: 15px;"><button type="button" class="login-btn btn-gray" style="width:100%;" onclick="closeModal('eq-plan-modal')">Kapat</button></div></div></div>
-<div class="modal-overlay" id="monthly-summary-modal"><div class="modal-content" style="width: 500px;"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('monthly-summary-modal')"></i><h3 class="modal-title" id="monthly-summary-title">Aylık Özet</h3><div id="monthly-summary-content" style="margin-top:15px;"></div><div style="margin-top: 15px;"><button type="button" class="login-btn btn-gray" style="width:100%;" onclick="closeModal('monthly-summary-modal')">Kapat</button></div></div></div>
+<div class="modal-overlay" id="monthly-summary-modal"><div class="modal-content" style="width: 750px; max-width: 95vw;"><i class="fa-solid fa-xmark modal-close" onclick="closeModal('monthly-summary-modal')"></i><h3 class="modal-title" id="monthly-summary-title">Toplu Aylık Özet</h3><div id="monthly-summary-content" style="margin-top:15px; max-height: 60vh; overflow-y: auto; padding-right: 5px;"></div><div style="margin-top: 15px;"><button type="button" class="login-btn btn-gray" style="width:100%;" onclick="closeModal('monthly-summary-modal')">Kapat</button></div></div></div>
 
 <div class="slide-container" id="dashboard-screen" style="display: flex;"> <div class="dashboard-layout">
         <div class="sidebar" id="app-sidebar">
@@ -309,73 +309,99 @@
                 let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr) && t.paylasildi === true); let videoCount = monthlyTasks.filter(t => t.tur === 'Video').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0); let tasarimCount = monthlyTasks.filter(t => t.tur === 'Tasarım').reduce((toplam, t) => toplam + (parseInt(t.adet) || 1), 0);
                 let driveBtnAttr = c.drive && c.drive.trim() !== "" ? `onclick="window.open('${c.drive}', '_blank')"` : `disabled style="opacity:0.5; cursor:not-allowed;"`;
 
-                html += `<div class="company-card" style="padding: 20px; text-align: left; cursor: default; display:flex; flex-direction:column; gap:12px; background: white;"><div style="display:flex; align-items:center; gap:10px; border-bottom: 2px solid #f1f5f9; padding-bottom:12px;"><div style="width: 40px; height: 40px; background: #fee2e2; border-radius: 10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fa-solid fa-building" style="font-size: 18px; color: var(--primary-red); margin:0;"></i></div><h3 style="font-size: 15px; margin:0; color: var(--bg-dark); font-weight:700;">${compName}</h3></div><div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted); font-weight:600;">Firma Sahibi:</span><span style="font-weight:700; color:var(--bg-dark); background:#f8fafc; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0;">${compOwner}</span></div><div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted); font-weight:600;">Sorumlu Personel:</span><span style="font-weight:700; color:var(--task-purple); background:#f5f3ff; padding:3px 8px; border-radius:6px; border:1px solid #ede9fe;">${compResp}</span></div></div><div style="background: #f8fafc; border-radius: 8px; padding: 12px; display:flex; flex-direction:column; gap:10px; border:1px solid #e2e8f0;"><div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-share-nodes" style="font-size: 12px; color:var(--primary-red); margin:0;"></i> Son Paylaşım Günü:</span><span style="padding-left: 18px;">${lastShareStr}</span></div><div style="width:100%; height:1px; background:#e2e8f0;"></div><div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-camera" style="font-size: 12px; color:#10b981; margin:0;"></i> Son Çekim Günü:</span><span style="padding-left: 18px;">${lastShootStr}</span></div></div><div style="display:flex; justify-content:space-between; gap: 8px;"><button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" ${driveBtnAttr}><i class="fa-brands fa-google-drive" style="color:#10b981; font-size:14px; margin-right:4px;"></i> Dosyalar</button><button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" onclick="openCompanyNote('${c.docId}')"><i class="fa-solid fa-note-sticky" style="color:var(--shoot-orange); font-size:14px; margin-right:4px;"></i> Firma Notu</button><button type="button" class="login-btn btn-purple" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" onclick="openMonthlySummary('${c.docId}')"><i class="fa-solid fa-chart-pie" style="font-size:14px; margin-right:4px;"></i> Aylık Özet</button></div><div style="display:flex; justify-content:space-between; gap: 8px; margin-top: auto;"><div style="font-size: 11px; background:#fff7ed; color:#c2410c; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan videolar"><i class="fa-solid fa-video" style="font-size: 12px; margin:0; color:#ea580c;"></i> Video: <b style="font-size:13px;">${videoCount}</b></div><div style="font-size: 11px; background:#fdf2f8; color:#be185d; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #fce7f3; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan tasarımlar"><i class="fa-solid fa-pen-nib" style="font-size: 12px; margin:0; color:#db2777;"></i> Tasarım: <b style="font-size:13px;">${tasarimCount}</b></div></div></div>`;
+                html += `<div class="company-card" style="padding: 20px; text-align: left; cursor: default; display:flex; flex-direction:column; gap:12px; background: white;"><div style="display:flex; align-items:center; gap:10px; border-bottom: 2px solid #f1f5f9; padding-bottom:12px;"><div style="width: 40px; height: 40px; background: #fee2e2; border-radius: 10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><i class="fa-solid fa-building" style="font-size: 18px; color: var(--primary-red); margin:0;"></i></div><h3 style="font-size: 15px; margin:0; color: var(--bg-dark); font-weight:700;">${compName}</h3></div><div style="display:flex; flex-direction:column; gap:6px;"><div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted); font-weight:600;">Firma Sahibi:</span><span style="font-weight:700; color:var(--bg-dark); background:#f8fafc; padding:3px 8px; border-radius:6px; border:1px solid #e2e8f0;">${compOwner}</span></div><div style="font-size: 11px; display:flex; justify-content:space-between; align-items:center;"><span style="color:var(--text-muted); font-weight:600;">Sorumlu Personel:</span><span style="font-weight:700; color:var(--task-purple); background:#f5f3ff; padding:3px 8px; border-radius:6px; border:1px solid #ede9fe;">${compResp}</span></div></div><div style="background: #f8fafc; border-radius: 8px; padding: 12px; display:flex; flex-direction:column; gap:10px; border:1px solid #e2e8f0;"><div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-share-nodes" style="font-size: 12px; color:var(--primary-red); margin:0;"></i> Son Paylaşım Günü:</span><span style="padding-left: 18px;">${lastShareStr}</span></div><div style="width:100%; height:1px; background:#e2e8f0;"></div><div style="font-size: 11px; display:flex; flex-direction:column; gap:2px;"><span style="color:var(--text-muted); font-weight:600; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-camera" style="font-size: 12px; color:#10b981; margin:0;"></i> Son Çekim Günü:</span><span style="padding-left: 18px;">${lastShootStr}</span></div></div><div style="display:flex; justify-content:space-between; gap: 8px;"><button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" ${driveBtnAttr}><i class="fa-brands fa-google-drive" style="color:#10b981; font-size:14px; margin-right:4px;"></i> Dosyalar</button><button type="button" class="login-btn btn-light" style="flex:1; padding:8px 6px; font-size:11px; margin:0;" onclick="openCompanyNote('${c.docId}')"><i class="fa-solid fa-note-sticky" style="color:var(--shoot-orange); font-size:14px; margin-right:4px;"></i> Firma Notu</button></div><div style="display:flex; justify-content:space-between; gap: 8px; margin-top: auto;"><div style="font-size: 11px; background:#fff7ed; color:#c2410c; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #ffedd5; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan videolar"><i class="fa-solid fa-video" style="font-size: 12px; margin:0; color:#ea580c;"></i> Video: <b style="font-size:13px;">${videoCount}</b></div><div style="font-size: 11px; background:#fdf2f8; color:#be185d; padding:8px 10px; border-radius:6px; font-weight:600; flex:1; text-align:center; border: 1px solid #fce7f3; display:flex; align-items:center; justify-content:center; gap:6px;" title="Bu ay Paylaşım Takviminde paylaşılan tasarımlar"><i class="fa-solid fa-pen-nib" style="font-size: 12px; margin:0; color:#db2777;"></i> Tasarım: <b style="font-size:13px;">${tasarimCount}</b></div></div></div>`;
             });
         }
-        html += '</div>'; document.getElementById('main-content').innerHTML = `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Firma Analiz Kartları</h2></div>${html}`;
+        html += '</div>'; 
+        
+        document.getElementById('main-content').innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Firma Analiz Kartları</h2>
+                <button type="button" class="login-btn btn-purple" style="width: auto; padding: 10px 20px; margin: 0; font-size: 12px;" onclick="openAllMonthlySummary()">
+                    <i class="fa-solid fa-chart-pie" style="margin-right: 8px;"></i> Toplu Aylık Özet
+                </button>
+            </div>
+            ${html}
+        `;
     }
 
     function openCompanyNote(docId) { let c = dbCompanies.find(x => x.docId === docId); if(!c) return; document.getElementById('comp-note-doc-id').value = docId; document.getElementById('comp-note-title').innerText = `${c.name} - Firma Notu`; document.getElementById('comp-note-text').value = c.notlar || ""; openModal('company-note-modal'); }
     async function saveCompanyNote() { let docId = document.getElementById('comp-note-doc-id').value; let text = document.getElementById('comp-note-text').value; let btn = document.getElementById('save-comp-note-btn'); btn.innerText = "Kaydediliyor..."; try { await db.collection('companies').doc(docId).update({ notlar: text }); await fetchCompaniesFromFirebase(); btn.innerText = "Kaydedildi!"; setTimeout(() => { btn.innerText = "Notu Kaydet"; closeModal('company-note-modal'); loadFirmalarPage(); }, 1000); } catch(e) { console.error(e); alert("Not kaydedilirken bir hata oluştu."); btn.innerText = "Notu Kaydet"; } }
 
-    function openMonthlySummary(docId) {
-        let c = dbCompanies.find(x => x.docId === docId); 
-        if(!c) return; 
-        let compName = c.name;
-        document.getElementById('monthly-summary-title').innerText = `${compName} - Aylık Özet`;
-        
+    function openAllMonthlySummary() {
         let today = new Date();
         let y = today.getFullYear();
         let m = today.getMonth() + 1;
         let currentMonthStr = `${y}-${m < 10 ? '0'+m : m}`;
+        let displayMonth = today.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
         
-        let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr));
-        
-        let sharedTasks = monthlyTasks.filter(t => t.paylasildi === true);
-        let pendingTasks = monthlyTasks.filter(t => t.paylasildi !== true);
-        
-        let getCounts = (taskList) => {
-            let v = taskList.filter(t => t.tur === 'Video').reduce((sum, t) => sum + (parseInt(t.adet) || 1), 0);
-            let ds = taskList.filter(t => t.tur === 'Tasarım').reduce((sum, t) => sum + (parseInt(t.adet) || 1), 0);
-            return { video: v, tasarim: ds, total: v + ds };
-        };
-        
-        let shared = getCounts(sharedTasks);
-        let pending = getCounts(pendingTasks);
-        let total = getCounts(monthlyTasks);
-        
+        document.getElementById('monthly-summary-title').innerText = `${currentCompany} - ${displayMonth} Özeti`;
+
         let html = `
-            <table class="reklam-table">
+            <table class="reklam-table" style="font-size: 12px; margin-bottom: 10px;">
                 <thead>
                     <tr>
-                        <th style="text-align:left;">Durum</th>
-                        <th>Tasarım</th>
-                        <th>Video</th>
-                        <th>Toplam</th>
+                        <th style="text-align:left; font-size:11px;">Firma Adı</th>
+                        <th style="font-size:11px;">Paylaşılan<br>(Tas/Vid)</th>
+                        <th style="font-size:11px;">Bekleyen<br>(Tas/Vid)</th>
+                        <th style="font-size:11px;">Toplam<br>(Tas/Vid)</th>
+                        <th style="font-size:11px; background:#eff6ff; color:#1d4ed8;">Genel<br>Toplam</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td style="text-align:left; font-weight:600; color:#10b981;">Paylaşılan</td>
-                        <td>${shared.tasarim}</td>
-                        <td>${shared.video}</td>
-                        <td style="font-weight:700;">${shared.total}</td>
-                    </tr>
-                    <tr>
-                        <td style="text-align:left; font-weight:600; color:#f59e0b;">Paylaşılacak</td>
-                        <td>${pending.tasarim}</td>
-                        <td>${pending.video}</td>
-                        <td style="font-weight:700;">${pending.total}</td>
-                    </tr>
-                    <tr style="background:#f8fafc;">
-                        <td style="text-align:left; font-weight:700; color:var(--bg-dark);">Ay Sonu Toplam</td>
-                        <td style="font-weight:700;">${total.tasarim}</td>
-                        <td style="font-weight:700;">${total.video}</td>
-                        <td style="font-weight:700; color:var(--task-purple);">${total.total}</td>
-                    </tr>
-                </tbody>
-            </table>
         `;
+
+        let grandShared = 0, grandPending = 0, grandTotal = 0;
+
+        dbCompanies.forEach(c => {
+            let compName = c.name;
+            let monthlyTasks = dbTasks.filter(t => normalizeStr(t.firma) === normalizeStr(compName) && (t.tarih || "").startsWith(currentMonthStr));
+            
+            let sharedTasks = monthlyTasks.filter(t => t.paylasildi === true);
+            let pendingTasks = monthlyTasks.filter(t => t.paylasildi !== true);
+            
+            let getCounts = (taskList) => {
+                let v = taskList.filter(t => t.tur === 'Video').reduce((sum, t) => sum + (parseInt(t.adet) || 1), 0);
+                let ds = taskList.filter(t => t.tur === 'Tasarım').reduce((sum, t) => sum + (parseInt(t.adet) || 1), 0);
+                return { video: v, tasarim: ds, total: v + ds };
+            };
+            
+            let shared = getCounts(sharedTasks);
+            let pending = getCounts(pendingTasks);
+            let total = getCounts(monthlyTasks);
+
+            if (total.total > 0) {
+                html += `
+                    <tr>
+                        <td style="text-align:left; font-weight:700; color:var(--bg-dark);">${compName}</td>
+                        <td style="color:#10b981; font-weight:600;">${shared.tasarim} T / ${shared.video} V</td>
+                        <td style="color:#f59e0b; font-weight:600;">${pending.tasarim} T / ${pending.video} V</td>
+                        <td style="color:var(--text-muted); font-weight:600;">${total.tasarim} T / ${total.video} V</td>
+                        <td style="font-weight:700; font-size:13px; background:#f8fafc; color:var(--task-purple);">${total.total}</td>
+                    </tr>
+                `;
+                grandShared += shared.total;
+                grandPending += pending.total;
+                grandTotal += total.total;
+            }
+        });
+
+        if (grandTotal === 0) {
+            html += `<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Bu ay için henüz eklenmiş bir görev bulunmuyor.</td></tr>`;
+        } else {
+            html += `
+                <tr style="background:#f1f5f9; border-top: 2px solid #cbd5e1;">
+                    <td style="text-align:left; font-weight:800; color:var(--bg-dark); font-size:13px;">GENEL TOPLAM</td>
+                    <td style="font-weight:700; color:#10b981; font-size:13px;">${grandShared}</td>
+                    <td style="font-weight:700; color:#f59e0b; font-size:13px;">${grandPending}</td>
+                    <td>-</td>
+                    <td style="font-weight:800; font-size:14px; background:#eff6ff; color:#1d4ed8;">${grandTotal}</td>
+                </tr>
+            `;
+        }
+
+        html += `</tbody></table>`;
+        
         document.getElementById('monthly-summary-content').innerHTML = html;
         openModal('monthly-summary-modal');
     }
