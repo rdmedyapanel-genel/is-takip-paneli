@@ -185,7 +185,7 @@ body { background-color: #e2e8f0; display: grid; place-items: center; height: 10
     transition: 0.2s; 
     width: 12px; 
     height: 12px; 
-    line-height: 1; 
+    line-height: 1.5; 
     flex-shrink: 0;
 }
 .hp-badge:hover { filter: brightness(0.9); }
@@ -196,7 +196,7 @@ body { background-color: #e2e8f0; display: grid; place-items: center; height: 10
     flex: 1; 
     font-size: 8px; 
     font-weight: 400; 
-    line-height: 1; 
+    line-height: 1.5; 
     min-width: 0; 
     display: flex;
     flex-direction: column; 
@@ -235,7 +235,7 @@ body { background-color: #e2e8f0; display: grid; place-items: center; height: 10
 .ga-card.completed-ga .ga-preview { text-decoration: line-through; color: #94a3b8; }
 
 .ga-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-.ga-title { font-size: 13px; font-weight: 700; color: var(--bg-dark); line-height: 1.2; }
+.ga-title { font-size: 13px; font-weight: 700; color: var(--bg-dark); line-height: 1.5; }
 .ga-badges { display: flex; flex-direction: column; gap: 3px; align-items: flex-end; }
 .ga-badge { padding: 2px 4px; border-radius: 3px; font-size: 9px; font-weight: 700; color: white; white-space: nowrap; }
 .ga-badge.video { background: var(--shoot-orange); }
