@@ -480,60 +480,75 @@
     }
     
     function changeChecklistDate(direction) { let d = new Date(currentChecklistDate); d.setDate(d.getDate() + direction); loadChecklistPage(formatDate(d)); }
-    async function saveChecklist(userId) { 
-    let btn = event.target; 
-    btn.innerText = "Kaydediliyor..."; 
-    try { 
-        let txtArea = document.getElementById(`chk-txt-${userId}`); 
-        let rawText = txtArea.value; 
+    
+    async function saveChecklist(userId) {
+        let btn = event.target;
+        btn.innerText = "Kaydediliyor...";
+        try {
+            let txtArea = document.getElementById(`chk-txt-${userId}`);
+            let rawText = txtArea.value;
+            rawText = rawText.replace(/\s+(?=\d+[\-\)]\s+)/g, '\n');
+            let lines = rawText.split('\n');
+            let counter = 1;
+            let formattedText = lines.map(line => {
+                let cleanLine = line.replace(/^\d+[\-\.)]\s*/, '').trim();
+                if(cleanLine === "") return "";
+                return `${counter++}- ${cleanLine}`;
+            }).filter(l => l !== "").join('\n');
+            txtArea.value = formattedText;
+            let docId = `chk_${currentCompany}_${currentChecklistDate}`;
+            let docRef = db.collection('checklists').doc(docId);
+            await docRef.set({ notes: { [userId]: formattedText }, company: currentCompany, date: currentChecklistDate }, { merge: true });
+            let oldText = "Listeyi Kaydet / Sırala";
+            btn.innerText = "Kaydedildi!";
+            btn.style.backgroundColor = "#16a34a";
+            setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 2000);
+        } catch (error) {
+            console.error("Checklist Kayıt Hatası: ", error);
+            alert("Kaydedilemedi, bağlantınızı kontrol edin.");
+            btn.innerText = "Listeyi Kaydet / Sırala";
+        }
+    }
 
-        // YENİ EKLEME: Yan yana yazılan numaraları (örnek: " 2- ", " 3) ") bulup alt satıra atar
-        rawText = rawText.replace(/\s+(?=\d+[\-\)]\s+)/g, '\n');
-
-        let lines = rawText.split('\n'); 
-        let counter = 1; 
-        let formattedText = lines.map(line => { 
-            let cleanLine = line.replace(/^\d+[\-\.)]\s*/, '').trim(); 
-            if(cleanLine === "") return ""; 
-            return `${counter++}- ${cleanLine}`; 
-        }).filter(l => l !== "").join('\n'); 
-        
-        txtArea.value = formattedText; 
-        let docId = `chk_${currentCompany}_${currentChecklistDate}`; 
-        let docRef = db.collection('checklists').doc(docId); 
-        await docRef.set({ notes: { [userId]: formattedText }, company: currentCompany, date: currentChecklistDate }, { merge: true }); 
-        
-        let oldText = "Listeyi Kaydet / Sırala"; 
-        btn.innerText = "Kaydedildi!"; 
-        btn.style.backgroundColor = "#16a34a"; 
-        setTimeout(() => { btn.innerText = oldText; btn.style.backgroundColor = ""; }, 2000); 
-    } catch (error) { 
-        console.error("Checklist Kayıt Hatası: ", error); 
-        alert("Kaydedilemedi, bağlantınızı kontrol edin."); 
-        btn.innerText = "Listeyi Kaydet / Sırala"; 
-    } 
-}
-
-    html2canvas(element, { scale: 2, backgroundColor: "#f8fafc" }).then(canvas => {
-        const link = document.createElement('a');
-        link.download = `${currentCompany}_Checklist_${currentChecklistDate}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-
-        // Resim indikten sonra orijinal textarea'ları geri getir
-        replacements.forEach(rep => {
-            rep.textarea.style.display = '';
-            rep.div.parentNode.removeChild(rep.div);
+    function downloadChecklistImage() {
+        const element = document.getElementById('checklist-export-area');
+        const textareas = element.querySelectorAll('textarea');
+        const replacements = [];
+        textareas.forEach(ta => {
+            const div = document.createElement('div');
+            div.className = ta.className;
+            div.style.cssText = window.getComputedStyle(ta).cssText;
+            div.style.height = "auto";
+            div.style.minHeight = ta.scrollHeight + "px";
+            div.style.overflow = "hidden";
+            div.style.backgroundColor = "transparent";
+            div.style.margin = "0";
+            div.style.display = "block";
+            let text = ta.value;
+            text = text.replace(/\s*(?=\b\d+[\-\)]\s+)/g, '\n').trim();
+            div.innerHTML = text.replace(/\n/g, '<br>');
+            ta.parentNode.insertBefore(div, ta);
+            ta.style.display = 'none';
+            replacements.push({ textarea: ta, div: div });
         });
-    }).catch(err => {
-        console.error("Görsel indirme hatası:", err);
-        // Hata olsa bile geri getir
-        replacements.forEach(rep => {
-            rep.textarea.style.display = '';
-            rep.div.parentNode.removeChild(rep.div);
+        html2canvas(element, { scale: 2, backgroundColor: "#f8fafc" }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `${currentCompany}_Checklist_${currentChecklistDate}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            replacements.forEach(rep => {
+                rep.textarea.style.display = '';
+                rep.div.parentNode.removeChild(rep.div);
+            });
+        }).catch(err => {
+            console.error("Görsel indirme hatası:", err);
+            replacements.forEach(rep => {
+                rep.textarea.style.display = '';
+                rep.div.parentNode.removeChild(rep.div);
+            });
         });
-    });
-}
+    }
+
     function generateAndCopyPlan(tomorrowStr, displayTomorrow, btnElement) {
         let planText = `${displayTomorrow}\n`;
         
