@@ -418,7 +418,34 @@
     }
 
     async function loadChecklistPage(dateStr) {
-        currentChecklistDate = dateStr || formatDate(new Date()); let dateObj = new Date(currentChecklistDate); let displayDate = dateObj.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric', weekday:'long' }); let docId = `chk_${currentCompany}_${currentChecklistDate}`; let doc = await db.collection('checklists').doc(docId).get(); let docData = doc.exists ? doc.data() : {}; let checklistData = docData.notes || {}; let targetUsers = dbUsers.filter(u => u.chkVisible === true && u.chkCompanies && u.chkCompanies.includes(currentCompany)); let todayStr = formatDate(new Date()); let isPast = currentChecklistDate < todayStr; let role = (currentUser.role || "").toLowerCase(); let isAdmin = role === 'admin' || currentUser.id === 'alperen';
+        let inputDate = dateStr || formatDate(new Date());
+        let dateObj = new Date(inputDate);
+        
+        // Pazar seçildiyse Cumartesiye al
+        if (dateObj.getDay() === 0) {
+            dateObj.setDate(dateObj.getDate() - 1);
+        }
+        
+        currentChecklistDate = formatDate(dateObj);
+        
+        let isWeekend = dateObj.getDay() === 6;
+        let displayDate = dateObj.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric', weekday:'long' });
+        
+        if (isWeekend) {
+            let pazarObj = new Date(dateObj);
+            pazarObj.setDate(pazarObj.getDate() + 1);
+            displayDate = `${dateObj.getDate()} ${dateObj.toLocaleDateString('tr-TR', { month:'long' })} Cumartesi - ${pazarObj.getDate()} ${pazarObj.toLocaleDateString('tr-TR', { month:'long', year:'numeric' })} Pazar`;
+        }
+        
+        let docId = `chk_${currentCompany}_${currentChecklistDate}`; 
+        let doc = await db.collection('checklists').doc(docId).get(); 
+        let docData = doc.exists ? doc.data() : {}; 
+        let checklistData = docData.notes || {}; 
+        let targetUsers = dbUsers.filter(u => u.chkVisible === true && u.chkCompanies && u.chkCompanies.includes(currentCompany)); 
+        let todayStr = formatDate(new Date()); 
+        let isPast = currentChecklistDate < todayStr; 
+        let role = (currentUser.role || "").toLowerCase(); 
+        let isAdmin = role === 'admin' || currentUser.id === 'alperen';
         
         let html = `
             <div class="checklist-container">
@@ -444,10 +471,20 @@
         targetUsers.forEach(u => { let noteContent = checklistData[u.id] || ""; let canEdit = isAdmin || (!isPast && u.id === currentUser.id); let disabledAttr = canEdit ? "" : "disabled"; html += `<div class="chk-user-card"><span class="chk-user-title">${u.name || "İsimsiz"}</span><textarea class="chk-textarea" id="chk-txt-${u.id}" placeholder="Buraya notlarınızı yazın... Kaydettiğinizde otomatik olarak numaralandırılacaktır." ${disabledAttr} autocomplete="off">${noteContent}</textarea>${canEdit ? `<div style="text-align: right;"><button type="button" class="login-btn btn-green" style="width: auto; padding: 6px 15px;" onclick="saveChecklist('${u.id}')">Listeyi Kaydet / Sırala</button></div>` : ''}</div>`; }); 
         html += `</div></div>`;
 
-        let dObj = new Date(currentChecklistDate);
-        dObj.setDate(dObj.getDate() + 1);
-        let tomorrowStr = formatDate(dObj);
-        let displayTomorrow = dObj.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric', weekday:'long' });
+        let tObj = new Date(currentChecklistDate);
+        if (isWeekend) {
+            tObj.setDate(tObj.getDate() + 2); // Cmt'den sonra Pzt planı istenir
+        } else {
+            tObj.setDate(tObj.getDate() + 1);
+        }
+        let tomorrowStr = formatDate(tObj);
+        let displayTomorrow = tObj.toLocaleDateString('tr-TR', { day:'numeric', month:'long', year:'numeric', weekday:'long' });
+
+        if (tObj.getDay() === 6) {
+            let pNext = new Date(tObj);
+            pNext.setDate(pNext.getDate() + 1);
+            displayTomorrow = `${tObj.getDate()} Cmt - ${pNext.getDate()} Paz`;
+        }
 
         html += `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
@@ -479,7 +516,17 @@
         if(chkDatePicker) chkDatePicker.destroy(); chkDatePicker = flatpickr("#chk-date-picker", { dateFormat: "Y-m-d", locale: "tr", defaultDate: currentChecklistDate, altInput: true, altFormat: "j F Y", onChange: function(selectedDates, dateStr) { loadChecklistPage(dateStr); } });
     }
     
-    function changeChecklistDate(direction) { let d = new Date(currentChecklistDate); d.setDate(d.getDate() + direction); loadChecklistPage(formatDate(d)); }
+    function changeChecklistDate(direction) { 
+        let d = new Date(currentChecklistDate); 
+        if (direction === 1 && d.getDay() === 6) {
+            d.setDate(d.getDate() + 2); // Cmt -> Pzt
+        } else if (direction === -1 && d.getDay() === 1) {
+            d.setDate(d.getDate() - 2); // Pzt -> Cmt
+        } else {
+            d.setDate(d.getDate() + direction); 
+        }
+        loadChecklistPage(formatDate(d)); 
+    }
     
     async function saveChecklist(userId) {
         let btn = event.target;
@@ -550,7 +597,7 @@
     }
 
     function generateAndCopyPlan(tomorrowStr, displayTomorrow, btnElement) {
-        let planText = `${displayTomorrow}\n`;
+        let planText = `${displayTomorrow} Planı\n`;
         
         const mesaiInputs = document.querySelectorAll('.mesai-input');
         mesaiInputs.forEach(input => {
@@ -561,17 +608,33 @@
 
         planText += `\nMedya Çekimi:\n`;
 
-        let tomorrowShoots = dbShoots.filter(s => s.tarih === tomorrowStr && normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany));
-        tomorrowShoots.sort((a, b) => (a.saat || "00:00").localeCompare(b.saat || "00:00"));
+        let dObjPlan = new Date(tomorrowStr);
+        let isPlanWeekend = dObjPlan.getDay() === 6;
+        let sundayStr = '';
+        if (isPlanWeekend) {
+            let sun = new Date(dObjPlan);
+            sun.setDate(sun.getDate() + 1);
+            sundayStr = formatDate(sun);
+        }
+
+        let tomorrowShoots = dbShoots.filter(s => 
+            normalizeStr(s.holding || s.firma) === normalizeStr(currentCompany) && 
+            (s.tarih === tomorrowStr || (isPlanWeekend && s.tarih === sundayStr))
+        );
+        tomorrowShoots.sort((a, b) => {
+            if (a.tarih !== b.tarih) return a.tarih.localeCompare(b.tarih);
+            return (a.saat || "00:00").localeCompare(b.saat || "00:00");
+        });
 
         if (tomorrowShoots.length === 0) {
             planText += `Planlı çekim bulunmuyor.\n`;
         } else {
             tomorrowShoots.forEach(s => {
+                let gunEk = isPlanWeekend && s.tarih === sundayStr ? "(Pazar) " : (isPlanWeekend ? "(Cmt) " : "");
                 let saat = s.saat || "Saat Yok";
                 let firma = s.firma || "Bilinmeyen Firma";
                 let kisiler = Array.isArray(s.kisi) ? s.kisi.join(', ') : (s.kisi || "");
-                planText += `${saat} - ${firma} | ${kisiler}\n`;
+                planText += `${gunEk}${saat} - ${firma} | ${kisiler}\n`;
             });
         }
 
