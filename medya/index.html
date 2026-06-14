@@ -317,12 +317,97 @@
         document.getElementById('main-content').innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                 <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;">${currentCompany} - Firma Analiz Kartları</h2>
-                <button type="button" class="login-btn btn-purple" style="width: auto; padding: 10px 20px; margin: 0; font-size: 12px;" onclick="openAllMonthlySummary()">
-                    <i class="fa-solid fa-chart-pie" style="margin-right: 8px;"></i> Toplu Aylık Özet
-                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" class="login-btn" style="background: #25D366; color: white; width: auto; padding: 10px 20px; margin: 0; font-size: 12px;" onclick="downloadShootDatesImage()">
+                        <i class="fa-solid fa-download" style="margin-right: 8px;"></i> Çekim Tarihlerini İndir
+                    </button>
+                    <button type="button" class="login-btn btn-purple" style="width: auto; padding: 10px 20px; margin: 0; font-size: 12px;" onclick="openAllMonthlySummary()">
+                        <i class="fa-solid fa-chart-pie" style="margin-right: 8px;"></i> Toplu Aylık Özet
+                    </button>
+                </div>
             </div>
             ${html}
         `;
+    }
+
+    function downloadShootDatesImage() {
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.style.width = '800px';
+        container.style.padding = '30px';
+        container.style.background = '#ffffff';
+        container.style.color = '#1e293b';
+        container.style.fontFamily = "'Poppins', sans-serif";
+        container.id = 'temp-shoot-export';
+
+        let todayDateStr = new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        let htmlContent = `
+            <div style="text-align: center; margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px;">
+                <h2 style="margin: 0; color: #1e293b; font-size: 24px; font-weight: 800;">Firma Çekim Tarihleri Raporu</h2>
+                <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">${currentCompany} - ${todayDateStr}</p>
+            </div>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <thead>
+                    <tr style="background-color: #f8fafc;">
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e1; color: #475569; font-weight: 700;">Firma Adı</th>
+                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #cbd5e1; color: #475569; font-weight: 700;">Son Çekim Tarihi</th>
+                        <th style="padding: 12px; text-align: center; border-bottom: 2px solid #cbd5e1; color: #475569; font-weight: 700;">Geçen Süre</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        dbCompanies.forEach((c, index) => {
+            const compName = c.name || "İsimsiz";
+            let compShoots = dbShoots.filter(s => normalizeStr(s.firma) === normalizeStr(compName) && s.cekildi === true);
+            compShoots.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
+            let lastShootDate = compShoots.length > 0 ? compShoots[0].tarih : null;
+            
+            let dateDisplay = "<span style='color: #ef4444; font-weight: 600;'>Çekim Yok</span>";
+            let daysDisplay = "-";
+            
+            if (lastShootDate) {
+                let diff = calculateDaysPassed(lastShootDate);
+                dateDisplay = `<span style="font-weight: 600; color: #0f172a;">${formatDateTR(lastShootDate)}</span>`;
+                
+                let daysColor = diff > 30 ? "#ef4444" : (diff > 15 ? "#f59e0b" : "#10b981");
+                daysDisplay = `<span style="font-weight: 700; color: ${daysColor}; background: ${daysColor}15; padding: 4px 10px; border-radius: 6px;">${diff} Gün</span>`;
+            }
+
+            let rowBg = index % 2 === 0 ? "#ffffff" : "#f8fafc";
+            
+            htmlContent += `
+                <tr style="background-color: ${rowBg};">
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #1e293b;">${compName}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">${dateDisplay}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center;">${daysDisplay}</td>
+                </tr>
+            `;
+        });
+
+        htmlContent += `
+                </tbody>
+            </table>
+        `;
+
+        container.innerHTML = htmlContent;
+        document.body.appendChild(container);
+
+        setTimeout(() => {
+            html2canvas(container, { scale: 2, backgroundColor: "#ffffff" }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${currentCompany}_Cekim_Tarihleri_${formatDate(new Date())}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                document.body.removeChild(container);
+            }).catch(err => {
+                console.error("Görsel indirme hatası:", err);
+                document.body.removeChild(container);
+            });
+        }, 100);
     }
 
     function openCompanyNote(docId) { let c = dbCompanies.find(x => x.docId === docId); if(!c) return; document.getElementById('comp-note-doc-id').value = docId; document.getElementById('comp-note-title').innerText = `${c.name} - Firma Notu`; document.getElementById('comp-note-text').value = c.notlar || ""; openModal('company-note-modal'); }
