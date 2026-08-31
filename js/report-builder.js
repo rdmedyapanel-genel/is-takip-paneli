@@ -211,10 +211,10 @@ function renderReportBuilderPage() {
         <div class="rb-page">
             <header class="rb-topbar">
                 <div><span>RDGRUP MEDYA</span><h2>Rapor Oluştur</h2><p>Firma ekle, aylık verileri tamamla ve müşteriye hazır PDF oluştur.</p></div>
-                <div class="rb-top-actions"><button type="button" class="rb-button secondary" onclick="rbSaveDraft()"><i class="fa-regular fa-floppy-disk"></i> Taslağı kaydet</button><button type="button" class="rb-button primary" onclick="rbOpenPreview()"><i class="fa-regular fa-file-pdf"></i> Önizle / PDF</button></div>
+                <div class="rb-top-actions"><button type="button" class="rb-button company" onclick="rbOpenCompanyModal()"><i class="fa-solid fa-building-circle-check"></i> Firma Ekle</button><button type="button" class="rb-button secondary" onclick="rbSaveDraft()"><i class="fa-regular fa-floppy-disk"></i> Taslağı kaydet</button><button type="button" class="rb-button primary" onclick="rbOpenPreview()"><i class="fa-regular fa-file-pdf"></i> Önizle / PDF</button></div>
             </header>
 
-            ${dbCompanies.length ? '' : '<div class="rb-warning">Rapor oluşturmak için önce aşağıdan firma ekleyin.</div>'}
+            ${dbCompanies.length ? '' : '<div class="rb-warning">Rapor oluşturmak için üstteki “Firma Ekle” düğmesini kullanın.</div>'}
             <div class="rb-layout">
                 <section class="rb-form-column">
                     <article class="rb-panel">
@@ -225,7 +225,6 @@ function renderReportBuilderPage() {
                             <label>Rapor rengi<div class="rb-color"><input type="color" value="${rbEscape(rbState.accent)}" oninput="rbSetField('accent',this.value)"><span>${rbEscape(rbState.accent.toUpperCase())}</span></div></label>
                         </div>
                         <div class="rb-meta-card ${metaConnection ? 'connected' : ''}"><div class="rb-meta-icon"><i class="fa-brands fa-meta"></i></div><div><strong>${metaConnection ? `@${rbEscape(metaConnection.username || company.instagram || 'Instagram')} bağlı` : 'Meta hesabını bağla'}</strong><span>${metaConnection ? 'Gönderiler, profil bilgileri ve izin varsa reklam sonuçları alınabilir.' : 'Seçili firmanın Instagram profesyonel hesabını güvenli biçimde bağlayın.'}</span>${metaConnection && adAccountOptions ? `<label class="rb-ad-account">Reklam hesabı<select onchange="rbSetField('adAccountId',this.value)"><option value="">Seçin</option>${adAccountOptions}</select></label>` : ''}${metaConnection?.adsRead === false ? '<em>Reklam izni verilmedi; gönderiler yine alınabilir.</em>' : ''}</div><div class="rb-meta-actions">${metaConnection ? `<button type="button" onclick="rbImportMetaContents()"><i class="fa-solid fa-rotate"></i> Meta’dan getir</button><button type="button" class="danger" onclick="rbDisconnectMeta()">Bağlantıyı kes</button>` : `<button type="button" onclick="rbConnectMeta()"><i class="fa-brands fa-facebook"></i> Meta’ya bağlan</button>`}</div></div>
-                        <details class="rb-company-add" open><summary><i class="fa-solid fa-building-circle-arrow-right"></i> Yeni firma ekle</summary><div class="rb-company-add-grid"><label>Firma adı<input id="rb-new-name" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" placeholder="@kullaniciadi"></label><label>Logo bağlantısı<input id="rb-new-logo" placeholder="https://..."></label><label>Rapor rengi<input id="rb-new-color" type="color" value="#6c63ff"></label><button type="button" class="rb-button primary" onclick="rbAddCompany()">Firmayı ekle</button></div></details>
                     </article>
 
                     <article class="rb-panel">
@@ -337,25 +336,58 @@ function rbImportPanelContents() {
 async function rbAddCompany() {
     const name = document.getElementById('rb-new-name')?.value.trim();
     if (!name) return alert('Firma adını girin.');
+    const normalizedName = typeof normalizeStr === 'function' ? normalizeStr(name) : name.toLocaleLowerCase('tr-TR');
+    const existing = dbCompanies.find(item => (typeof normalizeStr === 'function' ? normalizeStr(item.name) : String(item.name || '').toLocaleLowerCase('tr-TR')) === normalizedName);
+    if (existing) {
+        rbState = rbLoadState(existing.docId, rbState?.period || rbCurrentPeriod());
+        rbCloseCompanyModal();
+        renderReportBuilderPage();
+        return alert('Bu firma zaten sistemde kayıtlı. Mevcut firma rapora seçildi.');
+    }
+    const saveButton = document.getElementById('rb-company-save');
+    if (saveButton) { saveButton.disabled = true; saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kaydediliyor'; }
     const data = {
         name,
         instagram: document.getElementById('rb-new-instagram')?.value.trim() || '',
         reportLogo: document.getElementById('rb-new-logo')?.value.trim() || '',
         reportColor: document.getElementById('rb-new-color')?.value || '#6c63ff',
         order: dbCompanies.length,
-        showInAds: false,
+        showInAds: true,
         createdFrom: 'report-builder'
     };
     try {
         const result = await db.collection('companies').add(data);
         await fetchCompaniesFromFirebase();
-        rbState = rbLoadState(result.id, rbCurrentPeriod());
+        rbState = rbLoadState(result.id, rbState?.period || rbCurrentPeriod());
+        rbCloseCompanyModal();
         renderReportBuilderPage();
-        alert('Firma eklendi ve rapora seçildi.');
+        alert('Firma sisteme kaydedildi ve rapora seçildi. Bir daha eklemeniz gerekmez.');
     } catch (error) {
         console.error(error);
+        if (saveButton) { saveButton.disabled = false; saveButton.innerHTML = '<i class="fa-solid fa-check"></i> Firmayı Kaydet'; }
         alert('Firma eklenemedi. Firebase yetkilerini kontrol edin.');
     }
+}
+
+function rbOpenCompanyModal() {
+    rbCloseCompanyModal();
+    const modal = document.createElement('div');
+    modal.id = 'rb-company-modal';
+    modal.className = 'rb-company-modal';
+    modal.innerHTML = `<div class="rb-company-dialog" role="dialog" aria-modal="true" aria-labelledby="rb-company-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid fa-building-circle-check"></i></span><div><h3 id="rb-company-title">Yeni Firma Ekle</h3><p>Firma bir kez kaydedilir ve panelin tamamında kullanılabilir.</p></div></div><form class="rb-company-form" onsubmit="event.preventDefault(); rbAddCompany()"><label>Firma adı <b>*</b><input id="rb-new-name" required autocomplete="organization" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" autocomplete="off" placeholder="@kullaniciadi"></label><label class="wide">Logo bağlantısı <small>(isteğe bağlı)</small><input id="rb-new-logo" type="url" autocomplete="url" placeholder="https://..."></label><label>Rapor rengi<input id="rb-new-color" type="color" value="#6c63ff"></label><div class="rb-company-form-actions"><button type="button" class="rb-button" onclick="rbCloseCompanyModal()">Vazgeç</button><button type="submit" id="rb-company-save" class="rb-button primary"><i class="fa-solid fa-check"></i> Firmayı Kaydet</button></div></form></div>`;
+    modal.addEventListener('click', event => { if (event.target === modal) rbCloseCompanyModal(); });
+    document.body.appendChild(modal);
+    document.addEventListener('keydown', rbCompanyModalEscape);
+    setTimeout(() => document.getElementById('rb-new-name')?.focus(), 30);
+}
+
+function rbCompanyModalEscape(event) {
+    if (event.key === 'Escape') rbCloseCompanyModal();
+}
+
+function rbCloseCompanyModal() {
+    document.getElementById('rb-company-modal')?.remove();
+    document.removeEventListener('keydown', rbCompanyModalEscape);
 }
 
 function rbSetProfileImage(event) {

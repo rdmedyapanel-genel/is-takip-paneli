@@ -264,10 +264,6 @@
                     <div class="admin-launcher-icon" style="background:#f59e0b;"><i class="fa-solid fa-building"></i></div>
                     <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Firma Yönetimi</h4><span style="font-size:11px; color:var(--text-muted);">Markaları ekle ve Drive bağla</span></div>
                 </div>
-                <div class="admin-launcher-card" onclick="openModal('master-equipments-modal')">
-                    <div class="admin-launcher-icon" style="background:#a855f7;"><i class="fa-solid fa-toolbox"></i></div>
-                    <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Ekipman Yönetimi</h4><span style="font-size:11px; color:var(--text-muted);">Kamera, lens ve depo takvimi</span></div>
-                </div>
                 <div class="admin-launcher-card" onclick="openModal('master-roles-modal')">
                     <div class="admin-launcher-icon" style="background:#6366f1;"><i class="fa-solid fa-user-shield"></i></div>
                     <div><h4 style="margin:0; font-size:14px; color:var(--bg-dark);">Unvan & Sayfa Yetkileri</h4><span style="font-size:11px; color:var(--text-muted);">Dinamik rol ve menü sınırlandırma</span></div>
@@ -294,8 +290,8 @@
 
     const holdingCompanies = ["RDGRUP MEDYA"];
     
-    const mainPages = ["Tüm İşler", "Tüm Ekipmanlar", "Yönetim Paneli"];
-    const medyaPages = ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Reklamlar", "Ekipmanlar", "Raporlar"];
+    const mainPages = ["Tüm İşler", "Yönetim Paneli"];
+    const medyaPages = ["Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Reklamlar", "Raporlar"];
 
     window.onload = async function() {
         const savedUser = localStorage.getItem('rdgrup_user');
@@ -345,8 +341,8 @@
             const defaultRoles = [
                 { name: "Admin", pages: [...mainPages, ...medyaPages] }, 
                 { name: "Yönetici", pages: [...mainPages, ...medyaPages] },
-                { name: "Tasarımcı", pages: ["Tüm İşler", "Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
-                { name: "Fotoğrafçı", pages: ["Tüm İşler", "Anasayfa", "Kendi İşlerim", "Genel Takvim", "Çekim Takvimi", "Checklist", "Genel Ajanda", "Kişisel Ajanda", "Ekipmanlar"] },
+                { name: "Tasarımcı", pages: ["Tüm İşler", "Anasayfa", "Kendi İşlerim", "Genel Takvim", "Paylaşım Takvimi", "Çekim Takvimi", "Firmalar", "Checklist", "Genel Ajanda", "Kişisel Ajanda"] },
+                { name: "Fotoğrafçı", pages: ["Tüm İşler", "Anasayfa", "Kendi İşlerim", "Genel Takvim", "Çekim Takvimi", "Checklist", "Genel Ajanda", "Kişisel Ajanda"] },
                 { name: "Asistan", pages: ["Anasayfa", "Genel Takvim", "Genel Ajanda", "Kişisel Ajanda", "Checklist"] },
                 { name: "Stajyer", pages: ["Anasayfa", "Kendi İşlerim", "Genel Ajanda", "Kişisel Ajanda"] }
             ];
