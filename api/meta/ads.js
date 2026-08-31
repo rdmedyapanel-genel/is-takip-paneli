@@ -22,26 +22,87 @@ async function pagedGraph(url, maxPages = 5) {
   return rows;
 }
 
-async function creativeDetails(adIds, accessToken) {
+function directCreativeImage(creative = {}) {
+  const story = creative.object_story_spec || {};
+  const link = story.link_data || {};
+  const video = story.video_data || {};
+  const photo = story.photo_data || {};
+  const assets = creative.asset_feed_spec || {};
+  return creative.thumbnail_url
+    || creative.image_url
+    || video.image_url
+    || link.picture
+    || link.child_attachments?.find(item => item.picture)?.picture
+    || photo.image_url
+    || assets.images?.find(item => item.url)?.url
+    || assets.videos?.find(item => item.thumbnail_url)?.thumbnail_url
+    || '';
+}
+
+async function resolvedMediaImage(detail, connection) {
+  if (detail.thumbnailUrl) return detail.thumbnailUrl;
+  if (detail.instagramMediaId && connection.accessToken) {
+    try {
+      const url = new URL(`${GRAPH_URL}/${detail.instagramMediaId}`);
+      url.searchParams.set('fields', 'media_type,media_url,thumbnail_url');
+      url.searchParams.set('access_token', connection.accessToken);
+      const media = await graphJson(url.toString());
+      const image = media.thumbnail_url || media.media_url || '';
+      if (image) return image;
+    } catch (_) {}
+  }
+  if (detail.videoId) {
+    try {
+      const url = new URL(`${GRAPH_URL}/${detail.videoId}/thumbnails`);
+      url.searchParams.set('fields', 'uri,is_preferred,height,width');
+      url.searchParams.set('access_token', connection.userAccessToken);
+      const thumbnails = await graphJson(url.toString());
+      const image = (thumbnails.data || []).find(item => item.is_preferred)?.uri || thumbnails.data?.[0]?.uri || '';
+      if (image) return image;
+    } catch (_) {}
+  }
+  if (detail.objectStoryId && connection.accessToken) {
+    try {
+      const url = new URL(`${GRAPH_URL}/${detail.objectStoryId}`);
+      url.searchParams.set('fields', 'full_picture,attachments{media,target,url}');
+      url.searchParams.set('access_token', connection.accessToken);
+      const story = await graphJson(url.toString());
+      return story.full_picture || story.attachments?.data?.[0]?.media?.image?.src || '';
+    } catch (_) {}
+  }
+  return '';
+}
+
+async function creativeDetails(adIds, connection) {
   const details = {};
   for (let index = 0; index < adIds.length; index += 40) {
     const ids = adIds.slice(index, index + 40);
     const url = new URL(`${GRAPH_URL}/`);
     url.searchParams.set('ids', ids.join(','));
-    url.searchParams.set('fields', 'id,name,status,creative{id,name,thumbnail_url,image_url,effective_object_story_id,effective_instagram_media_id}');
-    url.searchParams.set('access_token', accessToken);
-    const payload = await graphJson(url.toString());
+    url.searchParams.set('fields', 'id,name,status,creative{id,name,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id,object_story_spec,asset_feed_spec}');
+    url.searchParams.set('access_token', connection.userAccessToken);
+    let payload;
+    try {
+      payload = await graphJson(url.toString());
+    } catch (_) {
+      url.searchParams.set('fields', 'id,name,status,creative{id,name,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id}');
+      payload = await graphJson(url.toString());
+    }
     Object.entries(payload || {}).forEach(([id, ad]) => {
       const creative = ad?.creative || {};
       details[id] = {
         status: ad?.status || '',
-        thumbnailUrl: creative.thumbnail_url || creative.image_url || '',
+        thumbnailUrl: directCreativeImage(creative),
         creativeName: creative.name || '',
         instagramMediaId: creative.effective_instagram_media_id || '',
         objectStoryId: creative.effective_object_story_id || '',
+        videoId: creative.video_id || creative.object_story_spec?.video_data?.video_id || '',
       };
     });
   }
+  await Promise.all(Object.values(details).map(async detail => {
+    if (!detail.thumbnailUrl) detail.thumbnailUrl = await resolvedMediaImage(detail, connection);
+  }));
   return details;
 }
 
@@ -85,7 +146,7 @@ module.exports = async function handler(req, res) {
     const insight = totalPayload.data?.[0] || {};
     const adIds = [...new Set(adInsights.map(row => String(row.ad_id || '')).filter(Boolean))];
     let creativeByAd = {};
-    try { creativeByAd = await creativeDetails(adIds, connection.userAccessToken); } catch (_) {}
+    try { creativeByAd = await creativeDetails(adIds, connection); } catch (_) {}
     const ads = adInsights.map(row => {
       const creative = creativeByAd[String(row.ad_id || '')] || {};
       return {

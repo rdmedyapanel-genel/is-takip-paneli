@@ -111,3 +111,75 @@
 .nr-ad-card-copy>div b { overflow:hidden; color:#25303b; font-size:7px; text-overflow:ellipsis; white-space:nowrap; }
 .nr-ad-card-copy>div small { color:#929aa4; font-size:5px; }
 @media (max-width:720px) { .rb-company-meta.wide { grid-column:1; grid-template-columns:38px 1fr; }.rb-company-meta-actions { grid-column:1/3; flex-direction:row; }.rb-company-meta-actions button { flex:1; }.rb-ad-list { grid-template-columns:1fr; } }
+
+/* V13: Daha güçlü PDF hiyerarşisi, dengeli doluluk ve güvenli görsel yedekleri */
+.nr-standard { padding:15% 8% 9% 9%; }
+.nr-header { left:9%; right:7%; grid-template-columns:38px 1fr auto; gap:10px; }
+.nr-header>b { font-size:21px; }
+.nr-header>span { font-size:9px; letter-spacing:1.35px; }
+.nr-header small { max-width:220px; overflow:hidden; font-size:8px; text-overflow:ellipsis; white-space:nowrap; }
+.nr-standard>h2 { font-size:36px; line-height:.92; letter-spacing:-1.45px; }
+.nr-standard>h2:after { width:48px; height:6px; margin-top:14px; }
+.nr-lead { max-width:84%; margin-top:13px; font-size:10.5px; line-height:1.55; }
+.nr-footer { left:9%; right:7%; font-size:8px; }
+.nr-footer strong { font-size:9px; }
+.nr-footer>b { width:30px; height:30px; font-size:9px; }
+.nr-cover-copy h1 { max-width:88%; font-size:42px; line-height:.96; }
+.nr-cover-copy p { max-width:72%; font-size:13px; line-height:1.45; }
+.nr-cover-period small { font-size:8px; }
+.nr-cover-period strong { font-size:19px; }
+.nr-content-list { gap:6px; margin-top:5%; }
+.nr-content-list>p { min-height:35px; padding:9px 12px; border-left-width:5px; }
+.nr-content-list>p>b { flex-basis:108px; font-size:11px; }
+.nr-content-list>p>span { font-size:11px; }
+.nr-content-total { left:9%; right:7%; bottom:10%; padding:18px 22px; }
+.nr-content-total>span { font-size:8px; }
+.nr-content-total b { font-size:25px; }
+.nr-content-total small { font-size:9px; }
+.nr-metrics { gap:14px; margin-top:10%; }
+.nr-metric { min-height:145px; padding:20px; border-radius:13px; }
+.nr-metric:before { height:7px; }
+.nr-metric span { font-size:11px; }
+.nr-metric b { margin-top:9px; font-size:30px; }
+.nr-total-card { width:66%; gap:11px; margin-top:9%; padding:25px; }
+.nr-total-card span { font-size:11px; }
+.nr-total-card b { font-size:42px; }
+.nr-breakdown { width:84%; margin-top:18px; padding:17px 21px; }
+.nr-breakdown p { padding:11px 0; font-size:12px; }
+.nr-breakdown b { font-size:15px; }
+.nr-ad-metrics { margin-top:11%; }
+.nr-notes { margin-top:9%; padding:28px; font-size:14px; line-height:1.85; }
+.nr-profile-shot-live { top:21%; left:10%; right:8%; bottom:10%; }
+.nr-profile-shot-live .nr-instagram-bar { min-height:7%; padding:0 4%; }
+.nr-profile-shot-live .nr-instagram-bar i { font-size:17px; }
+.nr-profile-shot-live .nr-instagram-bar b { font-size:11px; }
+.nr-profile-shot-live .nr-instagram-head { min-height:16%; grid-template-columns:66px 1fr auto; gap:14px; padding:2% 4.5%; }
+.nr-profile-shot-live .nr-instagram-avatar { width:62px; height:62px; }
+.nr-profile-shot-live .nr-instagram-identity strong { font-size:11px; }
+.nr-profile-shot-live .nr-instagram-identity span { font-size:8px; }
+.nr-profile-shot-live .nr-instagram-stats { gap:16px; }
+.nr-profile-shot-live .nr-instagram-stats b { font-size:12px; }
+.nr-profile-shot-live .nr-instagram-stats span { font-size:7px; }
+.nr-profile-shot-live .nr-instagram-grid { flex:none; width:76%; aspect-ratio:3/4; align-self:center; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(4,1fr); gap:3px; margin-bottom:3%; padding:0; }
+.rb-ad-thumb,.nr-ad-image { position:relative; }
+.rb-ad-image-fallback,.nr-ad-image-fallback { position:absolute; inset:0; display:grid; place-items:center; align-content:center; gap:7px; color:#96a0ac; text-align:center; }
+.rb-ad-image-fallback i { font-size:22px; }
+.rb-ad-image-fallback span { font-size:7px; font-weight:750; }
+.rb-ad-thumb img,.nr-ad-image img { position:absolute; z-index:1; inset:0; width:100%; height:100%; object-fit:cover; }
+.nr-ad-grid { gap:14px; margin-top:5%; }
+.nr-ad-card { min-height:305px; border-radius:13px; }
+.nr-ad-image { height:174px; }
+.nr-ad-image-fallback i { font-size:31px; }
+.nr-ad-image-fallback span { font-size:8px; font-weight:750; }
+.nr-ad-card-copy { padding:13px 14px 14px; }
+.nr-ad-card-copy>small { font-size:7.5px; letter-spacing:1px; }
+.nr-ad-card-copy h3 { min-height:31px; display:-webkit-box; overflow:hidden; margin:7px 0 3px; font-size:12.5px; line-height:1.25; white-space:normal; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+.nr-ad-card-copy>p { font-size:7.5px; }
+.nr-ad-card-copy>div { gap:6px; margin-top:12px; }
+.nr-ad-card-copy>div>span { gap:3px; padding-left:7px; border-left-width:3px; }
+.nr-ad-card-copy>div b { font-size:8.5px; }
+.nr-ad-card-copy>div small { font-size:6px; }
+.nr-profile-shot-live .nr-instagram-bar { min-height:6%; }
+.nr-profile-shot-live .nr-instagram-head { min-height:13.5%; grid-template-columns:62px 1fr auto; padding:1.5% 4.5%; }
+.nr-profile-shot-live .nr-instagram-avatar { width:58px; height:58px; }
+.nr-profile-shot-live .nr-instagram-grid { width:69%; margin-bottom:2%; }
