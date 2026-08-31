@@ -30,6 +30,15 @@
 @media (max-width:720px) { .rb-fields.four { grid-template-columns:1fr; }.rb-company-logo-field.wide { grid-column:1; } }
 @media (max-width:520px) { .rb-company-manager-toolbar { align-items:stretch; flex-direction:column; }.rb-company-manager-toolbar .rb-button { width:100%; }.rb-company-manager-row { grid-template-columns:40px 1fr; }.rb-company-manager-row>button { grid-column:1/3; }.rb-company-manager-logo { width:38px; height:38px; } }
 
+.rb-company-tint { display:flex!important; grid-column:1/3; align-items:center; gap:9px!important; min-height:38px; padding:9px 11px; border:1px solid #e2e4f5; border-radius:8px; background:#f8f7ff; color:#5148c7!important; }
+.rb-company-tint input { width:16px!important; min-height:16px!important; accent-color:#6c63ff; }
+.rb-company-manager-actions { display:flex; gap:6px; }
+.rb-company-manager-actions button { min-height:33px; padding:7px 10px; border:1px solid #dbddf5; border-radius:7px; background:#f7f6ff; color:#554bd1; font:750 8px 'Poppins',sans-serif; cursor:pointer; }
+.rb-company-manager-actions button.delete { border-color:#f1cbd0; background:#fff5f6; color:#bd3f4f; }
+.rb-company-manager-actions button.delete:hover { border-color:#df8e98; background:#ffecee; }
+.rb-tinted-logo { width:88%; height:88%; display:block; background:currentColor; -webkit-mask-image:var(--rb-logo-source); mask-image:var(--rb-logo-source); -webkit-mask-position:center; mask-position:center; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat; -webkit-mask-size:contain; mask-size:contain; }
+@media (max-width:520px) { .rb-company-manager-actions { grid-column:1/3; }.rb-company-manager-actions button { flex:1; } }
+
 @media print {
     @page { size:A4 portrait; margin:0; }
     html,body { width:210mm; margin:0!important; padding:0!important; background:#fff!important; }

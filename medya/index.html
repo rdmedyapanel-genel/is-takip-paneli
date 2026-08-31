@@ -93,13 +93,15 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     async function fetchUsersFromFirebase() { const snapshot = await db.collection('users').get(); dbUsers = []; snapshot.forEach(doc => { dbUsers.push({ docId: doc.id, ...doc.data() }); }); dbUsers.sort((a, b) => (a.order || 0) - (b.order || 0)); populateUserDropdowns(); }
-    async function fetchCompaniesFromFirebase() { const snapshot = await db.collection('companies').get(); dbCompanies = []; snapshot.forEach(doc => { dbCompanies.push({ docId: doc.id, ...doc.data() }); }); dbCompanies.sort((a, b) => (a.order || 0) - (b.order || 0)); populateCompanyDropdown(); }
+    async function fetchCompaniesFromFirebase() { const snapshot = await db.collection('companies').get(); dbCompanies = []; snapshot.forEach(doc => { const data = doc.data(); if (String(data.createdFrom || '').startsWith('report-builder')) return; dbCompanies.push({ docId: doc.id, ...data }); }); dbCompanies.sort((a, b) => (a.order || 0) - (b.order || 0)); populateCompanyDropdown(); }
     async function fetchReportCompaniesFromFirebase() {
         let snapshot = await db.collection('report_companies').get();
         dbReportCompanies = [];
         snapshot.forEach(doc => { dbReportCompanies.push({ docId: doc.id, ...doc.data() }); });
         if (dbReportCompanies.length === 0) {
-            const legacyReportCompanies = dbCompanies.filter(company => company.createdFrom === 'report-builder');
+            const legacySnapshot = await db.collection('companies').get();
+            const legacyReportCompanies = [];
+            legacySnapshot.forEach(doc => { const data = doc.data(); if (String(data.createdFrom || '').startsWith('report-builder')) legacyReportCompanies.push({ docId: doc.id, ...data }); });
             if (legacyReportCompanies.length) {
                 await Promise.all(legacyReportCompanies.map(company => {
                     const { docId, ...data } = company;

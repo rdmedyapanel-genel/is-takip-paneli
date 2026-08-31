@@ -1,6 +1,7 @@
 const rbMonthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 let rbState = null;
 let rbPendingCompanyLogo = '';
+let rbPendingCompanyLogoTint = true;
 let rbEditingCompanyId = '';
 
 function rbEscape(value) {
@@ -279,10 +280,18 @@ function rbMetricInput(key, label) {
 }
 
 function rbCompanyLogo(company) {
-    const logo = company.reportLogo || company.logo || rbState?.metaProfile?.profilePictureUrl || '';
+    if (company.reportLogo) {
+        if (company.reportLogoTint !== false) return rbTintedLogoMarkup(company.reportLogo, `${company.name || 'Firma'} logosu`);
+        return `<img src="${rbEscape(company.reportLogo)}" alt="${rbEscape(company.name || 'Firma')} logosu">`;
+    }
+    const logo = company.logo || rbState?.metaProfile?.profilePictureUrl || '';
     if (logo) return `<img src="${rbEscape(logo)}" alt="${rbEscape(company.name || 'Firma')} logosu">`;
     const initials = String(company.name || 'RD').split(/\s+/).filter(Boolean).map(word => word[0]).join('').slice(0, 2).toUpperCase();
     return `<span>${rbEscape(initials || 'RD')}</span>`;
+}
+
+function rbTintedLogoMarkup(logo, label = 'Firma logosu') {
+    return `<span class="rb-tinted-logo" role="img" aria-label="${rbEscape(label)}" style="--rb-logo-source:url(&quot;${rbEscape(logo)}&quot;)"></span>`;
 }
 
 function rbSetField(key, value) {
@@ -353,6 +362,7 @@ async function rbSaveCompany() {
         name,
         instagram: document.getElementById('rb-new-instagram')?.value.trim() || '',
         reportLogo: rbPendingCompanyLogo,
+        reportLogoTint: document.getElementById('rb-new-logo-tint')?.checked !== false,
         reportColor: document.getElementById('rb-new-color')?.value || '#6c63ff',
         updatedAt: new Date().toISOString(),
         createdFrom: 'report-builder-v2'
@@ -378,15 +388,18 @@ async function rbSaveCompany() {
 }
 
 function rbManagerCompanyLogo(company) {
-    const logo = company.reportLogo || company.logo || '';
-    if (logo) return `<img src="${rbEscape(logo)}" alt="${rbEscape(company.name || 'Firma')} logosu">`;
+    if (company.reportLogo) {
+        if (company.reportLogoTint !== false) return rbTintedLogoMarkup(company.reportLogo, `${company.name || 'Firma'} logosu`);
+        return `<img src="${rbEscape(company.reportLogo)}" alt="${rbEscape(company.name || 'Firma')} logosu">`;
+    }
+    if (company.logo) return `<img src="${rbEscape(company.logo)}" alt="${rbEscape(company.name || 'Firma')} logosu">`;
     const initials = String(company.name || 'RF').split(/\s+/).filter(Boolean).map(word => word[0]).join('').slice(0, 2).toUpperCase();
     return `<span>${rbEscape(initials || 'RF')}</span>`;
 }
 
 function rbOpenCompanyManager() {
     rbCloseCompanyModal();
-    const rows = dbReportCompanies.length ? dbReportCompanies.map(company => `<div class="rb-company-manager-row"><div class="rb-company-manager-logo">${rbManagerCompanyLogo(company)}</div><div><strong>${rbEscape(company.name || 'İsimsiz Firma')}</strong><span>${rbEscape(company.instagram || 'Instagram hesabı eklenmedi')}</span></div><button type="button" onclick="rbOpenCompanyModal('${rbEscape(company.docId)}')"><i class="fa-solid fa-pen"></i> Düzenle</button></div>`).join('') : '<div class="rb-company-manager-empty"><i class="fa-regular fa-building"></i><b>Henüz rapor firması yok</b><span>Panel firmalarından bağımsız ilk rapor firmasını ekleyin.</span></div>';
+    const rows = dbReportCompanies.length ? dbReportCompanies.map(company => `<div class="rb-company-manager-row"><div class="rb-company-manager-logo" style="color:${rbEscape(company.reportColor || company.color || '#6c63ff')}">${rbManagerCompanyLogo(company)}</div><div><strong>${rbEscape(company.name || 'İsimsiz Firma')}</strong><span>${rbEscape(company.instagram || 'Instagram hesabı eklenmedi')}</span></div><div class="rb-company-manager-actions"><button type="button" onclick="rbOpenCompanyModal('${rbEscape(company.docId)}')"><i class="fa-solid fa-pen"></i> Düzenle</button><button type="button" class="delete" onclick="rbDeleteCompany('${rbEscape(company.docId)}')"><i class="fa-regular fa-trash-can"></i> Sil</button></div></div>`).join('') : '<div class="rb-company-manager-empty"><i class="fa-regular fa-building"></i><b>Henüz rapor firması yok</b><span>Panel firmalarından bağımsız ilk rapor firmasını ekleyin.</span></div>';
     const modal = document.createElement('div');
     modal.id = 'rb-company-modal';
     modal.className = 'rb-company-modal';
@@ -396,17 +409,50 @@ function rbOpenCompanyManager() {
     document.addEventListener('keydown', rbCompanyModalEscape);
 }
 
+async function rbDeleteCompany(companyId) {
+    const company = dbReportCompanies.find(item => item.docId === companyId);
+    if (!company) return;
+    const approved = confirm(`“${company.name || 'Bu firma'}” rapor firmasını silmek istediğinizden emin misiniz?\n\nFirma rapor seçiminden kaldırılacak. Panel firmaları etkilenmeyecek.`);
+    if (!approved) return;
+    try {
+        const reportRef = db.collection('report_companies').doc(companyId);
+        const legacyRef = db.collection('companies').doc(companyId);
+        const legacySnapshot = await legacyRef.get();
+        const batch = db.batch();
+        batch.delete(reportRef);
+        if (legacySnapshot.exists && String(legacySnapshot.data()?.createdFrom || '').startsWith('report-builder')) batch.delete(legacyRef);
+        await batch.commit();
+        try { if (rbIsOnlineMetaEnvironment()) await fetch(`/api/meta/disconnect?companyId=${encodeURIComponent(companyId)}`, { credentials: 'same-origin' }); } catch (_) {}
+        const connections = rbMetaConnections();
+        delete connections[companyId];
+        localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
+        const period = rbState?.period || rbCurrentPeriod();
+        const deletedCurrentCompany = rbState?.companyId === companyId;
+        await fetchReportCompaniesFromFirebase();
+        if (deletedCurrentCompany) rbState = rbLoadState(dbReportCompanies[0]?.docId || '', period);
+        rbCloseCompanyModal();
+        renderReportBuilderPage();
+        rbOpenCompanyManager();
+        alert('Rapor firması silindi. Paneldeki firmalar ve eski rapor taslakları etkilenmedi.');
+    } catch (error) {
+        console.error(error);
+        alert('Rapor firması silinemedi. Firebase yetkilerini kontrol edin.');
+    }
+}
+
 function rbOpenCompanyModal(companyId = '') {
     rbCloseCompanyModal();
     rbEditingCompanyId = companyId;
     const company = dbReportCompanies.find(item => item.docId === companyId) || {};
     rbPendingCompanyLogo = company.reportLogo || company.logo || '';
+    rbPendingCompanyLogoTint = company.reportLogoTint !== false;
     const isEditing = Boolean(company.docId);
-    const logoPreview = rbPendingCompanyLogo ? `<img src="${rbEscape(rbPendingCompanyLogo)}" alt="Logo önizlemesi">` : '<i class="fa-solid fa-cloud-arrow-up"></i>';
+    const companyColor = company.reportColor || company.color || '#6c63ff';
+    const logoPreview = rbPendingCompanyLogo ? (rbPendingCompanyLogoTint ? rbTintedLogoMarkup(rbPendingCompanyLogo, 'Logo önizlemesi') : `<img src="${rbEscape(rbPendingCompanyLogo)}" alt="Logo önizlemesi">`) : '<i class="fa-solid fa-cloud-arrow-up"></i>';
     const modal = document.createElement('div');
     modal.id = 'rb-company-modal';
     modal.className = 'rb-company-modal';
-    modal.innerHTML = `<div class="rb-company-dialog" role="dialog" aria-modal="true" aria-labelledby="rb-company-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid ${isEditing ? 'fa-building-pen' : 'fa-building-circle-check'}"></i></span><div><h3 id="rb-company-title">${isEditing ? 'Rapor Firmasını Düzenle' : 'Yeni Rapor Firması'}</h3><p>Bu kayıt yalnızca Rapor Oluştur bölümünde kullanılacaktır.</p></div></div><form class="rb-company-form" onsubmit="event.preventDefault(); rbSaveCompany()"><label>Firma adı <b>*</b><input id="rb-new-name" required autocomplete="organization" value="${rbEscape(company.name || '')}" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" autocomplete="off" value="${rbEscape(company.instagram || '')}" placeholder="@kullaniciadi"></label><div class="rb-company-logo-field wide"><span>Firma logosu <small>PNG, JPG, WebP veya SVG</small></span><input id="rb-new-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbPrepareNewCompanyLogo(event)" hidden><button type="button" class="rb-company-logo-pick" onclick="document.getElementById('rb-new-logo-file').click()"><span id="rb-new-logo-preview">${logoPreview}</span><b id="rb-new-logo-text">${isEditing && rbPendingCompanyLogo ? 'Logoyu değiştir' : 'Bilgisayardan logo seç'}</b></button></div><label>Rapor rengi<input id="rb-new-color" type="color" value="${rbEscape(company.reportColor || company.color || '#6c63ff')}"></label><div class="rb-company-form-actions"><button type="button" class="rb-button" onclick="rbOpenCompanyManager()"><i class="fa-solid fa-arrow-left"></i> Firmalara Dön</button><button type="submit" id="rb-company-save" class="rb-button primary"><i class="fa-solid fa-check"></i> ${isEditing ? 'Değişiklikleri Kaydet' : 'Firmayı Kaydet'}</button></div></form></div>`;
+    modal.innerHTML = `<div class="rb-company-dialog" role="dialog" aria-modal="true" aria-labelledby="rb-company-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid ${isEditing ? 'fa-building-pen' : 'fa-building-circle-check'}"></i></span><div><h3 id="rb-company-title">${isEditing ? 'Rapor Firmasını Düzenle' : 'Yeni Rapor Firması'}</h3><p>Bu kayıt yalnızca Rapor Oluştur bölümünde kullanılacaktır.</p></div></div><form class="rb-company-form" onsubmit="event.preventDefault(); rbSaveCompany()"><label>Firma adı <b>*</b><input id="rb-new-name" required autocomplete="organization" value="${rbEscape(company.name || '')}" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" autocomplete="off" value="${rbEscape(company.instagram || '')}" placeholder="@kullaniciadi"></label><div class="rb-company-logo-field wide"><span>Firma logosu <small>PNG, JPG, WebP veya SVG</small></span><input id="rb-new-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbPrepareNewCompanyLogo(event)" hidden><button type="button" class="rb-company-logo-pick" onclick="document.getElementById('rb-new-logo-file').click()"><span id="rb-new-logo-preview" style="color:${rbEscape(companyColor)}">${logoPreview}</span><b id="rb-new-logo-text">${isEditing && rbPendingCompanyLogo ? 'Logoyu değiştir' : 'Bilgisayardan logo seç'}</b></button></div><label class="rb-company-tint wide"><input id="rb-new-logo-tint" type="checkbox" ${rbPendingCompanyLogoTint ? 'checked' : ''} onchange="rbToggleCompanyLogoTint(this.checked)"><span>Logoyu seçilen rapor rengine boya</span></label><label>Rapor rengi<input id="rb-new-color" type="color" value="${rbEscape(companyColor)}" oninput="rbUpdateCompanyLogoPreviewColor(this.value)"></label><div class="rb-company-form-actions"><button type="button" class="rb-button" onclick="rbOpenCompanyManager()"><i class="fa-solid fa-arrow-left"></i> Firmalara Dön</button><button type="submit" id="rb-company-save" class="rb-button primary"><i class="fa-solid fa-check"></i> ${isEditing ? 'Değişiklikleri Kaydet' : 'Firmayı Kaydet'}</button></div></form></div>`;
     modal.addEventListener('click', event => { if (event.target === modal) rbCloseCompanyModal(); });
     document.body.appendChild(modal);
     document.addEventListener('keydown', rbCompanyModalEscape);
@@ -426,10 +472,14 @@ async function rbPrepareNewCompanyLogo(event) {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-        rbPendingCompanyLogo = await rbConvertLogoFile(file);
+        const converted = await rbConvertLogoFile(file);
+        rbPendingCompanyLogo = converted.dataUrl;
+        rbPendingCompanyLogoTint = converted.tint;
         const preview = document.getElementById('rb-new-logo-preview');
         const text = document.getElementById('rb-new-logo-text');
-        if (preview) preview.innerHTML = `<img src="${rbEscape(rbPendingCompanyLogo)}" alt="Logo önizlemesi">`;
+        const tintInput = document.getElementById('rb-new-logo-tint');
+        if (tintInput) tintInput.checked = rbPendingCompanyLogoTint;
+        if (preview) preview.innerHTML = rbPendingCompanyLogoTint ? rbTintedLogoMarkup(rbPendingCompanyLogo, 'Logo önizlemesi') : `<img src="${rbEscape(rbPendingCompanyLogo)}" alt="Logo önizlemesi">`;
         if (text) text.textContent = file.name;
     } catch (error) {
         event.target.value = '';
@@ -442,8 +492,8 @@ async function rbUpdateCompanyLogo(event) {
     const company = rbCompany();
     if (!file || !company.docId) return;
     try {
-        const reportLogo = await rbConvertLogoFile(file);
-        await db.collection('report_companies').doc(company.docId).set({ reportLogo, reportLogoUpdatedAt: new Date().toISOString() }, { merge: true });
+        const converted = await rbConvertLogoFile(file);
+        await db.collection('report_companies').doc(company.docId).set({ reportLogo: converted.dataUrl, reportLogoTint: converted.tint, reportLogoUpdatedAt: new Date().toISOString() }, { merge: true });
         await fetchReportCompaniesFromFirebase();
         renderReportBuilderPage();
         alert('Firma logosu kaydedildi. Bundan sonraki PDF raporlarında otomatik kullanılacak.');
@@ -451,6 +501,34 @@ async function rbUpdateCompanyLogo(event) {
         event.target.value = '';
         alert(error.message || 'Logo kaydedilemedi.');
     }
+}
+
+function rbUpdateCompanyLogoPreviewColor(color) {
+    const preview = document.getElementById('rb-new-logo-preview');
+    if (preview) preview.style.color = color;
+}
+
+function rbToggleCompanyLogoTint(enabled) {
+    rbPendingCompanyLogoTint = enabled;
+    const preview = document.getElementById('rb-new-logo-preview');
+    if (!preview || !rbPendingCompanyLogo) return;
+    preview.innerHTML = enabled ? rbTintedLogoMarkup(rbPendingCompanyLogo, 'Logo önizlemesi') : `<img src="${rbEscape(rbPendingCompanyLogo)}" alt="Logo önizlemesi">`;
+}
+
+function rbLogoLooksWhite(context, width, height) {
+    const pixels = context.getImageData(0, 0, width, height).data;
+    let visible = 0;
+    let white = 0;
+    for (let index = 0; index < pixels.length; index += 16) {
+        const alpha = pixels[index + 3];
+        if (alpha < 35) continue;
+        visible++;
+        const red = pixels[index];
+        const green = pixels[index + 1];
+        const blue = pixels[index + 2];
+        if (red > 185 && green > 185 && blue > 185 && Math.max(red, green, blue) - Math.min(red, green, blue) < 50) white++;
+    }
+    return visible > 0 && white / visible >= .72;
 }
 
 function rbConvertLogoFile(file) {
@@ -471,6 +549,8 @@ function rbConvertLogoFile(file) {
                     if (!sourceWidth || !sourceHeight) return reject(new Error('Logo ölçüleri okunamadı.'));
                     const attempts = [[720,.9],[600,.84],[480,.76]];
                     let result = '';
+                    let resultCanvas = null;
+                    let resultContext = null;
                     for (const [maxSize, quality] of attempts) {
                         const ratio = Math.min(1, maxSize / Math.max(sourceWidth, sourceHeight));
                         const canvas = document.createElement('canvas');
@@ -480,10 +560,12 @@ function rbConvertLogoFile(file) {
                         context.clearRect(0, 0, canvas.width, canvas.height);
                         context.drawImage(image, 0, 0, canvas.width, canvas.height);
                         result = canvas.toDataURL('image/webp', quality);
+                        resultCanvas = canvas;
+                        resultContext = context;
                         if (result.length <= 320000) break;
                     }
                     if (!result || result.length > 700000) return reject(new Error('Logo çok büyük. Daha sade veya küçük bir görsel seçin.'));
-                    resolve(result);
+                    resolve({ dataUrl: result, tint: rbLogoLooksWhite(resultContext, resultCanvas.width, resultCanvas.height) });
                 } catch (_) {
                     reject(new Error('Bu logo güvenli biçimde dönüştürülemedi. PNG veya JPG olarak tekrar deneyin.'));
                 }
@@ -546,8 +628,8 @@ function rbProfilePreview(company) {
     const posts = Array.isArray(rbState.profilePosts) ? rbState.profilePosts.slice(0, 12) : [];
     if (posts.length) {
         const username = rbState.metaProfile?.username || rbMetaConnection()?.username || String(company.instagram || 'instagram').replace(/^@/, '');
-        const avatar = rbState.metaProfile?.profilePictureUrl || company.reportLogo || company.logo || '';
-        const avatarMarkup = avatar ? `<img src="${rbEscape(avatar)}" alt="${rbEscape(username)} profil fotoğrafı">` : `<span>${rbEscape(String(company.name || 'RD').slice(0, 2).toUpperCase())}</span>`;
+        const metaAvatar = rbState.metaProfile?.profilePictureUrl || '';
+        const avatarMarkup = metaAvatar ? `<img src="${rbEscape(metaAvatar)}" alt="${rbEscape(username)} profil fotoğrafı">` : (company.reportLogo || company.logo ? rbCompanyLogo(company) : `<span>${rbEscape(String(company.name || 'RD').slice(0, 2).toUpperCase())}</span>`);
         const grid = posts.map(post => post.thumbnailUrl
             ? `<a href="${rbEscape(post.permalink || '#')}" target="_blank" rel="noopener"><img src="${rbEscape(post.thumbnailUrl)}" alt="Instagram gönderisi"><i class="fa-brands ${post.type === 'Reels' ? 'fa-instagram' : 'fa-instagram'}"></i></a>`
             : '<div class="nr-instagram-empty"><i class="fa-regular fa-image"></i></div>').join('');
