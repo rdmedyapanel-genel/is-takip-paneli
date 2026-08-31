@@ -66,11 +66,12 @@ body { background-color: #e2e8f0; display: grid; place-items: center; height: 10
 .version-info a { color: var(--primary-red); font-size: 10px; font-weight: 600; cursor: pointer; text-decoration: none; }
 .version-info a:hover { text-decoration: underline; }
 
-.company-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; }
+.company-grid { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: 15px; width: min(760px, 100%); margin-inline: auto; }
 .company-card { background: #ffffff; border: 2px solid #f1f5f9; border-radius: 12px; padding: 15px 10px; text-align: center; transition: all 0.3s; cursor: pointer; }
 .company-card:hover { transform: translateY(-3px); border-color: var(--primary-red); box-shadow: 0 10px 20px rgba(220, 38, 38, 0.1); }
 .company-card i { font-size: 28px; color: var(--primary-red); margin-bottom: 8px; }
 .company-card h3 { font-size: 13px; color: var(--bg-dark); }
+.report-launch-card { border-color:#dbe4ff; background:linear-gradient(145deg,#fff,#f4f7ff); }.report-launch-card i { color:var(--task-purple); }.report-launch-card span { display:block; margin-top:5px; color:var(--text-muted); font-size:9px; font-weight:600; }.report-launch-card:hover { border-color:var(--task-purple); box-shadow:0 10px 20px rgba(108,99,255,.12); }
 
 .admin-panel-card { border-color: var(--bg-dark); padding: 8px 15px; display: inline-block; margin-top: 10px; }
 .admin-panel-card i { color: var(--bg-dark); font-size: 16px; margin-bottom: 4px; }
@@ -270,3 +271,19 @@ body { background-color: #e2e8f0; display: grid; place-items: center; height: 10
 .pa-note-card { background: #fffdf5; border-left: 4px solid #f59e0b; padding: 12px; border-radius: 6px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); display: flex; justify-content: space-between; align-items: flex-start; }
 .pa-content { font-size: 11px; color: var(--text-main); white-space: pre-wrap; line-height: 1.4; }
 .pa-date { font-size: 9px; color: var(--text-muted); margin-top: 8px; }
+
+/* Firma Aylık Raporu entegrasyonu */
+.report-module-shell { min-height:100%; display:flex; flex-direction:column; overflow:hidden; border:1px solid #dfe5ef; border-radius:14px; background:#fff; box-shadow:0 8px 30px rgba(15,23,42,.06); }
+.report-module-header { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:18px 20px; border-bottom:1px solid #e7ebf1; background:linear-gradient(135deg,#111827,#1e293b); color:white; }
+.report-module-kicker { display:block; margin-bottom:4px; color:#aeb8c8; font-size:8px; font-weight:800; letter-spacing:1.6px; }
+.report-module-header h2 { margin:0; font-size:19px; line-height:1.2; }.report-module-header p { margin:5px 0 0; color:#adb7c7; font-size:10px; }
+.report-open-button { flex-shrink:0; padding:9px 13px; border:1px solid #ffffff2e; border-radius:8px; background:#6c63ff; color:white; font-family:'Poppins',sans-serif; font-size:10px; font-weight:700; cursor:pointer; }.report-open-button:hover { background:#554cde; }
+.report-module-note { display:flex; align-items:center; gap:8px; padding:9px 14px; border-bottom:1px solid #e7ebf1; background:#eefbf4; color:#24724b; font-size:9px; font-weight:600; }.report-module-note i { color:#22a665; }
+.report-module-frame { width:100%; min-height:760px; flex:1; border:0; background:#eef1f5; }
+
+@media (max-width:760px) {
+    .company-grid { grid-template-columns:1fr; }
+    .report-module-header { align-items:flex-start; flex-direction:column; }
+    .report-open-button { width:100%; }
+    .report-module-frame { min-height:680px; }
+}

@@ -19,6 +19,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/report-builder.css">
     <style>
         .reklam-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1000px; font-size: 10px; }
         .reklam-table th { background: #f8fafc; color: #64748b; padding: 8px 4px; text-align: center; border-bottom: 2px solid #e2e8f0; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.2px; }
@@ -59,6 +60,7 @@
 </div>
 
 <script src="../js/firebase-config.js"></script>
+<script src="../js/report-builder.js"></script>
 <script>
     let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = []; let dbAds = []; let dbEquipments = []; let dbSpecialDays = [];
     let currentUser = null; let currentCompany = "RDGRUP MEDYA"; 
@@ -120,17 +122,22 @@
 
     function loadSidebarMenu() {
         const sidebarMenu = document.getElementById('sidebar-menu'); sidebarMenu.innerHTML = ''; 
-        const items = [{ icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' }, { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' }, { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' }, { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' }, { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, { icon: 'fa-bullhorn', name: 'Reklamlar' }, { icon: 'fa-toolbox', name: 'Ekipmanlar' }, { icon: 'fa-chart-bar', name: 'Raporlar' }];
+        const items = [{ icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' }, { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' }, { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' }, { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' }, { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, { icon: 'fa-bullhorn', name: 'Reklamlar' }, { icon: 'fa-toolbox', name: 'Ekipmanlar' }, { icon: 'fa-chart-line', name: 'Raporlar', label: 'Rapor Oluştur' }];
         const role = (currentUser.role || "").toLowerCase(); const isAdminOrYonetici = role === 'admin' || role === 'yönetici' || currentUser.id === 'alperen';
         items.forEach((item) => {
             if ((item.name === 'Raporlar' || item.name === 'Reklamlar') && !isAdminOrYonetici) return; 
             const li = document.createElement('li'); li.className = 'menu-item';
             if (sidebarMenu.children.length === 0) li.classList.add('active'); 
-            li.innerHTML = `<i class="fa-solid ${item.icon}"></i> <span>${item.name}</span>`;
+            li.dataset.page = item.name;
+            li.innerHTML = `<i class="fa-solid ${item.icon}"></i> <span>${item.label || item.name}</span>`;
             li.onclick = () => { document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); li.classList.add('active'); loadPageView(item.name); };
             sidebarMenu.appendChild(li);
         });
         loadPageView(items[0].name);
+        if (new URLSearchParams(window.location.search).get('view') === 'reports') {
+            const reportMenuItem = sidebarMenu.querySelector('[data-page="Raporlar"]');
+            if (reportMenuItem) reportMenuItem.click();
+        }
     }
 
     function loadPageView(pageName) {
@@ -740,7 +747,7 @@
         });
     }
 
-    async function loadRaporlarPage() {
+    async function loadLegacyPersonnelReportsPage() {
         document.getElementById('main-content').innerHTML = `<div class="full-loader" style="position:relative; height: 300px; background: transparent;"><div class="spinner"></div><p style="margin-top: 15px; font-weight: 600; font-size:12px; color: var(--text-muted);">Raporlar Hesaplanıyor...</p></div>`;
         let y = reportDate.getFullYear(); let m = reportDate.getMonth() + 1; let monthStr = `${y}-${m < 10 ? '0'+m : m}`; let displayMonth = reportDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
         const chkSnapshot = await db.collection('checklists').where('company', '==', currentCompany).get(); let monthlyChecklists = []; chkSnapshot.forEach(doc => { let d = doc.data(); if(d.date && d.date.startsWith(monthStr)) { monthlyChecklists.push(d); } });
@@ -758,7 +765,10 @@
         });
         html += `</div></div>`; document.getElementById('main-content').innerHTML = html;
     }
-    function changeReportMonth(direction) { reportDate.setMonth(reportDate.getMonth() + direction); loadRaporlarPage(); }
+    function loadRaporlarPage() {
+        renderReportBuilderPage();
+    }
+    function changeReportMonth(direction) { reportDate.setMonth(reportDate.getMonth() + direction); loadLegacyPersonnelReportsPage(); }
 
     function openAddTask() { document.getElementById('task-modal-title').innerText = "Paylaşım Görevi Ekle"; document.getElementById('task-doc-id').value = "new"; document.getElementById('t-firma').value = ""; document.getElementById('t-adet').value = "1"; document.getElementById('t-not').value = ""; if(taskDatePicker) taskDatePicker.destroy(); taskDatePicker = flatpickr("#t-tarih", { mode: "multiple", dateFormat: "Y-m-d", locale: "tr", defaultDate: new Date(), altInput: true, altFormat: "j F Y" }); document.getElementById('t-status-group').style.display = 'none'; document.getElementById('t-hazirlandi').checked = false; document.getElementById('t-paylasildi').checked = false; document.getElementById('task-buttons').innerHTML = `<button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('task-modal')">Kapat</button><button type="button" class="login-btn btn-purple" id="save-task-btn" style="flex: 1;" onclick="saveTask()">Kaydet</button>`; openModal('task-modal'); }
     function openEditTask(docId) { const t = dbTasks.find(x => x.docId === docId); if(!t) return; document.getElementById('task-modal-title').innerText = "Paylaşım Görevi Düzenle"; document.getElementById('task-doc-id').value = docId; document.getElementById('t-firma').value = t.firma || ""; document.getElementById('t-tur').value = t.tur || ""; document.getElementById('t-adet').value = t.adet || 1; document.getElementById('t-hazirlayan').value = t.hazirlayan || ""; document.getElementById('t-paylasan').value = t.paylasan || ""; document.getElementById('t-not').value = t.not || ""; if(taskDatePicker) taskDatePicker.destroy(); taskDatePicker = flatpickr("#t-tarih", { mode: "single", dateFormat: "Y-m-d", locale: "tr", defaultDate: t.tarih, altInput: true, altFormat: "j F Y" }); document.getElementById('t-status-group').style.display = 'flex'; document.getElementById('t-hazirlandi').checked = t.hazirlandi; document.getElementById('t-paylasildi').checked = t.paylasildi; document.getElementById('task-buttons').innerHTML = `<button type="button" class="login-btn btn-purple" id="save-task-btn" style="flex: 1;" onclick="saveTask()">Kaydet</button><button type="button" class="login-btn" style="flex: 1; background: var(--primary-red);" onclick="deleteTask('${docId}')">Sil</button><button type="button" class="login-btn btn-gray" style="flex: 1;" onclick="closeModal('task-modal')">Kapat</button>`; openModal('task-modal'); }

@@ -136,19 +136,17 @@
         
         // FİLTRELERİ OKUMA
         let typeFilter = document.getElementById('filter-type') ? document.getElementById('filter-type').value : 'Tümü';
-        let compFilter = document.getElementById('filter-comp') ? document.getElementById('filter-comp').value : 'Tümü';
 
         // VERİLERİ FİLTRELEME
         let filteredEqs = dbEquipments.filter(e => {
             let matchType = typeFilter === 'Tümü' || e.type === typeFilter;
-            let matchComp = compFilter === 'Tümü' || e.company === compFilter;
-            return matchType && matchComp;
+            return matchType && e.company === 'RDGRUP MEDYA';
         });
         
         let html = `
             <div class="content-card" style="padding: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;"><i class="fa-solid fa-toolbox" style="color:var(--task-purple); margin-right:8px;"></i> Holding Bünyesindeki Tüm Ekipmanlar</h2>
+                    <h2 class="content-title" style="margin-bottom: 0; border: none; padding:0;"><i class="fa-solid fa-toolbox" style="color:var(--task-purple); margin-right:8px;"></i> RDGRUP Medya Ekipmanları</h2>
                 </div>
 
                 <div style="display: flex; gap: 15px; margin-bottom: 20px; background: #f8fafc; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0;">
@@ -162,15 +160,6 @@
                             <option value="Ses/Mikrofon" ${typeFilter === 'Ses/Mikrofon' ? 'selected' : ''}>Ses / Mikrofon</option>
                             <option value="Fon" ${typeFilter === 'Fon' ? 'selected' : ''}>Fon / Perde</option>
                             <option value="Diğer" ${typeFilter === 'Diğer' ? 'selected' : ''}>Diğer</option>
-                        </select>
-                    </div>
-                    <div class="input-group" style="flex:1; margin:0;">
-                        <label style="font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; display: block;"><i class="fa-solid fa-building" style="margin-right: 4px;"></i> ŞİRKET FİLTRESİ</label>
-                        <select id="filter-comp" class="filter-select" onchange="loadEkipmanlarPage()">
-                            <option value="Tümü" ${compFilter === 'Tümü' ? 'selected' : ''}>Tüm Şirketler</option>
-                            <option value="RDGRUP MEDYA" ${compFilter === 'RDGRUP MEDYA' ? 'selected' : ''}>RDGrup Medya</option>
-                            <option value="ANKARA MEZUNİYET" ${compFilter === 'ANKARA MEZUNİYET' ? 'selected' : ''}>Ankara Mezuniyet</option>
-                            <option value="TÜRKİYE MEZUNİYET" ${compFilter === 'TÜRKİYE MEZUNİYET' ? 'selected' : ''}>Türkiye Mezuniyet</option>
                         </select>
                     </div>
                 </div>
@@ -216,8 +205,6 @@
             // Şirketlere göre renkli etiket
             let compColor = "background: #f8fafc; color: var(--bg-dark); border: 1px solid #e2e8f0;";
             if(eq.company === 'RDGRUP MEDYA') compColor = "background: #f5f3ff; color: var(--task-purple); border: 1px solid #ede9fe;";
-            if(eq.company === 'ANKARA MEZUNİYET') compColor = "background: #fff7ed; color: #ea580c; border: 1px solid #ffedd5;";
-            if(eq.company === 'TÜRKİYE MEZUNİYET') compColor = "background: #fdf2f8; color: #db2777; border: 1px solid #fce7f3;";
 
             html += `
                 <tr>
@@ -255,8 +242,6 @@
                 // Hangi şirketin çekimi olduğu bilgisi
                 let sCompColor = "color: var(--text-muted);";
                 if(s.holding === 'RDGRUP MEDYA') sCompColor = "color: var(--task-purple);";
-                if(s.holding === 'ANKARA MEZUNİYET') sCompColor = "color: #ea580c;";
-                if(s.holding === 'TÜRKİYE MEZUNİYET') sCompColor = "color: #db2777;";
 
                 html += `
                     <div class="eq-plan-item">
