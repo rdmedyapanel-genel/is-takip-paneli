@@ -23,6 +23,7 @@ module.exports = async function handler(req, res) {
       username: selected.username || '',
       adsRead: pending.adsRead === true,
       insightsRead: pending.insightsRead === true,
+      businessManagement: pending.businessManagement === true,
     };
     res.setHeader('Set-Cookie', [
       cookie(req, tokenCookieName(companyId), pack(connection), Math.min(Number(pending.maxAge) || 5184000, 5184000)),

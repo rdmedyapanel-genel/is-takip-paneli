@@ -35,6 +35,7 @@ module.exports = async function handler(req, res) {
     const permissions = await graphJson(permissionsUrl.toString());
     const adsRead = (permissions.data || []).some(item => item.permission === 'ads_read' && item.status === 'granted');
     const insightsRead = (permissions.data || []).some(item => item.permission === 'instagram_manage_insights' && item.status === 'granted');
+    const businessManagement = (permissions.data || []).some(item => item.permission === 'business_management' && item.status === 'granted');
 
     const candidates = await instagramCandidates(longToken.access_token);
     const selected = candidates.find(item => item.username?.toLowerCase() === stored.expectedUsername)
@@ -42,7 +43,7 @@ module.exports = async function handler(req, res) {
     if (!selected && candidates.length) {
       const maxAge = Math.min(Number(longToken.expires_in) || 5184000, 5184000);
       res.setHeader('Set-Cookie', [
-        cookie(req, pendingCookieName(stored.companyId), pack({ userAccessToken: longToken.access_token, adsRead, insightsRead, maxAge }), 600),
+        cookie(req, pendingCookieName(stored.companyId), pack({ userAccessToken: longToken.access_token, adsRead, insightsRead, businessManagement, maxAge }), 600),
         cookie(req, 'rdgrup_meta_state', '', 0),
       ]);
       return redirect(res, panelUrl(req, { meta_choose: '1', companyId: stored.companyId }));
@@ -58,6 +59,7 @@ module.exports = async function handler(req, res) {
       username: selected.username || '',
       adsRead,
       insightsRead,
+      businessManagement,
     };
     const maxAge = Math.min(Number(longToken.expires_in) || 5184000, 5184000);
     res.setHeader('Set-Cookie', [
