@@ -222,7 +222,7 @@ async function rbImportMetaContents() {
                     rbState.adReach = adsData.reach || '0';
                     rbState.adClicks = adsData.clicks || '0';
                     rbState.adCurrency = adsData.currency || 'TRY';
-                    rbState.metaAds = Array.isArray(adsData.ads) ? adsData.ads : [];
+                    rbState.metaAds = rbFillAdThumbnailsFromMedia(Array.isArray(adsData.ads) ? adsData.ads : [], [...(periodData.media || []), ...(latestData.media || [])]);
                     if (adsData.profileVisits && insightsData.profileVisits == null) rbState.profileVisits = adsData.profileVisits;
                     adsImported = true;
                 }
@@ -234,7 +234,8 @@ async function rbImportMetaContents() {
             localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
         }
         renderReportBuilderPage();
-        const adMessage = adsImported ? ` ${rbState.metaAds.length} reklamın ayrı sonucu ve hesap toplamı eklendi.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
+        const adCoverCount = rbState.metaAds.filter(ad => ad.thumbnailUrl).length;
+        const adMessage = adsImported ? ` ${rbState.metaAds.length} reklamın ayrı sonucu, ${adCoverCount} kapak görseli ve hesap toplamı eklendi.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
         const insightMessage = insightsResponse.ok && insightsData.hasData !== false ? ' Organik istatistikler de güncellendi.' : (insightsResponse.ok ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Organik istatistik iznini Firma ayarlarından hesabı yeniden bağlayarak güncelleyin.');
         alert(`${rbState.contents.length} aylık paylaşım ve son ${rbState.profilePosts.length} gönderi Meta’dan getirildi.${insightMessage}${adMessage}`);
     } catch (error) {
@@ -277,6 +278,29 @@ function rbFormatMoney(value, currency = 'TRY') {
     if (!Number.isFinite(parsed)) return '—';
     try { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currency || 'TRY', maximumFractionDigits: 2 }).format(parsed); }
     catch (_) { return `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(parsed)} ₺`; }
+}
+
+function rbComparableText(value) {
+    return String(value || '').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/instagram\s+gonderisi\s*:?/g, '').replace(/[^a-z0-9çğıöşü]+/gi, ' ').trim();
+}
+
+function rbFillAdThumbnailsFromMedia(ads, mediaRows) {
+    return ads.map(ad => {
+        if (ad.thumbnailUrl) return ad;
+        const byId = mediaRows.find(media => String(media.id || '') === String(ad.instagramMediaId || ''));
+        let match = byId;
+        if (!match) {
+            const adText = rbComparableText(ad.name);
+            match = mediaRows.find(media => {
+                const caption = rbComparableText(media.caption);
+                if (!adText || !caption) return false;
+                const captionLead = caption.slice(0, Math.min(48, caption.length));
+                const adLead = adText.slice(0, Math.min(48, adText.length));
+                return captionLead.length >= 18 && (adText.includes(captionLead) || caption.includes(adLead));
+            });
+        }
+        return match?.thumbnailUrl ? { ...ad, thumbnailUrl: match.thumbnailUrl } : ad;
+    });
 }
 
 function rbAdDetailCards() {

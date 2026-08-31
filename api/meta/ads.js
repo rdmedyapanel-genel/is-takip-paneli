@@ -77,19 +77,27 @@ async function creativeDetails(adIds, connection) {
   const details = {};
   for (let index = 0; index < adIds.length; index += 40) {
     const ids = adIds.slice(index, index + 40);
-    const url = new URL(`${GRAPH_URL}/`);
-    url.searchParams.set('ids', ids.join(','));
-    url.searchParams.set('fields', 'id,name,status,creative{id,name,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id,object_story_spec,asset_feed_spec}');
-    url.searchParams.set('access_token', connection.userAccessToken);
-    let payload;
-    try {
-      payload = await graphJson(url.toString());
-    } catch (_) {
-      url.searchParams.set('fields', 'id,name,status,creative{id,name,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id}');
-      payload = await graphJson(url.toString());
-    }
-    Object.entries(payload || {}).forEach(([id, ad]) => {
-      const creative = ad?.creative || {};
+    const adsUrl = new URL(`${GRAPH_URL}/`);
+    adsUrl.searchParams.set('ids', ids.join(','));
+    adsUrl.searchParams.set('fields', 'id,name,status,creative');
+    adsUrl.searchParams.set('access_token', connection.userAccessToken);
+    const adsPayload = await graphJson(adsUrl.toString());
+    await Promise.all(Object.entries(adsPayload || {}).map(async ([id, ad]) => {
+      const creativeId = String(ad?.creative?.id || '');
+      let creative = ad?.creative || {};
+      if (creativeId) {
+        const creativeUrl = new URL(`${GRAPH_URL}/${creativeId}`);
+        creativeUrl.searchParams.set('fields', 'id,name,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id,object_story_spec,asset_feed_spec');
+        creativeUrl.searchParams.set('thumbnail_width', '720');
+        creativeUrl.searchParams.set('thumbnail_height', '720');
+        creativeUrl.searchParams.set('access_token', connection.userAccessToken);
+        try {
+          creative = await graphJson(creativeUrl.toString());
+        } catch (_) {
+          creativeUrl.searchParams.set('fields', 'id,name,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id');
+          try { creative = await graphJson(creativeUrl.toString()); } catch (_) {}
+        }
+      }
       details[id] = {
         status: ad?.status || '',
         thumbnailUrl: directCreativeImage(creative),
@@ -98,12 +106,45 @@ async function creativeDetails(adIds, connection) {
         objectStoryId: creative.effective_object_story_id || '',
         videoId: creative.video_id || creative.object_story_spec?.video_data?.video_id || '',
       };
-    });
+    }));
   }
   await Promise.all(Object.values(details).map(async detail => {
     if (!detail.thumbnailUrl) detail.thumbnailUrl = await resolvedMediaImage(detail, connection);
   }));
   return details;
+}
+
+function comparableText(value) {
+  return String(value || '')
+    .toLocaleLowerCase('tr-TR')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/instagram\s+gonderisi\s*:?/g, '')
+    .replace(/[^a-z0-9çğıöşü]+/gi, ' ')
+    .trim();
+}
+
+async function instagramMediaLibrary(connection) {
+  if (!connection.igUserId || !connection.accessToken) return [];
+  const url = new URL(`${GRAPH_URL}/${connection.igUserId}/media`);
+  url.searchParams.set('fields', 'id,caption,media_type,thumbnail_url,media_url');
+  url.searchParams.set('limit', '100');
+  url.searchParams.set('access_token', connection.accessToken);
+  return pagedGraph(url.toString(), 4);
+}
+
+function matchingInstagramImage(ad, mediaRows) {
+  const byId = mediaRows.find(media => String(media.id || '') === String(ad.instagramMediaId || ''));
+  if (byId) return byId.thumbnail_url || byId.media_url || '';
+  const adText = comparableText(ad.name);
+  if (!adText) return '';
+  const match = mediaRows.find(media => {
+    const caption = comparableText(media.caption);
+    if (!caption) return false;
+    const captionLead = caption.slice(0, Math.min(48, caption.length));
+    const adLead = adText.slice(0, Math.min(48, adText.length));
+    return captionLead.length >= 18 && (adText.includes(captionLead) || caption.includes(adLead));
+  });
+  return match?.thumbnail_url || match?.media_url || '';
 }
 
 module.exports = async function handler(req, res) {
@@ -165,6 +206,12 @@ module.exports = async function handler(req, res) {
         instagramMediaId: creative.instagramMediaId || '',
       };
     }).sort((left, right) => Number(right.spend || 0) - Number(left.spend || 0));
+    if (ads.some(ad => !ad.thumbnailUrl)) {
+      try {
+        const mediaRows = await instagramMediaLibrary(connection);
+        ads.forEach(ad => { if (!ad.thumbnailUrl) ad.thumbnailUrl = matchingInstagramImage(ad, mediaRows); });
+      } catch (_) {}
+    }
     const visits = profileVisits(insight.actions);
     return res.status(200).json({
       spend: insight.spend || '0',
