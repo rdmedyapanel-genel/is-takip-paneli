@@ -85,11 +85,22 @@ function rbReadMetaRedirect() {
         if (rbState && rbState.companyId !== companyId && dbReportCompanies.some(item => item.docId === companyId)) rbState = rbLoadState(companyId, rbState.period);
         if (rbState) { rbState.metaAdAccountsLoaded = false; rbState.metaAdAccounts = []; }
         window.history.replaceState({}, '', `${window.location.pathname}?view=reports`);
+    } else if (params.get('meta_choose') === '1' && companyId) {
+        window.history.replaceState({}, '', `${window.location.pathname}?view=reports`);
+        setTimeout(() => rbOpenMetaAccountChooser(companyId), 50);
     } else if (params.get('meta_error')) {
         const message = params.get('meta_error');
         window.history.replaceState({}, '', `${window.location.pathname}?view=reports`);
         setTimeout(() => alert(`Meta bağlantısı tamamlanamadı: ${message}`), 50);
     }
+}
+
+function rbInstagramUsername(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    try { if (/^https?:\/\//i.test(raw)) return new URL(raw).pathname.split('/').filter(Boolean)[0] || ''; }
+    catch (_) {}
+    return raw.replace(/^@/, '').split(/[/?#]/)[0];
 }
 
 function rbIsOnlineMetaEnvironment() {
@@ -100,8 +111,51 @@ function rbConnectMeta() {
     const company = rbCompany();
     if (!company.docId) return alert('Önce firma ekleyip seçin.');
     if (!rbIsOnlineMetaEnvironment()) return alert('Meta bağlantısı güvenlik nedeniyle GitHub/Vercel üzerindeki çevrim içi panelde çalışır. Güncel dosyaları yükledikten sonra aynı düğmeye basın.');
-    const username = String(company.instagram || '').replace(/^@/, '').replace(/\/$/, '').split('/').pop() || '';
+    const username = rbInstagramUsername(company.instagram);
     window.location.href = `/api/meta/connect?companyId=${encodeURIComponent(company.docId)}&expectedUsername=${encodeURIComponent(username)}`;
+}
+
+async function rbOpenMetaAccountChooser(companyId) {
+    rbCloseCompanyModal();
+    const company = dbReportCompanies.find(item => item.docId === companyId) || {};
+    const modal = document.createElement('div');
+    modal.id = 'rb-company-modal';
+    modal.className = 'rb-company-modal';
+    modal.innerHTML = `<div class="rb-company-dialog rb-meta-chooser" role="dialog" aria-modal="true" aria-labelledby="rb-meta-chooser-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-brands fa-instagram"></i></span><div><h3 id="rb-meta-chooser-title">Instagram Hesabını Seç</h3><p>${rbEscape(company.name || 'Seçili firma')} için bağlanacak hesabı seçin.</p></div></div><div class="rb-meta-chooser-list"><div class="rb-meta-chooser-loading"><i class="fa-solid fa-spinner fa-spin"></i><span>Hesaplar Meta’dan alınıyor…</span></div></div></div>`;
+    modal.addEventListener('click', event => { if (event.target === modal) rbCloseCompanyModal(); });
+    document.body.appendChild(modal);
+    document.addEventListener('keydown', rbCompanyModalEscape);
+    try {
+        const response = await fetch(`/api/meta/account-candidates?companyId=${encodeURIComponent(companyId)}`, { credentials: 'same-origin' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Instagram hesapları alınamadı.');
+        const list = modal.querySelector('.rb-meta-chooser-list');
+        if (!list) return;
+        const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+        list.innerHTML = accounts.length ? accounts.map(account => `<button type="button" class="rb-meta-account" onclick="rbSelectMetaAccount('${rbEscape(companyId)}','${rbEscape(account.igUserId)}',this)"><span><i class="fa-brands fa-instagram"></i></span><div><strong>@${rbEscape(account.username || 'kullaniciadi-alinamadi')}</strong><small>${rbEscape(account.pageName || 'Bağlı Facebook Sayfası')}</small></div><i class="fa-solid fa-chevron-right"></i></button>`).join('') : '<div class="rb-meta-chooser-empty"><i class="fa-regular fa-circle-xmark"></i><b>Bağlanabilir Instagram hesabı bulunamadı</b><span>Hesabın bağlı olduğu Facebook Sayfasında tam erişiminiz olduğundan emin olun.</span></div>';
+    } catch (error) {
+        const list = modal.querySelector('.rb-meta-chooser-list');
+        if (list) list.innerHTML = `<div class="rb-meta-chooser-empty"><i class="fa-solid fa-triangle-exclamation"></i><b>Hesaplar alınamadı</b><span>${rbEscape(error.message || 'Meta bağlantısını yeniden başlatın.')}</span><button type="button" class="rb-button primary" onclick="rbCloseCompanyModal();rbConnectMeta()">Yeniden bağlan</button></div>`;
+    }
+}
+
+async function rbSelectMetaAccount(companyId, igUserId, button) {
+    if (button) { button.disabled = true; button.classList.add('loading'); }
+    try {
+        const response = await fetch(`/api/meta/select-account?companyId=${encodeURIComponent(companyId)}&igUserId=${encodeURIComponent(igUserId)}`, { method: 'POST', credentials: 'same-origin' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Instagram hesabı bağlanamadı.');
+        const connections = rbMetaConnections();
+        connections[companyId] = { username: data.username || '', pageId: data.pageId || '', igUserId: data.igUserId || '', adsRead: data.adsRead === true, insightsRead: data.insightsRead === true, connectedAt: new Date().toISOString() };
+        localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
+        rbState = rbLoadState(companyId, rbState?.period || rbCurrentPeriod());
+        rbCloseCompanyModal();
+        renderReportBuilderPage();
+        alert(`@${data.username || 'Instagram'} hesabı seçili firmaya bağlandı.`);
+    } catch (error) {
+        if (button) { button.disabled = false; button.classList.remove('loading'); }
+        alert(error.message || 'Instagram hesabı bağlanamadı.');
+    }
 }
 
 async function rbDisconnectMeta() {

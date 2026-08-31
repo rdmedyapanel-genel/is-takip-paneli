@@ -43,6 +43,15 @@
 .nr-profile-shot-live .nr-instagram-head { min-height:14%; padding:1.5% 4%; }
 .nr-profile-shot-live .nr-instagram-grid { flex:none; width:72%; aspect-ratio:3/4; align-self:center; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(4,1fr); padding:0; }
 .nr-profile-shot-live .nr-instagram-caption { min-height:4%; }
+.rb-meta-chooser { width:min(590px,100%); }
+.rb-meta-chooser-list { max-height:55vh; overflow:auto; display:grid; gap:8px; padding:16px 18px 19px; background:#f8fafc; }
+.rb-meta-chooser-loading,.rb-meta-chooser-empty { min-height:150px; display:grid; place-items:center; align-content:center; gap:8px; padding:22px; border:1px dashed #d6dce4; border-radius:11px; background:#fff; color:#7f8996; text-align:center; }
+.rb-meta-chooser-loading i,.rb-meta-chooser-empty>i { color:#6c63ff; font-size:24px; }
+.rb-meta-chooser-empty b { color:#34404d; font-size:10px; }.rb-meta-chooser-empty span { max-width:360px; font-size:8px; line-height:1.6; }
+.rb-meta-account { width:100%; display:grid; grid-template-columns:42px 1fr auto; align-items:center; gap:11px; padding:10px 12px; border:1px solid #dfe4ea; border-radius:10px; background:#fff; color:#293442; text-align:left; cursor:pointer; }
+.rb-meta-account:hover { border-color:#b9b4ef; background:#faf9ff; box-shadow:0 5px 14px rgba(46,38,128,.07); }.rb-meta-account:disabled { opacity:.6; cursor:wait; }
+.rb-meta-account>span { width:40px; height:40px; display:grid; place-items:center; border-radius:10px; background:linear-gradient(135deg,#7847e9,#e33c7d,#f4a138); color:#fff; font-size:18px; }
+.rb-meta-account>div { min-width:0; display:grid; gap:3px; }.rb-meta-account strong { overflow:hidden; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }.rb-meta-account small { overflow:hidden; color:#8a939f; font-size:8px; text-overflow:ellipsis; white-space:nowrap; }.rb-meta-account>i { color:#8177df; font-size:10px; }
 
 @media print {
     @page { size:A4 portrait; margin:0; }

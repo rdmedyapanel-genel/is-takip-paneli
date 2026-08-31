@@ -1,6 +1,6 @@
 const {
   GRAPH_URL, getMetaConfig, graphJson, pack, unpack, parseCookies,
-  tokenCookieName, cookie, redirect, panelUrl,
+  tokenCookieName, pendingCookieName, cookie, redirect, panelUrl, instagramCandidates,
 } = require('../../lib/meta-common');
 
 module.exports = async function handler(req, res) {
@@ -36,24 +36,26 @@ module.exports = async function handler(req, res) {
     const adsRead = (permissions.data || []).some(item => item.permission === 'ads_read' && item.status === 'granted');
     const insightsRead = (permissions.data || []).some(item => item.permission === 'instagram_manage_insights' && item.status === 'granted');
 
-    const pagesUrl = new URL(`${GRAPH_URL}/me/accounts`);
-    pagesUrl.searchParams.set('fields', 'id,name,access_token,instagram_business_account{id,username}');
-    pagesUrl.searchParams.set('limit', '100');
-    pagesUrl.searchParams.set('access_token', longToken.access_token);
-    const pages = await graphJson(pagesUrl.toString());
-    const candidates = (pages.data || []).filter(item => item.instagram_business_account?.id && item.access_token);
-    const selected = candidates.find(item => item.instagram_business_account?.username?.toLowerCase() === stored.expectedUsername)
-      || (candidates.length === 1 ? candidates[0] : null);
-    if (!selected && candidates.length > 1) return redirect(res, panelUrl(req, { meta_error: 'Birden fazla Instagram hesabı bulundu; firmaya doğru kullanıcı adını yazın.', companyId: stored.companyId }));
-    if (!selected?.instagram_business_account || !selected.access_token) return redirect(res, panelUrl(req, { meta_error: 'Bağlanabilecek profesyonel Instagram hesabı bulunamadı.', companyId: stored.companyId }));
+    const candidates = await instagramCandidates(longToken.access_token);
+    const selected = candidates.find(item => item.username?.toLowerCase() === stored.expectedUsername)
+      || (!stored.expectedUsername && candidates.length === 1 ? candidates[0] : null);
+    if (!selected && candidates.length) {
+      const maxAge = Math.min(Number(longToken.expires_in) || 5184000, 5184000);
+      res.setHeader('Set-Cookie', [
+        cookie(req, pendingCookieName(stored.companyId), pack({ userAccessToken: longToken.access_token, adsRead, insightsRead, maxAge }), 600),
+        cookie(req, 'rdgrup_meta_state', '', 0),
+      ]);
+      return redirect(res, panelUrl(req, { meta_choose: '1', companyId: stored.companyId }));
+    }
+    if (!selected?.igUserId || !selected.accessToken) return redirect(res, panelUrl(req, { meta_error: 'Bağlanabilecek profesyonel Instagram hesabı bulunamadı.', companyId: stored.companyId }));
 
     const connection = {
-      accessToken: selected.access_token,
+      accessToken: selected.accessToken,
       userAccessToken: longToken.access_token,
-      pageId: selected.id,
-      pageName: selected.name || '',
-      igUserId: selected.instagram_business_account.id,
-      username: selected.instagram_business_account.username || '',
+      pageId: selected.pageId,
+      pageName: selected.pageName || '',
+      igUserId: selected.igUserId,
+      username: selected.username || '',
       adsRead,
       insightsRead,
     };

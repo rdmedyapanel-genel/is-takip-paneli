@@ -5,8 +5,11 @@ const {
 
 module.exports = async function handler(req, res) {
   const companyId = safeCompanyId(req.query.companyId);
-  const expectedUsername = first(req.query.expectedUsername).trim().replace(/^@/, '').replace(/\/$/, '')
-    .split('/').pop().toLowerCase().replace(/[^a-z0-9._]/g, '');
+  const rawUsername = first(req.query.expectedUsername).trim();
+  let expectedUsername = rawUsername;
+  try { if (/^https?:\/\//i.test(rawUsername)) expectedUsername = new URL(rawUsername).pathname.split('/').filter(Boolean)[0] || ''; }
+  catch (_) {}
+  expectedUsername = expectedUsername.replace(/^@/, '').split(/[/?#]/)[0].toLowerCase().replace(/[^a-z0-9._]/g, '');
   const { appId, appSecret, redirectUri } = getMetaConfig(req);
   if (!companyId) return redirect(res, panelUrl(req, { meta_error: 'Firma seçilmedi.' }));
   if (!appId || !appSecret) return redirect(res, panelUrl(req, { meta_error: 'Meta ayarları Vercel üzerinde eksik.', companyId }));
