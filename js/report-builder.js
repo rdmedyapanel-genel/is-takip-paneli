@@ -26,10 +26,11 @@ function rbEmptyState(companyId, period) {
         metaProfile: {},
         metaAdAccounts: [],
         metaAdAccountsLoaded: false,
-        adAccountId: '',
+        metaAds: [],
+        adAccountId: company.reportAdAccountId || '',
         views: '', reach: '', profileVisits: '', followers: '',
         likes: '', comments: '', saves: '', shares: '',
-        adSpend: '', adImpressions: '', adReach: '', adClicks: '',
+        adSpend: '', adImpressions: '', adReach: '', adClicks: '', adCurrency: 'TRY',
         notes: ''
     };
 }
@@ -50,7 +51,9 @@ function rbLoadState(companyId, period) {
             contents: Array.isArray(saved.contents) ? saved.contents : [],
             profilePosts: Array.isArray(saved.profilePosts) ? saved.profilePosts : [],
             metaProfile: saved.metaProfile && typeof saved.metaProfile === 'object' ? saved.metaProfile : {},
-            metaAdAccounts: Array.isArray(saved.metaAdAccounts) ? saved.metaAdAccounts : []
+            metaAdAccounts: Array.isArray(saved.metaAdAccounts) ? saved.metaAdAccounts : [],
+            metaAds: Array.isArray(saved.metaAds) ? saved.metaAds : [],
+            adAccountId: empty.adAccountId || saved.adAccountId || ''
         } : empty;
     } catch (_) { return empty; }
 }
@@ -65,7 +68,11 @@ function rbMetaConnections() {
 }
 
 function rbMetaConnection() {
-    return rbMetaConnections()[rbState?.companyId] || null;
+    return rbMetaConnectionFor(rbState?.companyId);
+}
+
+function rbMetaConnectionFor(companyId) {
+    return rbMetaConnections()[companyId] || null;
 }
 
 function rbReadMetaRedirect() {
@@ -107,12 +114,16 @@ function rbIsOnlineMetaEnvironment() {
     return !['localhost', '127.0.0.1'].includes(window.location.hostname);
 }
 
-function rbConnectMeta() {
-    const company = rbCompany();
+function rbConnectMetaForCompany(companyId) {
+    const company = dbReportCompanies.find(item => item.docId === companyId) || {};
     if (!company.docId) return alert('Önce firma ekleyip seçin.');
     if (!rbIsOnlineMetaEnvironment()) return alert('Meta bağlantısı güvenlik nedeniyle GitHub/Vercel üzerindeki çevrim içi panelde çalışır. Güncel dosyaları yükledikten sonra aynı düğmeye basın.');
     const username = rbInstagramUsername(company.instagram);
     window.location.href = `/api/meta/connect?companyId=${encodeURIComponent(company.docId)}&expectedUsername=${encodeURIComponent(username)}`;
+}
+
+function rbConnectMeta() {
+    return rbConnectMetaForCompany(rbState?.companyId || '');
 }
 
 async function rbOpenMetaAccountChooser(companyId) {
@@ -149,8 +160,8 @@ async function rbSelectMetaAccount(companyId, igUserId, button) {
         connections[companyId] = { username: data.username || '', pageId: data.pageId || '', igUserId: data.igUserId || '', adsRead: data.adsRead === true, insightsRead: data.insightsRead === true, connectedAt: new Date().toISOString() };
         localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
         rbState = rbLoadState(companyId, rbState?.period || rbCurrentPeriod());
-        rbCloseCompanyModal();
         renderReportBuilderPage();
+        rbOpenCompanyModal(companyId);
         alert(`@${data.username || 'Instagram'} hesabı seçili firmaya bağlandı.`);
     } catch (error) {
         if (button) { button.disabled = false; button.classList.remove('loading'); }
@@ -159,12 +170,19 @@ async function rbSelectMetaAccount(companyId, igUserId, button) {
 }
 
 async function rbDisconnectMeta() {
-    if (!rbState?.companyId) return;
-    try { if (rbIsOnlineMetaEnvironment()) await fetch(`/api/meta/disconnect?companyId=${encodeURIComponent(rbState.companyId)}`, { credentials: 'same-origin' }); } catch (_) {}
-    const connections = rbMetaConnections(); delete connections[rbState.companyId];
+    return rbDisconnectMetaForCompany(rbState?.companyId || '');
+}
+
+async function rbDisconnectMetaForCompany(companyId) {
+    if (!companyId) return;
+    try { if (rbIsOnlineMetaEnvironment()) await fetch(`/api/meta/disconnect?companyId=${encodeURIComponent(companyId)}`, { credentials: 'same-origin' }); } catch (_) {}
+    const connections = rbMetaConnections(); delete connections[companyId];
     localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
-    rbState.metaAdAccountsLoaded = false; rbState.metaAdAccounts = []; rbState.adAccountId = '';
+    if (rbState?.companyId === companyId) {
+        rbState.metaAdAccountsLoaded = false; rbState.metaAdAccounts = []; rbState.adAccountId = ''; rbState.metaAds = [];
+    }
     renderReportBuilderPage();
+    rbOpenCompanyModal(companyId);
 }
 
 async function rbImportMetaContents() {
@@ -203,6 +221,8 @@ async function rbImportMetaContents() {
                     rbState.adImpressions = adsData.impressions || '0';
                     rbState.adReach = adsData.reach || '0';
                     rbState.adClicks = adsData.clicks || '0';
+                    rbState.adCurrency = adsData.currency || 'TRY';
+                    rbState.metaAds = Array.isArray(adsData.ads) ? adsData.ads : [];
                     if (adsData.profileVisits && insightsData.profileVisits == null) rbState.profileVisits = adsData.profileVisits;
                     adsImported = true;
                 }
@@ -214,8 +234,8 @@ async function rbImportMetaContents() {
             localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
         }
         renderReportBuilderPage();
-        const adMessage = adsImported ? ' Reklam sonuçları da eklendi.' : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için hesabı seçip tekrar “Meta’dan getir”e basın.' : '');
-        const insightMessage = insightsResponse.ok && insightsData.hasData !== false ? ' Organik istatistikler de güncellendi.' : (insightsResponse.ok ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Organik istatistikler için “İzinleri yenile” ile Meta onayını bir kez güncelleyin.');
+        const adMessage = adsImported ? ` ${rbState.metaAds.length} reklamın ayrı sonucu ve hesap toplamı eklendi.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
+        const insightMessage = insightsResponse.ok && insightsData.hasData !== false ? ' Organik istatistikler de güncellendi.' : (insightsResponse.ok ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Organik istatistik iznini Firma ayarlarından hesabı yeniden bağlayarak güncelleyin.');
         alert(`${rbState.contents.length} aylık paylaşım ve son ${rbState.profilePosts.length} gönderi Meta’dan getirildi.${insightMessage}${adMessage}`);
     } catch (error) {
         console.error(error); alert(error.message || 'Meta verileri alınamadı.');
@@ -229,6 +249,8 @@ async function rbLoadMetaAdAccounts(rerender = true) {
         const data = await response.json();
         rbState.metaAdAccountsLoaded = true;
         rbState.metaAdAccounts = response.ok && Array.isArray(data.accounts) ? data.accounts : [];
+        const configuredAccountId = rbCompany().reportAdAccountId || '';
+        if (!rbState.adAccountId && configuredAccountId) rbState.adAccountId = configuredAccountId;
         if (!rbState.adAccountId && rbState.metaAdAccounts.length === 1) rbState.adAccountId = rbState.metaAdAccounts[0].accountId;
         if (rerender) renderReportBuilderPage();
         return rbState.metaAdAccounts;
@@ -250,6 +272,19 @@ function rbFormatNumber(value) {
     return Number.isFinite(parsed) ? new Intl.NumberFormat('tr-TR').format(parsed) : '—';
 }
 
+function rbFormatMoney(value, currency = 'TRY') {
+    const parsed = Number(String(value || '').replace(/[^0-9.,-]/g, '').replace(',', '.'));
+    if (!Number.isFinite(parsed)) return '—';
+    try { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: currency || 'TRY', maximumFractionDigits: 2 }).format(parsed); }
+    catch (_) { return `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(parsed)} ₺`; }
+}
+
+function rbAdDetailCards() {
+    const ads = Array.isArray(rbState?.metaAds) ? rbState.metaAds : [];
+    if (!ads.length) return '<div class="rb-ad-empty"><i class="fa-regular fa-images"></i><span>Meta’dan verileri getirdiğinizde her reklamın kapağı ve sonuçları burada görünür.</span></div>';
+    return `<div class="rb-ad-list">${ads.map(ad => `<article class="rb-ad-card"><div class="rb-ad-thumb">${ad.thumbnailUrl ? `<img src="${rbEscape(ad.thumbnailUrl)}" alt="${rbEscape(ad.name || 'Reklam')} kapak görseli">` : '<i class="fa-solid fa-photo-film"></i>'}</div><div class="rb-ad-copy"><small>${rbEscape(ad.campaignName || 'Meta reklam kampanyası')}</small><strong>${rbEscape(ad.name || 'İsimsiz reklam')}</strong><span>${rbEscape(ad.adsetName || '')}</span><div><p><b>${rbEscape(rbFormatMoney(ad.spend, ad.currency))}</b><small>Harcama</small></p><p><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></p><p><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></p><p><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></p></div></div></article>`).join('')}</div>`;
+}
+
 function rbFormatDate(value) {
     if (!value) return 'Tarih girilmedi';
     return new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long' }).format(new Date(`${value}T12:00:00`));
@@ -267,7 +302,7 @@ function renderReportBuilderPage() {
     rbReadMetaRedirect();
     const company = rbCompany();
     const metaConnection = rbMetaConnection();
-    const adAccountOptions = (rbState.metaAdAccounts || []).map(account => `<option value="${rbEscape(account.accountId)}" ${account.accountId === rbState.adAccountId ? 'selected' : ''}>${rbEscape(account.name)}${account.currency ? ` · ${rbEscape(account.currency)}` : ''}</option>`).join('');
+    if (!rbState.adAccountId && company.reportAdAccountId) rbState.adAccountId = company.reportAdAccountId;
     const companyOptions = dbReportCompanies.map(item => `<option value="${rbEscape(item.docId)}" ${item.docId === rbState.companyId ? 'selected' : ''}>${rbEscape(item.name || 'İsimsiz Firma')}</option>`).join('');
     const contentRows = rbState.contents.length ? [...rbState.contents].sort((a, b) => String(a.date).localeCompare(String(b.date))).map(item => `
         <div class="rb-content-row">
@@ -295,7 +330,7 @@ function renderReportBuilderPage() {
                             <label>Rapor rengi<div class="rb-color"><input type="color" value="${rbEscape(rbState.accent)}" oninput="rbSetField('accent',this.value)"><span>${rbEscape(rbState.accent.toUpperCase())}</span></div></label>
                             <label>Firma logosu<input id="rb-current-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbUpdateCompanyLogo(event)" hidden><button type="button" class="rb-logo-upload" onclick="document.getElementById('rb-current-logo-file').click()" ${company.docId ? '' : 'disabled'}>${company.reportLogo || company.logo ? `<span>${rbCompanyLogo(company)}</span><b>Logoyu değiştir</b>` : '<i class="fa-regular fa-image"></i><b>Bilgisayardan seç</b>'}</button></label>
                         </div>
-                        <div class="rb-meta-card ${metaConnection ? 'connected' : ''}"><div class="rb-meta-icon"><i class="fa-brands fa-meta"></i></div><div><strong>${metaConnection ? `@${rbEscape(metaConnection.username || company.instagram || 'Instagram')} bağlı` : 'Meta hesabını bağla'}</strong><span>${metaConnection ? 'Gönderiler, profil bilgileri, organik istatistikler ve izin varsa reklam sonuçları alınabilir.' : 'Seçili firmanın Instagram profesyonel hesabını güvenli biçimde bağlayın.'}</span>${metaConnection && adAccountOptions ? `<label class="rb-ad-account">Reklam hesabı<select onchange="rbSetField('adAccountId',this.value)"><option value="">Seçin</option>${adAccountOptions}</select></label>` : ''}${metaConnection?.insightsRead === false ? '<em>Organik istatistik izni eksik; “İzinleri yenile” düğmesine basın.</em>' : ''}${metaConnection?.adsRead === false ? '<em>Reklam izni verilmedi; gönderiler yine alınabilir.</em>' : ''}</div><div class="rb-meta-actions">${metaConnection ? `${metaConnection.insightsRead === false ? '<button type="button" onclick="rbConnectMeta()"><i class="fa-solid fa-key"></i> İzinleri yenile</button>' : ''}<button type="button" onclick="rbImportMetaContents()"><i class="fa-solid fa-rotate"></i> Meta’dan getir</button><button type="button" class="danger" onclick="rbDisconnectMeta()">Bağlantıyı kes</button>` : `<button type="button" onclick="rbConnectMeta()"><i class="fa-brands fa-facebook"></i> Meta’ya bağlan</button>`}</div></div>
+                        <div class="rb-meta-card ${metaConnection ? 'connected' : ''}"><div class="rb-meta-icon"><i class="fa-brands fa-meta"></i></div><div><strong>${metaConnection ? `@${rbEscape(metaConnection.username || company.instagram || 'Instagram')} firma ayarlarında eşleştirildi` : 'Bu firma henüz Meta hesabına eşleştirilmedi'}</strong><span>${metaConnection ? `Rapor verileri tek düğmeyle alınır${company.reportAdAccountId ? '; reklam hesabı da hazırdır.' : '.'}` : 'Firmaları Düzenle bölümünden doğru Instagram hesabını bir kez seçin.'}</span>${metaConnection?.insightsRead === false ? '<em>Organik istatistik izni eksik. Firma ayarlarından hesabı yeniden bağlayın.</em>' : ''}${metaConnection?.adsRead === false ? '<em>Reklam okuma izni verilmedi; diğer Instagram verileri yine alınabilir.</em>' : ''}</div><div class="rb-meta-actions">${metaConnection ? '<button type="button" onclick="rbImportMetaContents()"><i class="fa-solid fa-rotate"></i> Meta’dan verileri getir</button>' : `<button type="button" onclick="rbOpenCompanyModal('${rbEscape(company.docId || '')}')"><i class="fa-solid fa-building-pen"></i> Firma ayarlarını aç</button>`}</div></div>
                     </article>
 
                     <article class="rb-panel">
@@ -320,8 +355,9 @@ function renderReportBuilderPage() {
                     </article>
 
                     <article class="rb-panel">
-                        <div class="rb-panel-head"><b>06</b><div><h3>Meta reklamları</h3><p>Reklam sonuçlarını ekle; boş bırakırsan PDF sayfası oluşmaz.</p></div></div>
-                        <div class="rb-fields metrics">${rbMetricInput('adSpend','Toplam harcama (₺)')}${rbMetricInput('adImpressions','Gösterim')}${rbMetricInput('adReach','Reklam erişimi')}${rbMetricInput('adClicks','Tıklama')}</div>
+                        <div class="rb-panel-head"><b>06</b><div><h3>Meta reklamları</h3><p>Her reklamın kapak görseli ve kendi sonucu; ardından hesap toplamı.</p></div></div>
+                        <div class="rb-fields metrics">${rbMetricInput('adSpend','Toplam harcama')}${rbMetricInput('adImpressions','Gösterim')}${rbMetricInput('adReach','Reklam erişimi')}${rbMetricInput('adClicks','Tıklama')}</div>
+                        ${rbAdDetailCards()}
                     </article>
 
                     <article class="rb-panel">
@@ -339,7 +375,6 @@ function renderReportBuilderPage() {
                 </aside>
             </div>
         </div>`;
-    if (metaConnection && metaConnection.adsRead !== false && !rbState.metaAdAccountsLoaded) setTimeout(() => rbLoadMetaAdAccounts(), 0);
 }
 
 function rbMetricInput(key, label) {
@@ -412,7 +447,7 @@ function rbImportPanelContents() {
     alert(imported.length ? `${imported.length} paylaşım rapora aktarıldı.` : 'Seçilen firma ve ay için tamamlanmış paylaşım bulunamadı.');
 }
 
-async function rbSaveCompany() {
+async function rbSaveCompany(connectAfterSave = false) {
     const name = document.getElementById('rb-new-name')?.value.trim();
     if (!name) return alert('Firma adını girin.');
     const normalizedName = typeof normalizeStr === 'function' ? normalizeStr(name) : name.toLocaleLowerCase('tr-TR');
@@ -421,16 +456,21 @@ async function rbSaveCompany() {
         rbState = rbLoadState(existing.docId, rbState?.period || rbCurrentPeriod());
         rbCloseCompanyModal();
         renderReportBuilderPage();
+        if (connectAfterSave) return rbConnectMetaForCompany(existing.docId);
         return alert('Bu firma zaten sistemde kayıtlı. Mevcut firma rapora seçildi; logosunu Rapor Bilgileri alanından değiştirebilirsiniz.');
     }
     const saveButton = document.getElementById('rb-company-save');
+    const connectButton = document.getElementById('rb-company-save-connect');
     if (saveButton) { saveButton.disabled = true; saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kaydediliyor'; }
+    if (connectButton) connectButton.disabled = true;
+    const editedCompany = dbReportCompanies.find(item => item.docId === rbEditingCompanyId) || {};
     const data = {
         name,
         instagram: document.getElementById('rb-new-instagram')?.value.trim() || '',
         reportLogo: rbPendingCompanyLogo,
         reportLogoTint: document.getElementById('rb-new-logo-tint')?.checked !== false,
         reportColor: document.getElementById('rb-new-color')?.value || '#6c63ff',
+        reportAdAccountId: document.getElementById('rb-company-ad-account')?.value || editedCompany.reportAdAccountId || '',
         updatedAt: new Date().toISOString(),
         createdFrom: 'report-builder-v2'
     };
@@ -442,14 +482,17 @@ async function rbSaveCompany() {
             const result = await db.collection('report_companies').add({ ...data, order: dbReportCompanies.length, createdAt: new Date().toISOString() });
             companyId = result.id;
         }
+        const wasEditing = Boolean(rbEditingCompanyId);
         await fetchReportCompaniesFromFirebase();
         rbState = rbLoadState(companyId, rbState?.period || rbCurrentPeriod());
         rbCloseCompanyModal();
         renderReportBuilderPage();
-        alert(rbEditingCompanyId ? 'Rapor firması güncellendi.' : 'Firma yalnızca rapor sistemine kaydedildi ve seçildi.');
+        if (connectAfterSave) return rbConnectMetaForCompany(companyId);
+        alert(wasEditing ? 'Rapor firması güncellendi.' : 'Firma yalnızca rapor sistemine kaydedildi ve seçildi.');
     } catch (error) {
         console.error(error);
         if (saveButton) { saveButton.disabled = false; saveButton.innerHTML = '<i class="fa-solid fa-check"></i> Firmayı Kaydet'; }
+        if (connectButton) connectButton.disabled = false;
         alert('Rapor firması kaydedilemedi. Firebase yetkilerini kontrol edin.');
     }
 }
@@ -466,7 +509,7 @@ function rbManagerCompanyLogo(company) {
 
 function rbOpenCompanyManager() {
     rbCloseCompanyModal();
-    const rows = dbReportCompanies.length ? dbReportCompanies.map(company => `<div class="rb-company-manager-row"><div class="rb-company-manager-logo" style="color:${rbEscape(company.reportColor || company.color || '#6c63ff')}">${rbManagerCompanyLogo(company)}</div><div><strong>${rbEscape(company.name || 'İsimsiz Firma')}</strong><span>${rbEscape(company.instagram || 'Instagram hesabı eklenmedi')}</span></div><div class="rb-company-manager-actions"><button type="button" onclick="rbOpenCompanyModal('${rbEscape(company.docId)}')"><i class="fa-solid fa-pen"></i> Düzenle</button><button type="button" class="delete" onclick="rbDeleteCompany('${rbEscape(company.docId)}')"><i class="fa-regular fa-trash-can"></i> Sil</button></div></div>`).join('') : '<div class="rb-company-manager-empty"><i class="fa-regular fa-building"></i><b>Henüz rapor firması yok</b><span>Panel firmalarından bağımsız ilk rapor firmasını ekleyin.</span></div>';
+    const rows = dbReportCompanies.length ? dbReportCompanies.map(company => { const connection = rbMetaConnectionFor(company.docId); return `<div class="rb-company-manager-row"><div class="rb-company-manager-logo" style="color:${rbEscape(company.reportColor || company.color || '#6c63ff')}">${rbManagerCompanyLogo(company)}</div><div><strong>${rbEscape(company.name || 'İsimsiz Firma')}</strong><span>${rbEscape(company.instagram || 'Instagram hesabı eklenmedi')}</span><small class="rb-company-meta-badge ${connection ? 'connected' : ''}"><i class="fa-brands fa-meta"></i> ${connection ? `@${rbEscape(connection.username || 'Instagram')} bağlı` : 'Meta bağlantısı yok'}</small></div><div class="rb-company-manager-actions"><button type="button" onclick="rbOpenCompanyModal('${rbEscape(company.docId)}')"><i class="fa-solid fa-pen"></i> Düzenle</button><button type="button" class="delete" onclick="rbDeleteCompany('${rbEscape(company.docId)}')"><i class="fa-regular fa-trash-can"></i> Sil</button></div></div>`; }).join('') : '<div class="rb-company-manager-empty"><i class="fa-regular fa-building"></i><b>Henüz rapor firması yok</b><span>Panel firmalarından bağımsız ilk rapor firmasını ekleyin.</span></div>';
     const modal = document.createElement('div');
     modal.id = 'rb-company-modal';
     modal.className = 'rb-company-modal';
@@ -514,16 +557,51 @@ function rbOpenCompanyModal(companyId = '') {
     rbPendingCompanyLogo = company.reportLogo || company.logo || '';
     rbPendingCompanyLogoTint = company.reportLogoTint !== false;
     const isEditing = Boolean(company.docId);
+    const metaConnection = rbMetaConnectionFor(companyId);
     const companyColor = company.reportColor || company.color || '#6c63ff';
     const logoPreview = rbPendingCompanyLogo ? (rbPendingCompanyLogoTint ? rbTintedLogoMarkup(rbPendingCompanyLogo, 'Logo önizlemesi') : `<img src="${rbEscape(rbPendingCompanyLogo)}" alt="Logo önizlemesi">`) : '<i class="fa-solid fa-cloud-arrow-up"></i>';
+    const metaSection = !isEditing
+        ? '<div class="rb-company-meta wide"><span><i class="fa-brands fa-meta"></i></span><div><strong>Meta hesabını firma kaydından sonra seçin</strong><small>“Kaydet ve Meta Hesabı Seç” düğmesi doğru Instagram hesabını eşleştirme adımını açar.</small></div></div>'
+        : `<div class="rb-company-meta wide ${metaConnection ? 'connected' : ''}"><span><i class="fa-brands fa-meta"></i></span><div><strong>${metaConnection ? `@${rbEscape(metaConnection.username || 'Instagram')} bu firmaya bağlı` : 'Meta hesabı henüz bağlanmadı'}</strong><small>${metaConnection ? 'Bu seçim tüm aylık raporlarda otomatik kullanılacak.' : 'Doğru Instagram hesabını şimdi seçin; rapor ekranında tekrar sorulmaz.'}</small>${metaConnection?.adsRead !== false && metaConnection ? '<label class="rb-company-ad-select">Reklam hesabı <span id="rb-company-ad-account-wrap"><i class="fa-solid fa-spinner fa-spin"></i> Hesaplar alınıyor…</span></label>' : ''}</div><div class="rb-company-meta-actions">${metaConnection ? `<button type="button" onclick="rbConnectMetaForCompany('${rbEscape(companyId)}')">Hesabı değiştir / izinleri yenile</button><button type="button" class="danger" onclick="rbDisconnectMetaForCompany('${rbEscape(companyId)}')">Bağlantıyı kes</button>` : `<button type="button" onclick="rbConnectMetaForCompany('${rbEscape(companyId)}')">Instagram hesabını seç</button>`}</div></div>`;
     const modal = document.createElement('div');
     modal.id = 'rb-company-modal';
     modal.className = 'rb-company-modal';
-    modal.innerHTML = `<div class="rb-company-dialog" role="dialog" aria-modal="true" aria-labelledby="rb-company-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid ${isEditing ? 'fa-building-pen' : 'fa-building-circle-check'}"></i></span><div><h3 id="rb-company-title">${isEditing ? 'Rapor Firmasını Düzenle' : 'Yeni Rapor Firması'}</h3><p>Bu kayıt yalnızca Rapor Oluştur bölümünde kullanılacaktır.</p></div></div><form class="rb-company-form" onsubmit="event.preventDefault(); rbSaveCompany()"><label>Firma adı <b>*</b><input id="rb-new-name" required autocomplete="organization" value="${rbEscape(company.name || '')}" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" autocomplete="off" value="${rbEscape(company.instagram || '')}" placeholder="@kullaniciadi"></label><div class="rb-company-logo-field wide"><span>Firma logosu <small>PNG, JPG, WebP veya SVG</small></span><input id="rb-new-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbPrepareNewCompanyLogo(event)" hidden><button type="button" class="rb-company-logo-pick" onclick="document.getElementById('rb-new-logo-file').click()"><span id="rb-new-logo-preview" style="color:${rbEscape(companyColor)}">${logoPreview}</span><b id="rb-new-logo-text">${isEditing && rbPendingCompanyLogo ? 'Logoyu değiştir' : 'Bilgisayardan logo seç'}</b></button></div><label class="rb-company-tint wide"><input id="rb-new-logo-tint" type="checkbox" ${rbPendingCompanyLogoTint ? 'checked' : ''} onchange="rbToggleCompanyLogoTint(this.checked)"><span>Logoyu seçilen rapor rengine boya</span></label><label>Rapor rengi<input id="rb-new-color" type="color" value="${rbEscape(companyColor)}" oninput="rbUpdateCompanyLogoPreviewColor(this.value)"></label><div class="rb-company-form-actions"><button type="button" class="rb-button" onclick="rbOpenCompanyManager()"><i class="fa-solid fa-arrow-left"></i> Firmalara Dön</button><button type="submit" id="rb-company-save" class="rb-button primary"><i class="fa-solid fa-check"></i> ${isEditing ? 'Değişiklikleri Kaydet' : 'Firmayı Kaydet'}</button></div></form></div>`;
+    modal.innerHTML = `<div class="rb-company-dialog" role="dialog" aria-modal="true" aria-labelledby="rb-company-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid ${isEditing ? 'fa-building-pen' : 'fa-building-circle-check'}"></i></span><div><h3 id="rb-company-title">${isEditing ? 'Rapor Firmasını Düzenle' : 'Yeni Rapor Firması'}</h3><p>Firma bilgileri ve Meta eşleştirmesi tek yerde saklanır.</p></div></div><form class="rb-company-form" onsubmit="event.preventDefault(); rbSaveCompany(false)"><label>Firma adı <b>*</b><input id="rb-new-name" required autocomplete="organization" value="${rbEscape(company.name || '')}" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" autocomplete="off" value="${rbEscape(company.instagram || '')}" placeholder="@kullaniciadi"></label><div class="rb-company-logo-field wide"><span>Firma logosu <small>PNG, JPG, WebP veya SVG</small></span><input id="rb-new-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbPrepareNewCompanyLogo(event)" hidden><button type="button" class="rb-company-logo-pick" onclick="document.getElementById('rb-new-logo-file').click()"><span id="rb-new-logo-preview" style="color:${rbEscape(companyColor)}">${logoPreview}</span><b id="rb-new-logo-text">${isEditing && rbPendingCompanyLogo ? 'Logoyu değiştir' : 'Bilgisayardan logo seç'}</b></button></div><label class="rb-company-tint wide"><input id="rb-new-logo-tint" type="checkbox" ${rbPendingCompanyLogoTint ? 'checked' : ''} onchange="rbToggleCompanyLogoTint(this.checked)"><span>Logoyu seçilen rapor rengine boya</span></label><label>Rapor rengi<input id="rb-new-color" type="color" value="${rbEscape(companyColor)}" oninput="rbUpdateCompanyLogoPreviewColor(this.value)"></label>${metaSection}<div class="rb-company-form-actions"><button type="button" class="rb-button" onclick="rbOpenCompanyManager()"><i class="fa-solid fa-arrow-left"></i> Firmalara Dön</button>${isEditing ? '<button type="submit" id="rb-company-save" class="rb-button primary"><i class="fa-solid fa-check"></i> Değişiklikleri Kaydet</button>' : '<button type="submit" id="rb-company-save" class="rb-button secondary"><i class="fa-solid fa-floppy-disk"></i> Sadece Kaydet</button><button type="button" id="rb-company-save-connect" class="rb-button primary" onclick="rbSaveCompany(true)"><i class="fa-brands fa-meta"></i> Kaydet ve Meta Hesabı Seç</button>'}</div></form></div>`;
     modal.addEventListener('click', event => { if (event.target === modal) rbCloseCompanyModal(); });
     document.body.appendChild(modal);
     document.addEventListener('keydown', rbCompanyModalEscape);
+    if (isEditing && metaConnection?.adsRead !== false) setTimeout(() => rbLoadCompanyAdAccounts(companyId), 0);
     setTimeout(() => document.getElementById('rb-new-name')?.focus(), 30);
+}
+
+async function rbLoadCompanyAdAccounts(companyId) {
+    const wrap = document.getElementById('rb-company-ad-account-wrap');
+    if (!wrap || !companyId || !rbIsOnlineMetaEnvironment()) return;
+    try {
+        const response = await fetch(`/api/meta/ad-accounts?companyId=${encodeURIComponent(companyId)}`, { credentials: 'same-origin' });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Reklam hesapları alınamadı.');
+        const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+        const company = dbReportCompanies.find(item => item.docId === companyId) || {};
+        let selected = company.reportAdAccountId || '';
+        if (!selected && accounts.length === 1) {
+            selected = accounts[0].accountId;
+            await db.collection('report_companies').doc(companyId).set({ reportAdAccountId: selected }, { merge: true });
+            company.reportAdAccountId = selected;
+        }
+        wrap.innerHTML = accounts.length ? `<select id="rb-company-ad-account" onchange="rbSaveCompanyAdAccount('${rbEscape(companyId)}',this.value)"><option value="">Reklam hesabı seçin</option>${accounts.map(account => `<option value="${rbEscape(account.accountId)}" ${account.accountId === selected ? 'selected' : ''}>${rbEscape(account.name)}${account.currency ? ` · ${rbEscape(account.currency)}` : ''}</option>`).join('')}</select>` : '<small>Bu kullanıcıya açık reklam hesabı bulunamadı.</small>';
+    } catch (error) {
+        wrap.innerHTML = `<small>${rbEscape(error.message || 'Reklam hesapları alınamadı.')}</small>`;
+    }
+}
+
+async function rbSaveCompanyAdAccount(companyId, accountId) {
+    try {
+        await db.collection('report_companies').doc(companyId).set({ reportAdAccountId: accountId || '', updatedAt: new Date().toISOString() }, { merge: true });
+        const company = dbReportCompanies.find(item => item.docId === companyId);
+        if (company) company.reportAdAccountId = accountId || '';
+        if (rbState?.companyId === companyId) rbState.adAccountId = accountId || '';
+    } catch (_) { alert('Reklam hesabı seçimi kaydedilemedi.'); }
 }
 
 function rbCompanyModalEscape(event) {
@@ -724,7 +802,13 @@ function rbOpenPreview() {
     pages += rbStandardPage('HESAP GÖRÜNÜMÜ', `HESABIN<br><span>GÖRÜNÜMÜ</span>`, `<p class="nr-lead">Instagram profilinin aylık rapora eklenen görünümü.</p>${rbProfilePreview(company)}`, page++);
     pages += rbStandardPage('ORGANİK PERFORMANS', `İSTATİSTİKLER <span>ERİŞİM</span>`, `<p class="nr-lead">İçeriklerin görünürlüğü ve hesap hareketleri.</p><div class="nr-metrics">${rbPreviewMetric('Toplam Görüntüleme',rbState.views)}${rbPreviewMetric('Erişilen Hesap',rbState.reach)}${rbPreviewMetric('Profil Ziyareti',rbState.profileVisits,true)}${rbPreviewMetric('Takipçi Sayısı',rbState.followers,true)}</div>`, page++);
     pages += rbStandardPage('TOPLULUK ETKİLEŞİMİ', `İSTATİSTİKLER <span>ETKİLEŞİM</span>`, `<p class="nr-lead">İçeriklere verilen toplam tepki ve dağılımı.</p><div class="nr-total-card"><span>Toplam Etkileşim</span><b>${rbFormatNumber(rbTotalInteraction())}</b></div><div class="nr-breakdown">${[['Beğeni',rbState.likes],['Yorum',rbState.comments],['Kaydetme',rbState.saves],['Paylaşım',rbState.shares]].map(row => `<p><span>${row[0]}</span><b>${rbFormatNumber(row[1])}</b></p>`).join('')}</div>`, page++);
-    if ([rbState.adSpend,rbState.adImpressions,rbState.adReach,rbState.adClicks].some(Boolean)) pages += rbStandardPage('ÜCRETLİ MEDYA', `REKLAMLAR <span>META</span>`, `<p class="nr-lead">Aylık reklam harcaması ve sonuç özeti.</p><div class="nr-metrics nr-ad-metrics">${rbPreviewMetric('Toplam Harcama',`${rbFormatNumber(rbState.adSpend)} ₺`)}${rbPreviewMetric('Gösterim',rbState.adImpressions)}${rbPreviewMetric('Erişim',rbState.adReach,true)}${rbPreviewMetric('Tıklama',rbState.adClicks,true)}</div>`, page++);
+    const metaAds = Array.isArray(rbState.metaAds) ? rbState.metaAds : [];
+    for (let index = 0; index < metaAds.length; index += 4) {
+        const adChunk = metaAds.slice(index, index + 4);
+        const adCards = adChunk.map(ad => `<article class="nr-ad-card"><div class="nr-ad-image">${ad.thumbnailUrl ? `<img src="${rbEscape(ad.thumbnailUrl)}" alt="${rbEscape(ad.name || 'Reklam')} kapak görseli">` : '<i class="fa-solid fa-photo-film"></i>'}</div><div class="nr-ad-card-copy"><small>${rbEscape(ad.campaignName || 'META REKLAM KAMPANYASI')}</small><h3>${rbEscape(ad.name || 'İsimsiz reklam')}</h3><p>${rbEscape(ad.adsetName || 'Reklam seti')}</p><div><span><b>${rbEscape(rbFormatMoney(ad.spend, ad.currency))}</b><small>Harcama</small></span><span><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></span><span><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></span><span><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></span></div></div></article>`).join('');
+        pages += rbStandardPage('ÜCRETLİ MEDYA', `REKLAM <span>DETAYLARI</span>`, `<p class="nr-lead">Bu dönemde yayınlanan reklamların görseli ve ayrı sonuçları.</p><div class="nr-ad-grid">${adCards}</div>`, page++);
+    }
+    if ([rbState.adSpend,rbState.adImpressions,rbState.adReach,rbState.adClicks].some(Boolean)) pages += rbStandardPage('ÜCRETLİ MEDYA', `REKLAMLAR <span>TOPLAM</span>`, `<p class="nr-lead">Tüm reklamların hesap düzeyindeki aylık toplam sonucu.</p><div class="nr-metrics nr-ad-metrics">${rbPreviewMetric('Toplam Harcama',rbFormatMoney(rbState.adSpend, rbState.adCurrency))}${rbPreviewMetric('Gösterim',rbState.adImpressions)}${rbPreviewMetric('Erişim',rbState.adReach,true)}${rbPreviewMetric('Tıklama',rbState.adClicks,true)}</div>`, page++);
     if (rbState.notes.trim()) pages += rbStandardPage('AYLIK DEĞERLENDİRME', `SONUÇ VE <span>ÖNERİLER</span>`, `<p class="nr-lead">Ayın kısa değerlendirmesi ve sonraki dönem odağı.</p><div class="nr-notes">${rbEscape(rbState.notes).replace(/\n/g,'<br>')}</div>`, page++);
 
     const modal = document.createElement('div');
@@ -734,7 +818,7 @@ function rbOpenPreview() {
 }
 
 function rbPreviewMetric(label, value, light = false) {
-    const shown = typeof value === 'string' && value.includes('₺') ? value : rbFormatNumber(value);
+    const shown = typeof value === 'string' && /[₺$€£]|\b[A-Z]{3}\b/.test(value) ? value : rbFormatNumber(value);
     return `<div class="nr-metric ${light ? 'light' : ''}"><span>${rbEscape(label)}</span><b>${rbEscape(shown)}</b></div>`;
 }
 

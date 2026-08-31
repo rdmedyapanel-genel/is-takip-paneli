@@ -9,6 +9,42 @@ function profileVisits(actions = []) {
     .reduce((total, action) => total + (Number(action.value) || 0), 0);
 }
 
+async function pagedGraph(url, maxPages = 5) {
+  const rows = [];
+  let next = url;
+  let page = 0;
+  while (next && page < maxPages) {
+    const payload = await graphJson(next);
+    rows.push(...(payload.data || []));
+    next = payload.paging?.next || '';
+    page++;
+  }
+  return rows;
+}
+
+async function creativeDetails(adIds, accessToken) {
+  const details = {};
+  for (let index = 0; index < adIds.length; index += 40) {
+    const ids = adIds.slice(index, index + 40);
+    const url = new URL(`${GRAPH_URL}/`);
+    url.searchParams.set('ids', ids.join(','));
+    url.searchParams.set('fields', 'id,name,status,creative{id,name,thumbnail_url,image_url,effective_object_story_id,effective_instagram_media_id}');
+    url.searchParams.set('access_token', accessToken);
+    const payload = await graphJson(url.toString());
+    Object.entries(payload || {}).forEach(([id, ad]) => {
+      const creative = ad?.creative || {};
+      details[id] = {
+        status: ad?.status || '',
+        thumbnailUrl: creative.thumbnail_url || creative.image_url || '',
+        creativeName: creative.name || '',
+        instagramMediaId: creative.effective_instagram_media_id || '',
+        objectStoryId: creative.effective_object_story_id || '',
+      };
+    });
+  }
+  return details;
+}
+
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const companyId = String(Array.isArray(req.query.companyId) ? req.query.companyId[0] : req.query.companyId || '');
@@ -28,14 +64,46 @@ module.exports = async function handler(req, res) {
     const allowed = (accountsPayload.data || []).some(account => (account.account_id || String(account.id || '').replace(/^act_/, '')) === accountId);
     if (!allowed) return res.status(403).json({ error: 'Bu reklam hesabına erişim bulunamadı.' });
 
-    const insightsUrl = new URL(`${GRAPH_URL}/act_${accountId}/insights`);
-    insightsUrl.searchParams.set('fields', 'spend,impressions,reach,clicks,actions,account_currency');
-    insightsUrl.searchParams.set('level', 'account');
-    insightsUrl.searchParams.set('time_range', JSON.stringify({ since, until }));
-    insightsUrl.searchParams.set('limit', '10');
-    insightsUrl.searchParams.set('access_token', connection.userAccessToken);
-    const payload = await graphJson(insightsUrl.toString());
-    const insight = payload.data?.[0] || {};
+    const totalUrl = new URL(`${GRAPH_URL}/act_${accountId}/insights`);
+    totalUrl.searchParams.set('fields', 'spend,impressions,reach,clicks,actions,account_currency');
+    totalUrl.searchParams.set('level', 'account');
+    totalUrl.searchParams.set('time_range', JSON.stringify({ since, until }));
+    totalUrl.searchParams.set('limit', '10');
+    totalUrl.searchParams.set('access_token', connection.userAccessToken);
+
+    const adsUrl = new URL(`${GRAPH_URL}/act_${accountId}/insights`);
+    adsUrl.searchParams.set('fields', 'ad_id,ad_name,adset_name,campaign_name,spend,impressions,reach,clicks,actions,account_currency');
+    adsUrl.searchParams.set('level', 'ad');
+    adsUrl.searchParams.set('time_range', JSON.stringify({ since, until }));
+    adsUrl.searchParams.set('limit', '100');
+    adsUrl.searchParams.set('access_token', connection.userAccessToken);
+
+    const [totalPayload, adInsights] = await Promise.all([
+      graphJson(totalUrl.toString()),
+      pagedGraph(adsUrl.toString()),
+    ]);
+    const insight = totalPayload.data?.[0] || {};
+    const adIds = [...new Set(adInsights.map(row => String(row.ad_id || '')).filter(Boolean))];
+    let creativeByAd = {};
+    try { creativeByAd = await creativeDetails(adIds, connection.userAccessToken); } catch (_) {}
+    const ads = adInsights.map(row => {
+      const creative = creativeByAd[String(row.ad_id || '')] || {};
+      return {
+        id: String(row.ad_id || ''),
+        name: row.ad_name || creative.creativeName || 'İsimsiz reklam',
+        campaignName: row.campaign_name || '',
+        adsetName: row.adset_name || '',
+        spend: row.spend || '0',
+        impressions: row.impressions || '0',
+        reach: row.reach || '0',
+        clicks: row.clicks || '0',
+        profileVisits: String(profileVisits(row.actions) || ''),
+        currency: row.account_currency || insight.account_currency || '',
+        thumbnailUrl: creative.thumbnailUrl || '',
+        status: creative.status || '',
+        instagramMediaId: creative.instagramMediaId || '',
+      };
+    }).sort((left, right) => Number(right.spend || 0) - Number(left.spend || 0));
     const visits = profileVisits(insight.actions);
     return res.status(200).json({
       spend: insight.spend || '0',
@@ -44,6 +112,7 @@ module.exports = async function handler(req, res) {
       clicks: insight.clicks || '0',
       profileVisits: visits ? String(visits) : '',
       currency: insight.account_currency || '',
+      ads,
     });
   } catch (caught) {
     return res.status(502).json({ error: caught instanceof Error ? caught.message : 'Reklam verileri alınamadı.' });

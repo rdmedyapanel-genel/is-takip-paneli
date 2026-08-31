@@ -13,4 +13,6 @@ Meta uygulama şifresi site dosyalarına yazılmaz. GitHub deposu Vercel'e bağl
 
 Meta for Developers uygulamasında **Valid OAuth Redirect URIs** alanına `META_REDIRECT_URI` ile aynı adresi ekleyin. Ardından Vercel'de projeyi yeniden yayınlayın.
 
-Bağlantı tamamlandığında seçili firmaya ait aylık gönderiler, takipçi bilgisi ve profil görünümündeki son 12 gönderi **Meta'dan getir** düğmesiyle rapora alınır.
+Firma eklerken **Kaydet ve Meta Hesabı Seç** düğmesiyle doğru Instagram hesabı firmaya bir kez eşleştirilir. Mevcut firmaların bağlantısı ve reklam hesabı **Firmaları Düzenle** bölümünden değiştirilebilir. Rapor sayfasında tekrar hesap seçmek gerekmez.
+
+Bağlantı tamamlandığında seçili firmaya ait aylık gönderiler, takipçi bilgisi, organik istatistikler ve profil görünümündeki son 12 gönderi **Meta'dan verileri getir** düğmesiyle rapora alınır. Reklam izni varsa her reklamın kapak görseli ve ayrı performans değerleri PDF'de kartlar halinde gösterilir; reklam detaylarından sonra hesap düzeyindeki aylık toplam sayfası eklenir.

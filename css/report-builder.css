@@ -64,3 +64,50 @@
     .nr-page { width:210mm; height:297mm; aspect-ratio:auto; margin:0; box-shadow:none; break-inside:avoid; page-break-inside:avoid; break-after:page; page-break-after:always; -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
     .nr-page:last-child { break-after:auto; page-break-after:auto; }
 }
+
+/* V12: Firma bazlı Meta eşleştirmesi ve reklam detayları */
+.rb-company-dialog { width:min(620px,100%); max-height:92vh; }
+.rb-company-form { max-height:calc(92vh - 82px); overflow-y:auto; }
+.rb-company-meta.wide { grid-column:1/3; display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:10px; padding:11px 12px; border:1px solid #d9dcff; border-radius:10px; background:#f7f6ff; }
+.rb-company-meta.connected { border-color:#b9e6cf; background:#f1fbf6; }
+.rb-company-meta>span { width:36px; height:36px; display:grid; place-items:center; border-radius:9px; background:#6458e8; color:#fff; font-size:17px; }
+.rb-company-meta.connected>span { background:#16865a; }
+.rb-company-meta>div:nth-child(2) { min-width:0; display:grid; gap:3px; }
+.rb-company-meta strong { color:#25303c; font-size:10px; }
+.rb-company-meta small { color:#78828f; font-size:8px; line-height:1.45; }
+.rb-company-meta-actions { display:flex; flex-direction:column; gap:5px; }
+.rb-company-meta-actions button { min-height:31px; padding:6px 9px; border:0; border-radius:7px; background:#6458e8; color:#fff; font:750 7px 'Poppins',sans-serif; cursor:pointer; }
+.rb-company-meta.connected .rb-company-meta-actions button { background:#16865a; }
+.rb-company-meta-actions button.danger { border:1px solid #efcbd0; background:#fff; color:#ad4350; }
+.rb-company-ad-select { margin-top:5px; }
+.rb-company-ad-select>span { min-height:31px; display:flex; align-items:center; color:#61706a; font-size:7px; font-weight:700; }
+.rb-company-ad-select select { width:100%; min-height:33px; padding:5px 8px; border:1px solid #cce4d7; border-radius:7px; background:#fff; color:#314039; font:700 8px 'Poppins',sans-serif; }
+.rb-company-meta-badge { width:max-content; padding:3px 6px; border-radius:12px; background:#f1f3f6; color:#8a929d; font-size:7px; font-weight:750; }
+.rb-company-meta-badge.connected { background:#e9f8f0; color:#16865a; }
+.rb-ad-list { max-height:430px; overflow:auto; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; padding:0 15px 16px; }
+.rb-ad-card { min-width:0; display:grid; grid-template-columns:94px minmax(0,1fr); overflow:hidden; border:1px solid #e1e5ea; border-radius:10px; background:#fff; }
+.rb-ad-thumb { min-height:112px; overflow:hidden; display:grid; place-items:center; background:#eef1f5; color:#9aa2ad; font-size:22px; }
+.rb-ad-thumb img { width:100%; height:100%; object-fit:cover; }
+.rb-ad-copy { min-width:0; display:grid; align-content:start; gap:3px; padding:9px; }
+.rb-ad-copy>small { overflow:hidden; color:#6c63ff; font-size:6px; font-weight:850; text-overflow:ellipsis; white-space:nowrap; }
+.rb-ad-copy>strong { overflow:hidden; color:#252e39; font-size:9px; line-height:1.25; text-overflow:ellipsis; white-space:nowrap; }
+.rb-ad-copy>span { overflow:hidden; color:#929aa5; font-size:6px; text-overflow:ellipsis; white-space:nowrap; }
+.rb-ad-copy>div { display:grid; grid-template-columns:repeat(2,1fr); gap:4px; margin-top:5px; }
+.rb-ad-copy p { display:grid; gap:1px; margin:0; padding:4px 5px; border-radius:5px; background:#f6f7f9; }
+.rb-ad-copy p b { overflow:hidden; color:#303946; font-size:7px; text-overflow:ellipsis; }
+.rb-ad-copy p small { color:#9199a4; font-size:5px; }
+.rb-ad-empty { margin:0 15px 16px; display:flex; align-items:center; justify-content:center; gap:8px; padding:14px; border:1px dashed #d9dee5; border-radius:9px; color:#8a939f; font-size:8px; text-align:center; }
+.rb-ad-empty i { color:#6c63ff; font-size:16px; }
+.nr-ad-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:4%; }
+.nr-ad-card { min-height:248px; overflow:hidden; border:1px solid #dfe4e9; border-radius:11px; background:#fff; box-shadow:0 6px 18px rgba(18,28,42,.06); }
+.nr-ad-image { height:125px; overflow:hidden; display:grid; place-items:center; background:#e9edf2; color:#9ba3ad; font-size:28px; }
+.nr-ad-image img { width:100%; height:100%; object-fit:cover; }
+.nr-ad-card-copy { padding:10px 11px; }
+.nr-ad-card-copy>small { display:block; overflow:hidden; color:var(--nr-accent); font-size:6px; font-weight:900; letter-spacing:.4px; text-overflow:ellipsis; white-space:nowrap; }
+.nr-ad-card-copy h3 { overflow:hidden; margin:5px 0 2px; color:#202934; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }
+.nr-ad-card-copy>p { overflow:hidden; margin:0; color:#9098a3; font-size:6px; text-overflow:ellipsis; white-space:nowrap; }
+.nr-ad-card-copy>div { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin-top:9px; }
+.nr-ad-card-copy>div>span { min-width:0; display:grid; gap:2px; padding-left:5px; border-left:2px solid var(--nr-accent); }
+.nr-ad-card-copy>div b { overflow:hidden; color:#25303b; font-size:7px; text-overflow:ellipsis; white-space:nowrap; }
+.nr-ad-card-copy>div small { color:#929aa4; font-size:5px; }
+@media (max-width:720px) { .rb-company-meta.wide { grid-column:1; grid-template-columns:38px 1fr; }.rb-company-meta-actions { grid-column:1/3; flex-direction:row; }.rb-company-meta-actions button { flex:1; }.rb-ad-list { grid-template-columns:1fr; } }
