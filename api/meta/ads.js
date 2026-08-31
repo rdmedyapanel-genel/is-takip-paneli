@@ -1,4 +1,4 @@
-const { GRAPH_URL, graphJson, tokenCookieName, unpack, parseCookies } = require('../../lib/meta-common');
+const { GRAPH_URL, graphJson, tokenCookieName, unpack, parseCookies, imageProxyPath } = require('../../lib/meta-common');
 
 function safeDate(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || '')) ? String(value) : '';
@@ -212,6 +212,7 @@ module.exports = async function handler(req, res) {
         ads.forEach(ad => { if (!ad.thumbnailUrl) ad.thumbnailUrl = matchingInstagramImage(ad, mediaRows); });
       } catch (_) {}
     }
+    ads.forEach(ad => { if (ad.thumbnailUrl) ad.thumbnailUrl = imageProxyPath(ad.thumbnailUrl); });
     const visits = profileVisits(insight.actions);
     return res.status(200).json({
       spend: insight.spend || '0',
