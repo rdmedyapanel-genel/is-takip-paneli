@@ -18,7 +18,8 @@ module.exports = async function handler(req, res) {
   authUrl.searchParams.set('redirect_uri', redirectUri);
   authUrl.searchParams.set('state', state);
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'pages_show_list,pages_read_engagement,instagram_basic,ads_read');
+  authUrl.searchParams.set('scope', 'pages_show_list,pages_read_engagement,instagram_basic,instagram_manage_insights,ads_read');
+  authUrl.searchParams.set('auth_type', 'rerequest');
   res.setHeader('Set-Cookie', cookie(req, 'rdgrup_meta_state', pack({ companyId, nonce, expectedUsername }), 600));
   return redirect(res, authUrl.toString());
 };

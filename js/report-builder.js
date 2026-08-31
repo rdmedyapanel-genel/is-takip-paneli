@@ -78,6 +78,7 @@ function rbReadMetaRedirect() {
             pageId: params.get('pageId') || '',
             igUserId: params.get('igUserId') || '',
             adsRead: params.get('adsRead') === '1',
+            insightsRead: params.get('insightsRead') === '1',
             connectedAt: new Date().toISOString()
         };
         localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
@@ -120,17 +121,23 @@ async function rbImportMetaContents() {
     const since = `${rbState.period}-01`;
     const until = `${rbState.period}-${String(lastDay).padStart(2, '0')}`;
     try {
-        const [periodResponse, latestResponse] = await Promise.all([
+        const [periodResponse, latestResponse, insightsResponse] = await Promise.all([
             fetch(`/api/meta/media?companyId=${encodeURIComponent(rbState.companyId)}&since=${since}&until=${until}`, { credentials: 'same-origin' }),
-            fetch(`/api/meta/media?companyId=${encodeURIComponent(rbState.companyId)}&latest=12`, { credentials: 'same-origin' })
+            fetch(`/api/meta/media?companyId=${encodeURIComponent(rbState.companyId)}&latest=12`, { credentials: 'same-origin' }),
+            fetch(`/api/meta/insights?companyId=${encodeURIComponent(rbState.companyId)}&since=${since}&until=${until}`, { credentials: 'same-origin' })
         ]);
-        const periodData = await periodResponse.json(); const latestData = await latestResponse.json();
+        const periodData = await periodResponse.json(); const latestData = await latestResponse.json(); const insightsData = await insightsResponse.json();
         if (!periodResponse.ok) throw new Error(periodData.error || 'Meta gönderileri alınamadı.');
         if (!latestResponse.ok) throw new Error(latestData.error || 'Profil görünümü alınamadı.');
         rbState.contents = (periodData.media || []).map(item => ({ id: item.id || rbUid(), date: item.date || '', type: item.type === 'Reels' ? 'Reels' : 'Gönderi' }));
         rbState.profilePosts = latestData.media || [];
         rbState.metaProfile = { ...(latestData.profile || {}), username: latestData.username || '' };
         if (latestData.profile?.followersCount != null) rbState.followers = String(latestData.profile.followersCount);
+        if (insightsResponse.ok) {
+            ['views','reach','profileVisits','likes','comments','saves','shares'].forEach(key => {
+                if (insightsData[key] != null) rbState[key] = String(insightsData[key]);
+            });
+        }
         let adsImported = false;
         if (rbMetaConnection()?.adsRead !== false) {
             await rbLoadMetaAdAccounts(false);
@@ -142,14 +149,20 @@ async function rbImportMetaContents() {
                     rbState.adImpressions = adsData.impressions || '0';
                     rbState.adReach = adsData.reach || '0';
                     rbState.adClicks = adsData.clicks || '0';
-                    if (adsData.profileVisits) rbState.profileVisits = adsData.profileVisits;
+                    if (adsData.profileVisits && insightsData.profileVisits == null) rbState.profileVisits = adsData.profileVisits;
                     adsImported = true;
                 }
             }
         }
+        if (!insightsResponse.ok) {
+            const connections = rbMetaConnections();
+            if (connections[rbState.companyId]) connections[rbState.companyId].insightsRead = false;
+            localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
+        }
         renderReportBuilderPage();
         const adMessage = adsImported ? ' Reklam sonuçları da eklendi.' : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için hesabı seçip tekrar “Meta’dan getir”e basın.' : '');
-        alert(`${rbState.contents.length} aylık paylaşım ve son ${rbState.profilePosts.length} gönderi Meta’dan getirildi.${adMessage}`);
+        const insightMessage = insightsResponse.ok && insightsData.hasData !== false ? ' Organik istatistikler de güncellendi.' : (insightsResponse.ok ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Organik istatistikler için “İzinleri yenile” ile Meta onayını bir kez güncelleyin.');
+        alert(`${rbState.contents.length} aylık paylaşım ve son ${rbState.profilePosts.length} gönderi Meta’dan getirildi.${insightMessage}${adMessage}`);
     } catch (error) {
         console.error(error); alert(error.message || 'Meta verileri alınamadı.');
     }
@@ -228,7 +241,7 @@ function renderReportBuilderPage() {
                             <label>Rapor rengi<div class="rb-color"><input type="color" value="${rbEscape(rbState.accent)}" oninput="rbSetField('accent',this.value)"><span>${rbEscape(rbState.accent.toUpperCase())}</span></div></label>
                             <label>Firma logosu<input id="rb-current-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbUpdateCompanyLogo(event)" hidden><button type="button" class="rb-logo-upload" onclick="document.getElementById('rb-current-logo-file').click()" ${company.docId ? '' : 'disabled'}>${company.reportLogo || company.logo ? `<span>${rbCompanyLogo(company)}</span><b>Logoyu değiştir</b>` : '<i class="fa-regular fa-image"></i><b>Bilgisayardan seç</b>'}</button></label>
                         </div>
-                        <div class="rb-meta-card ${metaConnection ? 'connected' : ''}"><div class="rb-meta-icon"><i class="fa-brands fa-meta"></i></div><div><strong>${metaConnection ? `@${rbEscape(metaConnection.username || company.instagram || 'Instagram')} bağlı` : 'Meta hesabını bağla'}</strong><span>${metaConnection ? 'Gönderiler, profil bilgileri ve izin varsa reklam sonuçları alınabilir.' : 'Seçili firmanın Instagram profesyonel hesabını güvenli biçimde bağlayın.'}</span>${metaConnection && adAccountOptions ? `<label class="rb-ad-account">Reklam hesabı<select onchange="rbSetField('adAccountId',this.value)"><option value="">Seçin</option>${adAccountOptions}</select></label>` : ''}${metaConnection?.adsRead === false ? '<em>Reklam izni verilmedi; gönderiler yine alınabilir.</em>' : ''}</div><div class="rb-meta-actions">${metaConnection ? `<button type="button" onclick="rbImportMetaContents()"><i class="fa-solid fa-rotate"></i> Meta’dan getir</button><button type="button" class="danger" onclick="rbDisconnectMeta()">Bağlantıyı kes</button>` : `<button type="button" onclick="rbConnectMeta()"><i class="fa-brands fa-facebook"></i> Meta’ya bağlan</button>`}</div></div>
+                        <div class="rb-meta-card ${metaConnection ? 'connected' : ''}"><div class="rb-meta-icon"><i class="fa-brands fa-meta"></i></div><div><strong>${metaConnection ? `@${rbEscape(metaConnection.username || company.instagram || 'Instagram')} bağlı` : 'Meta hesabını bağla'}</strong><span>${metaConnection ? 'Gönderiler, profil bilgileri, organik istatistikler ve izin varsa reklam sonuçları alınabilir.' : 'Seçili firmanın Instagram profesyonel hesabını güvenli biçimde bağlayın.'}</span>${metaConnection && adAccountOptions ? `<label class="rb-ad-account">Reklam hesabı<select onchange="rbSetField('adAccountId',this.value)"><option value="">Seçin</option>${adAccountOptions}</select></label>` : ''}${metaConnection?.insightsRead === false ? '<em>Organik istatistik izni eksik; “İzinleri yenile” düğmesine basın.</em>' : ''}${metaConnection?.adsRead === false ? '<em>Reklam izni verilmedi; gönderiler yine alınabilir.</em>' : ''}</div><div class="rb-meta-actions">${metaConnection ? `${metaConnection.insightsRead === false ? '<button type="button" onclick="rbConnectMeta()"><i class="fa-solid fa-key"></i> İzinleri yenile</button>' : ''}<button type="button" onclick="rbImportMetaContents()"><i class="fa-solid fa-rotate"></i> Meta’dan getir</button><button type="button" class="danger" onclick="rbDisconnectMeta()">Bağlantıyı kes</button>` : `<button type="button" onclick="rbConnectMeta()"><i class="fa-brands fa-facebook"></i> Meta’ya bağlan</button>`}</div></div>
                     </article>
 
                     <article class="rb-panel">
@@ -238,17 +251,17 @@ function renderReportBuilderPage() {
                     </article>
 
                     <article class="rb-panel">
-                        <div class="rb-panel-head"><b>03</b><div><h3>Hesabın görünümü</h3><p>Instagram profil ekran görüntüsünü rapora ekle.</p></div></div>
-                        <label class="rb-upload"><input type="file" accept="image/*" onchange="rbSetProfileImage(event)" hidden>${rbState.profileImage ? `<img src="${rbEscape(rbState.profileImage)}" alt="Profil önizlemesi"><span>Görseli değiştir</span>` : '<i class="fa-regular fa-image"></i><strong>Profil ekran görüntüsü seç</strong><span>PNG veya JPG</span>'}</label>
+                        <div class="rb-panel-head"><b>03</b><div><h3>Hesabın görünümü</h3><p>Son 12 gönderi Meta’dan otomatik çekilir ve PDF’de 3 sütun × 4 satır gösterilir.</p></div></div>
+                        <label class="rb-upload"><input type="file" accept="image/*" onchange="rbSetProfileImage(event)" hidden>${rbState.profileImage ? `<img src="${rbEscape(rbState.profileImage)}" alt="Profil önizlemesi"><span>Görseli değiştir</span>` : '<i class="fa-brands fa-meta"></i><strong>Meta’dan otomatik çekilir</strong><span>İstersen özel bir ekran görüntüsü de yükleyebilirsin</span>'}</label>
                     </article>
 
                     <article class="rb-panel">
-                        <div class="rb-panel-head"><b>04</b><div><h3>Erişim istatistikleri</h3><p>Aylık organik hesap sonuçlarını gir.</p></div></div>
+                        <div class="rb-panel-head"><b>04</b><div><h3>Erişim istatistikleri</h3><p>Aylık organik sonuçlar Meta’dan otomatik gelir; gerekirse düzenleyebilirsin.</p></div></div>
                         <div class="rb-fields metrics">${rbMetricInput('views','Toplam görüntüleme')}${rbMetricInput('reach','Erişilen hesap')}${rbMetricInput('profileVisits','Profil ziyareti')}${rbMetricInput('followers','Takipçi sayısı')}</div>
                     </article>
 
                     <article class="rb-panel">
-                        <div class="rb-panel-head"><b>05</b><div><h3>Etkileşim istatistikleri</h3><p>İçeriklerin aldığı aksiyonları tamamla.</p></div></div>
+                        <div class="rb-panel-head"><b>05</b><div><h3>Etkileşim istatistikleri</h3><p>Beğeni, yorum, kaydetme ve paylaşım Meta’dan otomatik gelir.</p></div></div>
                         <div class="rb-fields metrics">${rbMetricInput('likes','Beğeni')}${rbMetricInput('comments','Yorum')}${rbMetricInput('saves','Kaydetme')}${rbMetricInput('shares','Paylaşım')}</div>
                     </article>
 

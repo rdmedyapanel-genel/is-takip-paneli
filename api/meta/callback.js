@@ -34,6 +34,7 @@ module.exports = async function handler(req, res) {
     permissionsUrl.searchParams.set('access_token', longToken.access_token);
     const permissions = await graphJson(permissionsUrl.toString());
     const adsRead = (permissions.data || []).some(item => item.permission === 'ads_read' && item.status === 'granted');
+    const insightsRead = (permissions.data || []).some(item => item.permission === 'instagram_manage_insights' && item.status === 'granted');
 
     const pagesUrl = new URL(`${GRAPH_URL}/me/accounts`);
     pagesUrl.searchParams.set('fields', 'id,name,access_token,instagram_business_account{id,username}');
@@ -54,6 +55,7 @@ module.exports = async function handler(req, res) {
       igUserId: selected.instagram_business_account.id,
       username: selected.instagram_business_account.username || '',
       adsRead,
+      insightsRead,
     };
     const maxAge = Math.min(Number(longToken.expires_in) || 5184000, 5184000);
     res.setHeader('Set-Cookie', [
@@ -62,7 +64,7 @@ module.exports = async function handler(req, res) {
     ]);
     return redirect(res, panelUrl(req, {
       meta_connected: '1', companyId: stored.companyId, pageId: connection.pageId,
-      igUserId: connection.igUserId, username: connection.username, adsRead: adsRead ? '1' : '0',
+      igUserId: connection.igUserId, username: connection.username, adsRead: adsRead ? '1' : '0', insightsRead: insightsRead ? '1' : '0',
     }));
   } catch (caught) {
     const message = caught instanceof Error ? caught.message : 'Meta bağlantısı tamamlanamadı.';
