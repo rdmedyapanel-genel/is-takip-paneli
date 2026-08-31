@@ -1,6 +1,7 @@
 const rbMonthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 let rbState = null;
 let rbPendingCompanyLogo = '';
+let rbEditingCompanyId = '';
 
 function rbEscape(value) {
     return String(value == null ? '' : value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -12,7 +13,7 @@ function rbCurrentPeriod() {
 }
 
 function rbEmptyState(companyId, period) {
-    const company = dbCompanies.find(item => item.docId === companyId) || {};
+    const company = dbReportCompanies.find(item => item.docId === companyId) || {};
     return {
         companyId,
         period,
@@ -54,7 +55,7 @@ function rbLoadState(companyId, period) {
 }
 
 function rbCompany() {
-    return dbCompanies.find(item => item.docId === rbState?.companyId) || dbCompanies[0] || {};
+    return dbReportCompanies.find(item => item.docId === rbState?.companyId) || dbReportCompanies[0] || {};
 }
 
 function rbMetaConnections() {
@@ -79,7 +80,7 @@ function rbReadMetaRedirect() {
             connectedAt: new Date().toISOString()
         };
         localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
-        if (rbState && rbState.companyId !== companyId && dbCompanies.some(item => item.docId === companyId)) rbState = rbLoadState(companyId, rbState.period);
+        if (rbState && rbState.companyId !== companyId && dbReportCompanies.some(item => item.docId === companyId)) rbState = rbLoadState(companyId, rbState.period);
         if (rbState) { rbState.metaAdAccountsLoaded = false; rbState.metaAdAccounts = []; }
         window.history.replaceState({}, '', `${window.location.pathname}?view=reports`);
     } else if (params.get('meta_error')) {
@@ -187,9 +188,9 @@ function rbFormatDate(value) {
 }
 
 function rbEnsureState() {
-    const firstCompany = dbCompanies[0];
+    const firstCompany = dbReportCompanies[0];
     if (!firstCompany) { rbState = rbEmptyState('', rbCurrentPeriod()); return; }
-    const companyExists = rbState && dbCompanies.some(item => item.docId === rbState.companyId);
+    const companyExists = rbState && dbReportCompanies.some(item => item.docId === rbState.companyId);
     if (!companyExists) rbState = rbLoadState(firstCompany.docId, rbCurrentPeriod());
 }
 
@@ -199,7 +200,7 @@ function renderReportBuilderPage() {
     const company = rbCompany();
     const metaConnection = rbMetaConnection();
     const adAccountOptions = (rbState.metaAdAccounts || []).map(account => `<option value="${rbEscape(account.accountId)}" ${account.accountId === rbState.adAccountId ? 'selected' : ''}>${rbEscape(account.name)}${account.currency ? ` · ${rbEscape(account.currency)}` : ''}</option>`).join('');
-    const companyOptions = dbCompanies.map(item => `<option value="${rbEscape(item.docId)}" ${item.docId === rbState.companyId ? 'selected' : ''}>${rbEscape(item.name || 'İsimsiz Firma')}</option>`).join('');
+    const companyOptions = dbReportCompanies.map(item => `<option value="${rbEscape(item.docId)}" ${item.docId === rbState.companyId ? 'selected' : ''}>${rbEscape(item.name || 'İsimsiz Firma')}</option>`).join('');
     const contentRows = rbState.contents.length ? [...rbState.contents].sort((a, b) => String(a.date).localeCompare(String(b.date))).map(item => `
         <div class="rb-content-row">
             <input type="date" value="${rbEscape(item.date)}" onchange="rbUpdateContent('${rbEscape(item.id)}','date',this.value)">
@@ -212,10 +213,10 @@ function renderReportBuilderPage() {
         <div class="rb-page">
             <header class="rb-topbar">
                 <div><span>RDGRUP MEDYA</span><h2>Rapor Oluştur</h2><p>Firma ekle, aylık verileri tamamla ve müşteriye hazır PDF oluştur.</p></div>
-                <div class="rb-top-actions"><button type="button" class="rb-button company" onclick="rbOpenCompanyModal()"><i class="fa-solid fa-building-circle-check"></i> Firma Ekle</button><button type="button" class="rb-button secondary" onclick="rbSaveDraft()"><i class="fa-regular fa-floppy-disk"></i> Taslağı kaydet</button><button type="button" class="rb-button primary" onclick="rbOpenPreview()"><i class="fa-regular fa-file-pdf"></i> Önizle / PDF</button></div>
+                <div class="rb-top-actions"><button type="button" class="rb-button company" onclick="rbOpenCompanyManager()"><i class="fa-solid fa-building-pen"></i> Firmaları Düzenle</button><button type="button" class="rb-button secondary" onclick="rbSaveDraft()"><i class="fa-regular fa-floppy-disk"></i> Taslağı kaydet</button><button type="button" class="rb-button primary" onclick="rbOpenPreview()"><i class="fa-regular fa-file-pdf"></i> Önizle / PDF</button></div>
             </header>
 
-            ${dbCompanies.length ? '' : '<div class="rb-warning">Rapor oluşturmak için üstteki “Firma Ekle” düğmesini kullanın.</div>'}
+            ${dbReportCompanies.length ? '' : '<div class="rb-warning">Henüz rapor firması yok. Üstteki “Firmaları Düzenle” bölümünden ilk firmayı ekleyin.</div>'}
             <div class="rb-layout">
                 <section class="rb-form-column">
                     <article class="rb-panel">
@@ -335,11 +336,11 @@ function rbImportPanelContents() {
     alert(imported.length ? `${imported.length} paylaşım rapora aktarıldı.` : 'Seçilen firma ve ay için tamamlanmış paylaşım bulunamadı.');
 }
 
-async function rbAddCompany() {
+async function rbSaveCompany() {
     const name = document.getElementById('rb-new-name')?.value.trim();
     if (!name) return alert('Firma adını girin.');
     const normalizedName = typeof normalizeStr === 'function' ? normalizeStr(name) : name.toLocaleLowerCase('tr-TR');
-    const existing = dbCompanies.find(item => (typeof normalizeStr === 'function' ? normalizeStr(item.name) : String(item.name || '').toLocaleLowerCase('tr-TR')) === normalizedName);
+    const existing = dbReportCompanies.find(item => item.docId !== rbEditingCompanyId && (typeof normalizeStr === 'function' ? normalizeStr(item.name) : String(item.name || '').toLocaleLowerCase('tr-TR')) === normalizedName);
     if (existing) {
         rbState = rbLoadState(existing.docId, rbState?.period || rbCurrentPeriod());
         rbCloseCompanyModal();
@@ -353,31 +354,59 @@ async function rbAddCompany() {
         instagram: document.getElementById('rb-new-instagram')?.value.trim() || '',
         reportLogo: rbPendingCompanyLogo,
         reportColor: document.getElementById('rb-new-color')?.value || '#6c63ff',
-        order: dbCompanies.length,
-        showInAds: true,
-        createdFrom: 'report-builder'
+        updatedAt: new Date().toISOString(),
+        createdFrom: 'report-builder-v2'
     };
     try {
-        const result = await db.collection('companies').add(data);
-        await fetchCompaniesFromFirebase();
-        rbState = rbLoadState(result.id, rbState?.period || rbCurrentPeriod());
+        let companyId = rbEditingCompanyId;
+        if (companyId) {
+            await db.collection('report_companies').doc(companyId).set(data, { merge: true });
+        } else {
+            const result = await db.collection('report_companies').add({ ...data, order: dbReportCompanies.length, createdAt: new Date().toISOString() });
+            companyId = result.id;
+        }
+        await fetchReportCompaniesFromFirebase();
+        rbState = rbLoadState(companyId, rbState?.period || rbCurrentPeriod());
         rbCloseCompanyModal();
         renderReportBuilderPage();
-        alert('Firma sisteme kaydedildi ve rapora seçildi. Bir daha eklemeniz gerekmez.');
+        alert(rbEditingCompanyId ? 'Rapor firması güncellendi.' : 'Firma yalnızca rapor sistemine kaydedildi ve seçildi.');
     } catch (error) {
         console.error(error);
         if (saveButton) { saveButton.disabled = false; saveButton.innerHTML = '<i class="fa-solid fa-check"></i> Firmayı Kaydet'; }
-        alert('Firma eklenemedi. Firebase yetkilerini kontrol edin.');
+        alert('Rapor firması kaydedilemedi. Firebase yetkilerini kontrol edin.');
     }
 }
 
-function rbOpenCompanyModal() {
+function rbManagerCompanyLogo(company) {
+    const logo = company.reportLogo || company.logo || '';
+    if (logo) return `<img src="${rbEscape(logo)}" alt="${rbEscape(company.name || 'Firma')} logosu">`;
+    const initials = String(company.name || 'RF').split(/\s+/).filter(Boolean).map(word => word[0]).join('').slice(0, 2).toUpperCase();
+    return `<span>${rbEscape(initials || 'RF')}</span>`;
+}
+
+function rbOpenCompanyManager() {
     rbCloseCompanyModal();
-    rbPendingCompanyLogo = '';
+    const rows = dbReportCompanies.length ? dbReportCompanies.map(company => `<div class="rb-company-manager-row"><div class="rb-company-manager-logo">${rbManagerCompanyLogo(company)}</div><div><strong>${rbEscape(company.name || 'İsimsiz Firma')}</strong><span>${rbEscape(company.instagram || 'Instagram hesabı eklenmedi')}</span></div><button type="button" onclick="rbOpenCompanyModal('${rbEscape(company.docId)}')"><i class="fa-solid fa-pen"></i> Düzenle</button></div>`).join('') : '<div class="rb-company-manager-empty"><i class="fa-regular fa-building"></i><b>Henüz rapor firması yok</b><span>Panel firmalarından bağımsız ilk rapor firmasını ekleyin.</span></div>';
     const modal = document.createElement('div');
     modal.id = 'rb-company-modal';
     modal.className = 'rb-company-modal';
-    modal.innerHTML = `<div class="rb-company-dialog" role="dialog" aria-modal="true" aria-labelledby="rb-company-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid fa-building-circle-check"></i></span><div><h3 id="rb-company-title">Yeni Firma Ekle</h3><p>Firma bir kez kaydedilir ve panelin tamamında kullanılabilir.</p></div></div><form class="rb-company-form" onsubmit="event.preventDefault(); rbAddCompany()"><label>Firma adı <b>*</b><input id="rb-new-name" required autocomplete="organization" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" autocomplete="off" placeholder="@kullaniciadi"></label><div class="rb-company-logo-field wide"><span>Firma logosu <small>PNG, JPG, WebP veya SVG</small></span><input id="rb-new-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbPrepareNewCompanyLogo(event)" hidden><button type="button" class="rb-company-logo-pick" onclick="document.getElementById('rb-new-logo-file').click()"><span id="rb-new-logo-preview"><i class="fa-solid fa-cloud-arrow-up"></i></span><b id="rb-new-logo-text">Bilgisayardan logo seç</b></button></div><label>Rapor rengi<input id="rb-new-color" type="color" value="#6c63ff"></label><div class="rb-company-form-actions"><button type="button" class="rb-button" onclick="rbCloseCompanyModal()">Vazgeç</button><button type="submit" id="rb-company-save" class="rb-button primary"><i class="fa-solid fa-check"></i> Firmayı Kaydet</button></div></form></div>`;
+    modal.innerHTML = `<div class="rb-company-dialog rb-company-manager" role="dialog" aria-modal="true" aria-labelledby="rb-company-manager-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid fa-building-pen"></i></span><div><h3 id="rb-company-manager-title">Rapor Firmaları</h3><p>Bu liste panel firmalarından tamamen bağımsızdır.</p></div></div><div class="rb-company-manager-toolbar"><div><b>${dbReportCompanies.length}</b><span> kayıtlı rapor firması</span></div><button type="button" class="rb-button primary" onclick="rbOpenCompanyModal()"><i class="fa-solid fa-plus"></i> Yeni Firma Ekle</button></div><div class="rb-company-manager-list">${rows}</div></div>`;
+    modal.addEventListener('click', event => { if (event.target === modal) rbCloseCompanyModal(); });
+    document.body.appendChild(modal);
+    document.addEventListener('keydown', rbCompanyModalEscape);
+}
+
+function rbOpenCompanyModal(companyId = '') {
+    rbCloseCompanyModal();
+    rbEditingCompanyId = companyId;
+    const company = dbReportCompanies.find(item => item.docId === companyId) || {};
+    rbPendingCompanyLogo = company.reportLogo || company.logo || '';
+    const isEditing = Boolean(company.docId);
+    const logoPreview = rbPendingCompanyLogo ? `<img src="${rbEscape(rbPendingCompanyLogo)}" alt="Logo önizlemesi">` : '<i class="fa-solid fa-cloud-arrow-up"></i>';
+    const modal = document.createElement('div');
+    modal.id = 'rb-company-modal';
+    modal.className = 'rb-company-modal';
+    modal.innerHTML = `<div class="rb-company-dialog" role="dialog" aria-modal="true" aria-labelledby="rb-company-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid ${isEditing ? 'fa-building-pen' : 'fa-building-circle-check'}"></i></span><div><h3 id="rb-company-title">${isEditing ? 'Rapor Firmasını Düzenle' : 'Yeni Rapor Firması'}</h3><p>Bu kayıt yalnızca Rapor Oluştur bölümünde kullanılacaktır.</p></div></div><form class="rb-company-form" onsubmit="event.preventDefault(); rbSaveCompany()"><label>Firma adı <b>*</b><input id="rb-new-name" required autocomplete="organization" value="${rbEscape(company.name || '')}" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" autocomplete="off" value="${rbEscape(company.instagram || '')}" placeholder="@kullaniciadi"></label><div class="rb-company-logo-field wide"><span>Firma logosu <small>PNG, JPG, WebP veya SVG</small></span><input id="rb-new-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbPrepareNewCompanyLogo(event)" hidden><button type="button" class="rb-company-logo-pick" onclick="document.getElementById('rb-new-logo-file').click()"><span id="rb-new-logo-preview">${logoPreview}</span><b id="rb-new-logo-text">${isEditing && rbPendingCompanyLogo ? 'Logoyu değiştir' : 'Bilgisayardan logo seç'}</b></button></div><label>Rapor rengi<input id="rb-new-color" type="color" value="${rbEscape(company.reportColor || company.color || '#6c63ff')}"></label><div class="rb-company-form-actions"><button type="button" class="rb-button" onclick="rbOpenCompanyManager()"><i class="fa-solid fa-arrow-left"></i> Firmalara Dön</button><button type="submit" id="rb-company-save" class="rb-button primary"><i class="fa-solid fa-check"></i> ${isEditing ? 'Değişiklikleri Kaydet' : 'Firmayı Kaydet'}</button></div></form></div>`;
     modal.addEventListener('click', event => { if (event.target === modal) rbCloseCompanyModal(); });
     document.body.appendChild(modal);
     document.addEventListener('keydown', rbCompanyModalEscape);
@@ -414,8 +443,8 @@ async function rbUpdateCompanyLogo(event) {
     if (!file || !company.docId) return;
     try {
         const reportLogo = await rbConvertLogoFile(file);
-        await db.collection('companies').doc(company.docId).set({ reportLogo, reportLogoUpdatedAt: new Date().toISOString() }, { merge: true });
-        await fetchCompaniesFromFirebase();
+        await db.collection('report_companies').doc(company.docId).set({ reportLogo, reportLogoUpdatedAt: new Date().toISOString() }, { merge: true });
+        await fetchReportCompaniesFromFirebase();
         renderReportBuilderPage();
         alert('Firma logosu kaydedildi. Bundan sonraki PDF raporlarında otomatik kullanılacak.');
     } catch (error) {
@@ -491,7 +520,7 @@ async function rbSaveDraft() {
     const remoteState = { ...rbState, profileImage: '', updatedAt: new Date().toISOString(), updatedBy: currentUser?.id || '' };
     try {
         await db.collection('monthly_reports').doc(`${rbState.companyId}_${rbState.period}`).set(remoteState, { merge: true });
-        if (rbCompany().docId) await db.collection('companies').doc(rbCompany().docId).set({ reportColor: rbState.accent }, { merge: true });
+        if (rbCompany().docId) await db.collection('report_companies').doc(rbCompany().docId).set({ reportColor: rbState.accent }, { merge: true });
         alert('Rapor taslağı kaydedildi.');
     } catch (error) {
         console.error(error);

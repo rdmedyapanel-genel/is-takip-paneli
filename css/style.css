@@ -66,7 +66,7 @@ body { background-color: #e2e8f0; display: grid; place-items: center; height: 10
 .version-info a { color: var(--primary-red); font-size: 10px; font-weight: 600; cursor: pointer; text-decoration: none; }
 .version-info a:hover { text-decoration: underline; }
 
-.company-grid { display: grid; grid-template-columns: repeat(2, minmax(240px, 1fr)); gap: 15px; width: min(760px, 100%); margin-inline: auto; }
+.company-grid { display:grid; grid-template-columns:minmax(240px,1fr); gap:15px; width:min(380px,100%); margin:24px auto 0; }
 .company-card { background: #ffffff; border: 2px solid #f1f5f9; border-radius: 12px; padding: 15px 10px; text-align: center; transition: all 0.3s; cursor: pointer; }
 .company-card:hover { transform: translateY(-3px); border-color: var(--primary-red); box-shadow: 0 10px 20px rgba(220, 38, 38, 0.1); }
 .company-card i { font-size: 28px; color: var(--primary-red); margin-bottom: 8px; }

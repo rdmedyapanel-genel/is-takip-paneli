@@ -1,6 +1,6 @@
 # RDGrup İş Takip Paneli
 
-Panelin **Medya** bölümündeki **Rapor Oluştur** sayfasından firma eklenebilir, aylık rapor hazırlanabilir ve PDF çıktısı alınabilir.
+Panelin **Medya** bölümündeki **Rapor Oluştur** sayfasından rapor firmaları yönetilebilir, aylık rapor hazırlanabilir ve PDF çıktısı alınabilir. Rapor firmaları normal iş takip firmalarından ayrı bir listede tutulur; iki alan birbirine karışmaz.
 
 ## Meta bağlantısı
 

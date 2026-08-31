@@ -62,7 +62,7 @@
 <script src="../js/firebase-config.js"></script>
 <script src="../js/report-builder.js"></script>
 <script>
-    let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = []; let dbAds = []; let dbEquipments = []; let dbSpecialDays = [];
+    let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbReportCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = []; let dbAds = []; let dbEquipments = []; let dbSpecialDays = [];
     let currentUser = null; let currentCompany = "RDGRUP MEDYA"; 
     let activePage = ""; let showArchivedGA = false; let reportDate = new Date(); let reklamDate = new Date(); let summaryDate = new Date();
     let taskDatePicker, shootDatePicker, chkDatePicker, gaDatePicker;
@@ -81,7 +81,7 @@
 
     async function initializeSystem() {
         try {
-            await fetchCompaniesFromFirebase(); await fetchUsersFromFirebase(); await fetchEquipmentsFromFirebase(); await fetchTasksFromFirebase(); await fetchShootsFromFirebase(); await fetchAgendaFromFirebase(); await fetchGenelAgendaFromFirebase(); await fetchAdsFromFirebase(); await fetchSpecialDaysFromFirebase();
+            await fetchCompaniesFromFirebase(); await fetchReportCompaniesFromFirebase(); await fetchUsersFromFirebase(); await fetchEquipmentsFromFirebase(); await fetchTasksFromFirebase(); await fetchShootsFromFirebase(); await fetchAgendaFromFirebase(); await fetchGenelAgendaFromFirebase(); await fetchAdsFromFirebase(); await fetchSpecialDaysFromFirebase();
             loadSidebarMenu();
         } catch (error) { console.error("Bağlantı hatası: ", error); } finally { document.getElementById('init-loader').style.display = 'none'; }
     }
@@ -94,6 +94,23 @@
 
     async function fetchUsersFromFirebase() { const snapshot = await db.collection('users').get(); dbUsers = []; snapshot.forEach(doc => { dbUsers.push({ docId: doc.id, ...doc.data() }); }); dbUsers.sort((a, b) => (a.order || 0) - (b.order || 0)); populateUserDropdowns(); }
     async function fetchCompaniesFromFirebase() { const snapshot = await db.collection('companies').get(); dbCompanies = []; snapshot.forEach(doc => { dbCompanies.push({ docId: doc.id, ...doc.data() }); }); dbCompanies.sort((a, b) => (a.order || 0) - (b.order || 0)); populateCompanyDropdown(); }
+    async function fetchReportCompaniesFromFirebase() {
+        let snapshot = await db.collection('report_companies').get();
+        dbReportCompanies = [];
+        snapshot.forEach(doc => { dbReportCompanies.push({ docId: doc.id, ...doc.data() }); });
+        if (dbReportCompanies.length === 0) {
+            const legacyReportCompanies = dbCompanies.filter(company => company.createdFrom === 'report-builder');
+            if (legacyReportCompanies.length) {
+                await Promise.all(legacyReportCompanies.map(company => {
+                    const { docId, ...data } = company;
+                    return db.collection('report_companies').doc(docId).set({ ...data, migratedAt: new Date().toISOString() }, { merge: true });
+                }));
+                snapshot = await db.collection('report_companies').get();
+                snapshot.forEach(doc => { dbReportCompanies.push({ docId: doc.id, ...doc.data() }); });
+            }
+        }
+        dbReportCompanies.sort((a, b) => (a.order || 0) - (b.order || 0));
+    }
     async function fetchEquipmentsFromFirebase() { const snapshot = await db.collection('equipments').get(); dbEquipments = []; snapshot.forEach(doc => { dbEquipments.push({ docId: doc.id, ...doc.data() }); }); dbEquipments.sort((a, b) => (a.order || 0) - (b.order || 0)); }
     async function fetchTasksFromFirebase() { const snapshot = await db.collection('tasks').get(); dbTasks = []; snapshot.forEach(doc => { dbTasks.push({ docId: doc.id, ...doc.data() }); }); }
     async function fetchShootsFromFirebase() { const snapshot = await db.collection('shoots').get(); dbShoots = []; snapshot.forEach(doc => { dbShoots.push({ docId: doc.id, ...doc.data() }); }); }
