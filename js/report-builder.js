@@ -1,5 +1,6 @@
 const rbMonthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
 let rbState = null;
+let rbPendingCompanyLogo = '';
 
 function rbEscape(value) {
     return String(value == null ? '' : value).replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[char]));
@@ -219,10 +220,11 @@ function renderReportBuilderPage() {
                 <section class="rb-form-column">
                     <article class="rb-panel">
                         <div class="rb-panel-head"><b>01</b><div><h3>Rapor bilgileri</h3><p>Firma, dönem ve rapor rengini belirle.</p></div></div>
-                        <div class="rb-fields three">
+                        <div class="rb-fields four">
                             <label>Firma<select id="rb-company" onchange="rbSwitchContext()">${companyOptions || '<option value="">Firma yok</option>'}</select></label>
                             <label>Rapor dönemi<input id="rb-period" type="month" value="${rbEscape(rbState.period)}" onchange="rbSwitchContext()"></label>
                             <label>Rapor rengi<div class="rb-color"><input type="color" value="${rbEscape(rbState.accent)}" oninput="rbSetField('accent',this.value)"><span>${rbEscape(rbState.accent.toUpperCase())}</span></div></label>
+                            <label>Firma logosu<input id="rb-current-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbUpdateCompanyLogo(event)" hidden><button type="button" class="rb-logo-upload" onclick="document.getElementById('rb-current-logo-file').click()" ${company.docId ? '' : 'disabled'}>${company.reportLogo || company.logo ? `<span>${rbCompanyLogo(company)}</span><b>Logoyu değiştir</b>` : '<i class="fa-regular fa-image"></i><b>Bilgisayardan seç</b>'}</button></label>
                         </div>
                         <div class="rb-meta-card ${metaConnection ? 'connected' : ''}"><div class="rb-meta-icon"><i class="fa-brands fa-meta"></i></div><div><strong>${metaConnection ? `@${rbEscape(metaConnection.username || company.instagram || 'Instagram')} bağlı` : 'Meta hesabını bağla'}</strong><span>${metaConnection ? 'Gönderiler, profil bilgileri ve izin varsa reklam sonuçları alınabilir.' : 'Seçili firmanın Instagram profesyonel hesabını güvenli biçimde bağlayın.'}</span>${metaConnection && adAccountOptions ? `<label class="rb-ad-account">Reklam hesabı<select onchange="rbSetField('adAccountId',this.value)"><option value="">Seçin</option>${adAccountOptions}</select></label>` : ''}${metaConnection?.adsRead === false ? '<em>Reklam izni verilmedi; gönderiler yine alınabilir.</em>' : ''}</div><div class="rb-meta-actions">${metaConnection ? `<button type="button" onclick="rbImportMetaContents()"><i class="fa-solid fa-rotate"></i> Meta’dan getir</button><button type="button" class="danger" onclick="rbDisconnectMeta()">Bağlantıyı kes</button>` : `<button type="button" onclick="rbConnectMeta()"><i class="fa-brands fa-facebook"></i> Meta’ya bağlan</button>`}</div></div>
                     </article>
@@ -342,14 +344,14 @@ async function rbAddCompany() {
         rbState = rbLoadState(existing.docId, rbState?.period || rbCurrentPeriod());
         rbCloseCompanyModal();
         renderReportBuilderPage();
-        return alert('Bu firma zaten sistemde kayıtlı. Mevcut firma rapora seçildi.');
+        return alert('Bu firma zaten sistemde kayıtlı. Mevcut firma rapora seçildi; logosunu Rapor Bilgileri alanından değiştirebilirsiniz.');
     }
     const saveButton = document.getElementById('rb-company-save');
     if (saveButton) { saveButton.disabled = true; saveButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kaydediliyor'; }
     const data = {
         name,
         instagram: document.getElementById('rb-new-instagram')?.value.trim() || '',
-        reportLogo: document.getElementById('rb-new-logo')?.value.trim() || '',
+        reportLogo: rbPendingCompanyLogo,
         reportColor: document.getElementById('rb-new-color')?.value || '#6c63ff',
         order: dbCompanies.length,
         showInAds: true,
@@ -371,10 +373,11 @@ async function rbAddCompany() {
 
 function rbOpenCompanyModal() {
     rbCloseCompanyModal();
+    rbPendingCompanyLogo = '';
     const modal = document.createElement('div');
     modal.id = 'rb-company-modal';
     modal.className = 'rb-company-modal';
-    modal.innerHTML = `<div class="rb-company-dialog" role="dialog" aria-modal="true" aria-labelledby="rb-company-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid fa-building-circle-check"></i></span><div><h3 id="rb-company-title">Yeni Firma Ekle</h3><p>Firma bir kez kaydedilir ve panelin tamamında kullanılabilir.</p></div></div><form class="rb-company-form" onsubmit="event.preventDefault(); rbAddCompany()"><label>Firma adı <b>*</b><input id="rb-new-name" required autocomplete="organization" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" autocomplete="off" placeholder="@kullaniciadi"></label><label class="wide">Logo bağlantısı <small>(isteğe bağlı)</small><input id="rb-new-logo" type="url" autocomplete="url" placeholder="https://..."></label><label>Rapor rengi<input id="rb-new-color" type="color" value="#6c63ff"></label><div class="rb-company-form-actions"><button type="button" class="rb-button" onclick="rbCloseCompanyModal()">Vazgeç</button><button type="submit" id="rb-company-save" class="rb-button primary"><i class="fa-solid fa-check"></i> Firmayı Kaydet</button></div></form></div>`;
+    modal.innerHTML = `<div class="rb-company-dialog" role="dialog" aria-modal="true" aria-labelledby="rb-company-title"><button type="button" class="rb-company-close" onclick="rbCloseCompanyModal()" aria-label="Kapat">×</button><div class="rb-company-dialog-head"><span><i class="fa-solid fa-building-circle-check"></i></span><div><h3 id="rb-company-title">Yeni Firma Ekle</h3><p>Firma bir kez kaydedilir ve panelin tamamında kullanılabilir.</p></div></div><form class="rb-company-form" onsubmit="event.preventDefault(); rbAddCompany()"><label>Firma adı <b>*</b><input id="rb-new-name" required autocomplete="organization" placeholder="Örn. Gülçimen Aspava Emek"></label><label>Instagram hesabı<input id="rb-new-instagram" autocomplete="off" placeholder="@kullaniciadi"></label><div class="rb-company-logo-field wide"><span>Firma logosu <small>PNG, JPG, WebP veya SVG</small></span><input id="rb-new-logo-file" type="file" accept=".png,.jpg,.jpeg,.webp,.svg,image/png,image/jpeg,image/webp,image/svg+xml" onchange="rbPrepareNewCompanyLogo(event)" hidden><button type="button" class="rb-company-logo-pick" onclick="document.getElementById('rb-new-logo-file').click()"><span id="rb-new-logo-preview"><i class="fa-solid fa-cloud-arrow-up"></i></span><b id="rb-new-logo-text">Bilgisayardan logo seç</b></button></div><label>Rapor rengi<input id="rb-new-color" type="color" value="#6c63ff"></label><div class="rb-company-form-actions"><button type="button" class="rb-button" onclick="rbCloseCompanyModal()">Vazgeç</button><button type="submit" id="rb-company-save" class="rb-button primary"><i class="fa-solid fa-check"></i> Firmayı Kaydet</button></div></form></div>`;
     modal.addEventListener('click', event => { if (event.target === modal) rbCloseCompanyModal(); });
     document.body.appendChild(modal);
     document.addEventListener('keydown', rbCompanyModalEscape);
@@ -388,6 +391,78 @@ function rbCompanyModalEscape(event) {
 function rbCloseCompanyModal() {
     document.getElementById('rb-company-modal')?.remove();
     document.removeEventListener('keydown', rbCompanyModalEscape);
+}
+
+async function rbPrepareNewCompanyLogo(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+        rbPendingCompanyLogo = await rbConvertLogoFile(file);
+        const preview = document.getElementById('rb-new-logo-preview');
+        const text = document.getElementById('rb-new-logo-text');
+        if (preview) preview.innerHTML = `<img src="${rbEscape(rbPendingCompanyLogo)}" alt="Logo önizlemesi">`;
+        if (text) text.textContent = file.name;
+    } catch (error) {
+        event.target.value = '';
+        alert(error.message || 'Logo okunamadı.');
+    }
+}
+
+async function rbUpdateCompanyLogo(event) {
+    const file = event.target.files?.[0];
+    const company = rbCompany();
+    if (!file || !company.docId) return;
+    try {
+        const reportLogo = await rbConvertLogoFile(file);
+        await db.collection('companies').doc(company.docId).set({ reportLogo, reportLogoUpdatedAt: new Date().toISOString() }, { merge: true });
+        await fetchCompaniesFromFirebase();
+        renderReportBuilderPage();
+        alert('Firma logosu kaydedildi. Bundan sonraki PDF raporlarında otomatik kullanılacak.');
+    } catch (error) {
+        event.target.value = '';
+        alert(error.message || 'Logo kaydedilemedi.');
+    }
+}
+
+function rbConvertLogoFile(file) {
+    return new Promise((resolve, reject) => {
+        const extension = String(file.name || '').split('.').pop().toLowerCase();
+        if (extension === 'eps' || file.type === 'application/postscript') return reject(new Error('EPS dosyası tarayıcıda doğrudan kullanılamaz. EPS’yi buraya gönderirsen PDF uyumlu PNG’ye dönüştürebilirim.'));
+        if (!['png','jpg','jpeg','webp','svg'].includes(extension) && !String(file.type || '').startsWith('image/')) return reject(new Error('PNG, JPG, WebP veya SVG logo seçin.'));
+        if (file.size > 15 * 1024 * 1024) return reject(new Error('Logo dosyası 15 MB’dan küçük olmalı.'));
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Logo dosyası okunamadı.'));
+        reader.onload = () => {
+            const image = new Image();
+            image.onerror = () => reject(new Error('Logo görseli açılamadı.'));
+            image.onload = () => {
+                try {
+                    const sourceWidth = image.naturalWidth || image.width;
+                    const sourceHeight = image.naturalHeight || image.height;
+                    if (!sourceWidth || !sourceHeight) return reject(new Error('Logo ölçüleri okunamadı.'));
+                    const attempts = [[720,.9],[600,.84],[480,.76]];
+                    let result = '';
+                    for (const [maxSize, quality] of attempts) {
+                        const ratio = Math.min(1, maxSize / Math.max(sourceWidth, sourceHeight));
+                        const canvas = document.createElement('canvas');
+                        canvas.width = Math.max(1, Math.round(sourceWidth * ratio));
+                        canvas.height = Math.max(1, Math.round(sourceHeight * ratio));
+                        const context = canvas.getContext('2d');
+                        context.clearRect(0, 0, canvas.width, canvas.height);
+                        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                        result = canvas.toDataURL('image/webp', quality);
+                        if (result.length <= 320000) break;
+                    }
+                    if (!result || result.length > 700000) return reject(new Error('Logo çok büyük. Daha sade veya küçük bir görsel seçin.'));
+                    resolve(result);
+                } catch (_) {
+                    reject(new Error('Bu logo güvenli biçimde dönüştürülemedi. PNG veya JPG olarak tekrar deneyin.'));
+                }
+            };
+            image.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+    });
 }
 
 function rbSetProfileImage(event) {
