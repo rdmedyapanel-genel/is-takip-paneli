@@ -333,7 +333,9 @@ async function rbImportMetaContents() {
     const adCoverCount = ads.filter(ad => rbAdImageSources(ad).length).length;
     const matchedAdCoverCount = ads.filter(ad => String(ad.thumbnailSource || '').startsWith('instagram-media')).length;
     const dateMatchedAdCoverCount = ads.filter(ad => ad.thumbnailSource === 'instagram-media-date').length;
-    const adMessage = adsImported ? ` ${ads.length} reklamın ayrı sonucu ve ${adCoverCount} kapak adayı eklendi; ${matchedAdCoverCount} tanesi Instagram gönderisiyle eşleşti${dateMatchedAdCoverCount ? ` (${dateMatchedAdCoverCount} tarih eşleşmesi)` : ''}.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
+    const descriptionMatchedAdCoverCount = ads.filter(ad => ad.thumbnailSource === 'instagram-media-description').length;
+    const matchDetails = [descriptionMatchedAdCoverCount ? `${descriptionMatchedAdCoverCount} açıklama` : '', dateMatchedAdCoverCount ? `${dateMatchedAdCoverCount} tarih` : ''].filter(Boolean).join(', ');
+    const adMessage = adsImported ? ` ${ads.length} reklamın ayrı sonucu ve ${adCoverCount} kapak adayı eklendi; ${matchedAdCoverCount} tanesi Instagram gönderisiyle eşleşti${matchDetails ? ` (${matchDetails} eşleşmesi)` : ''}.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
     const insightMessage = insightsData?.hasData !== false && insightsData ? ' Organik istatistikler de güncellendi.' : (insightsData ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Var olan organik istatistikler korundu.');
     const warningMessage = warnings.length ? `\n\nAlınamayan bölümler:\n- ${warnings.join('\n- ')}` : '';
     alert(`${rbState.contents.length} aylık paylaşım ve son ${rbState.profilePosts.length} gönderi raporda hazır.${insightMessage}${adMessage}${warningMessage}`);
@@ -412,6 +414,39 @@ function rbTextMatchScore(left, right) {
     return common >= 2 ? common / Math.min(leftWords.length, rightWords.length) : 0;
 }
 
+function rbAdDescriptions(ad) {
+    return rbImageSources(ad?.description, ad?.descriptionCandidates);
+}
+
+function rbDescriptionMatchScore(left, right) {
+    const leftText = rbComparableText(left);
+    const rightText = rbComparableText(right);
+    if (!leftText || !rightText) return 0;
+    const shortestLength = Math.min(leftText.length, rightText.length);
+    if (leftText === rightText) return 1;
+    if (shortestLength >= 18 && (leftText.includes(rightText) || rightText.includes(leftText))) return .99;
+    const ignored = new Set(['icin','için','ile','bir','bu','ve','veya','daha','olan','olarak','instagram','gonderisi','gönderisi','reklam']);
+    const words = value => [...new Set(rbComparableText(value).split(' ').filter(word => word.length > 2 && !ignored.has(word)))];
+    const leftWords = words(leftText); const rightWords = words(rightText);
+    if (!leftWords.length || !rightWords.length) return 0;
+    const rightSet = new Set(rightWords);
+    const common = leftWords.filter(word => rightSet.has(word)).length;
+    if (common < 3) return 0;
+    const coverage = common / Math.min(leftWords.length, rightWords.length);
+    const union = new Set([...leftWords, ...rightWords]).size;
+    const jaccard = union ? common / union : 0;
+    return coverage * .8 + jaccard * .2;
+}
+
+function rbMediaMatchByDescription(ad, mediaRows) {
+    const descriptions = rbAdDescriptions(ad);
+    if (!descriptions.length) return null;
+    return mediaRows.map(media => ({
+        media,
+        score: Math.max(...descriptions.map(description => rbDescriptionMatchScore(description, media.caption)))
+    })).sort((left, right) => right.score - left.score).find(candidate => candidate.score >= .62)?.media || null;
+}
+
 function rbDateValue(value) {
     const matched = String(value || '').match(/^\d{4}-\d{2}-\d{2}/)?.[0];
     const parsed = matched ? new Date(`${matched}T12:00:00Z`).getTime() : NaN;
@@ -441,6 +476,11 @@ function rbFillAdThumbnailsFromMedia(ads, mediaRows) {
     return ads.map(ad => {
         const byId = mediaRows.find(media => String(media.id || '') === String(ad.instagramMediaId || ''));
         let match = byId;
+        let matchSource = byId ? 'instagram-media-id' : '';
+        if (!match) {
+            match = rbMediaMatchByDescription(ad, mediaRows);
+            if (match) matchSource = 'instagram-media-description';
+        }
         if (!match) {
             const adText = rbComparableText(ad.name);
             match = mediaRows.find(media => {
@@ -450,15 +490,17 @@ function rbFillAdThumbnailsFromMedia(ads, mediaRows) {
                 const adLead = adText.slice(0, Math.min(48, adText.length));
                 return captionLead.length >= 18 && (adText.includes(captionLead) || caption.includes(adLead));
             });
+            if (match) matchSource = 'instagram-media-name';
         }
         if (!match) {
             const adLabels = [ad.name, ad.campaignName, ad.adsetName].filter(Boolean);
             match = mediaRows.map(media => ({ media, score: Math.max(...adLabels.map(label => rbTextMatchScore(label, media.caption))) }))
                 .sort((left, right) => right.score - left.score)
                 .find(candidate => candidate.score >= .55)?.media;
+            if (match) matchSource = 'instagram-media-name';
         }
-        let matchSource = match ? 'instagram-media' : '';
-        if (!match) {
+        // Meta gerçek reklam açıklamasını verdiyse tarih eşleştirmesi yapılmaz; yanlış kapak riskini önler.
+        if (!match && !rbAdDescriptions(ad).length) {
             match = rbMediaMatchByDate(ad, mediaRows);
             if (match) matchSource = 'instagram-media-date';
         }

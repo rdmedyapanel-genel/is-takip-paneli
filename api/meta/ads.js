@@ -39,6 +39,24 @@ function directCreativeImage(creative = {}) {
     || '';
 }
 
+function creativeDescriptions(creative = {}) {
+  const story = creative.object_story_spec || {};
+  const assets = creative.asset_feed_spec || {};
+  const values = [
+    creative.body,
+    creative.title,
+    story.link_data?.message,
+    story.video_data?.message,
+    story.photo_data?.message,
+    story.template_data?.message,
+    story.text_data?.message,
+    ...(assets.bodies || []).map(item => item?.text),
+    ...(assets.titles || []).map(item => item?.text),
+    ...(assets.descriptions || []).map(item => item?.text),
+  ].map(value => String(value || '').trim()).filter(Boolean);
+  return [...new Set(values)];
+}
+
 async function resolvedMediaImage(detail, connection) {
   if (detail.thumbnailUrl) return detail.thumbnailUrl;
   if (detail.instagramMediaId && connection.accessToken) {
@@ -93,14 +111,14 @@ async function adDetails(adIds, connection, includeImages = false) {
       let creative = ad?.creative || {};
       if (includeImages && creativeId) {
         const creativeUrl = new URL(`${GRAPH_URL}/${creativeId}`);
-        creativeUrl.searchParams.set('fields', 'id,name,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id,object_story_spec,asset_feed_spec');
+        creativeUrl.searchParams.set('fields', 'id,name,body,title,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id,object_story_spec,asset_feed_spec');
         creativeUrl.searchParams.set('thumbnail_width', '720');
         creativeUrl.searchParams.set('thumbnail_height', '720');
         creativeUrl.searchParams.set('access_token', connection.userAccessToken);
         try {
           creative = await graphJson(creativeUrl.toString());
         } catch (_) {
-          creativeUrl.searchParams.set('fields', 'id,name,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id');
+          creativeUrl.searchParams.set('fields', 'id,name,body,title,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id');
           try { creative = await graphJson(creativeUrl.toString()); } catch (_) {}
         }
       }
@@ -114,6 +132,7 @@ async function adDetails(adIds, connection, includeImages = false) {
         createdTime: ad?.created_time || '',
         updatedTime: ad?.updated_time || '',
         publishedTime: ad?.adset?.start_time || ad?.created_time || '',
+        descriptionCandidates: creativeDescriptions(creative),
       };
     }));
   }
@@ -142,7 +161,17 @@ module.exports = async function handler(req, res) {
     accountsUrl.searchParams.set('limit', '100');
     accountsUrl.searchParams.set('access_token', connection.userAccessToken);
     const accountsPayload = await graphJson(accountsUrl.toString());
-    const allowed = (accountsPayload.data || []).some(account => (account.account_id || String(account.id || '').replace(/^act_/, '')) === accountId);
+    let allowed = (accountsPayload.data || []).some(account => (account.account_id || String(account.id || '').replace(/^act_/, '')) === accountId);
+    // Bazı Business Portfolio reklam hesapları /me/adaccounts listesine düşmez; doğrudan erişim yine geçerli olabilir.
+    if (!allowed) {
+      try {
+        const accountUrl = new URL(`${GRAPH_URL}/act_${accountId}`);
+        accountUrl.searchParams.set('fields', 'id,account_id');
+        accountUrl.searchParams.set('access_token', connection.userAccessToken);
+        const directAccount = await graphJson(accountUrl.toString());
+        allowed = (directAccount.account_id || String(directAccount.id || '').replace(/^act_/, '')) === accountId;
+      } catch (_) {}
+    }
     if (!allowed) return res.status(403).json({ error: 'Bu reklam hesabına erişim bulunamadı.' });
 
     const totalUrl = new URL(`${GRAPH_URL}/act_${accountId}/insights`);
@@ -187,6 +216,8 @@ module.exports = async function handler(req, res) {
         createdTime: detail.createdTime || '',
         updatedTime: detail.updatedTime || '',
         publishedTime: detail.publishedTime || detail.createdTime || '',
+        description: detail.descriptionCandidates?.[0] || '',
+        descriptionCandidates: detail.descriptionCandidates || [],
       };
     }).sort((left, right) => Number(right.spend || 0) - Number(left.spend || 0));
     const visits = profileVisits(insight.actions);
