@@ -26,3 +26,9 @@ Rapor ayındaki ve son 12 gönderide eşleşmeyen reklam kapakları için Instag
 Bulunan Meta kapakları, profil fotoğrafı ve gönderi görselleri süreli CDN bağlantılarının PDF ekranında engellenmemesi için imzalı `/api/meta/image-proxy` uç noktası üzerinden aynı site görseline dönüştürülür. Proxy çalışmazsa özgün Meta adresi otomatik olarak ikinci seçenek şeklinde denenir. Proxy yalnızca Meta/Facebook/Instagram görsel alan adlarına izin verir ve `META_APP_SECRET` ile imzalanır.
 
 Gönderiler, profil görünümü, organik istatistikler ve reklamlar birbirinden bağımsız içe aktarılır. Reklam servisi gecikse veya hata verse bile alınmış gönderiler ve istatistikler hemen ekrana uygulanır, yerel taslağa kaydedilir ve silinmez.
+
+## Genel Performans Özeti ve en iyi içerikler
+
+PDF'nin kapaktan sonraki ilk sayfası, firma için seçilen renge uyarlanan editoryal bir **Genel Performans Özeti** olarak hazırlanır. Bu sayfada toplam erişim, etkileşim, takipçi sayısı, paylaşılan içerik, etkileşim dağılımı ve otomatik kısa değerlendirme birlikte gösterilir.
+
+**Meta'dan verileri getir** işlemi seçili ayın gönderi bazlı erişim ve etkileşim istatistiklerini de alır. Gönderiler önce erişime, erişim yoksa görüntülenme ve etkileşime göre sıralanır; en güçlü üç içerik kapak görseli, açıklaması, erişimi ve etkileşimiyle **En İyi İçerikler** alanına otomatik eklenir. Bir içerik satırına tıklandığında ilgili Instagram gönderisi açılır.
