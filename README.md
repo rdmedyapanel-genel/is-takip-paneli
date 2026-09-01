@@ -42,3 +42,5 @@ Meta Reklam API'sinden alınan harcama ham, KDV hariç değer olarak taslakta sa
 Kapak, Genel Performans Özeti ile aynı editoryal ve yumuşak görsel dilde hazırlanır. Firma logosu büyük, beyaz ve firma renginden üretilen koyu bir yüzey üzerinde gösterilir. Firma için açık bir renk seçilmiş olsa bile başlık ve bilgi metinlerinde otomatik koyulaştırılmış güvenli bir ton kullanılır.
 
 Tüm PDF sayfalarında başlıklar, açıklamalar, istatistik değerleri, reklam bilgileri, Instagram hesap bilgileri ve alt bilgiler büyütülmüş ve kontrastı artırılmıştır. Daha büyük içerik satırlarının çakışmaması için paylaşım listeleri sayfa başına en fazla 12 kayıtla bölünür.
+
+PDF motorlarının büyük dairesel geçişleri keskin renk bandı şeklinde basmasını önlemek için kapak, performans özeti ve standart sayfalardaki zeminler tek tonlu ve yumuşak doğrusal geçişlere dönüştürülmüştür. Firma rengi korunur; arka planda mor veya gri ikinci bir renk üretilmez.

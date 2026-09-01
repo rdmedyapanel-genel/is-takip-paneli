@@ -1081,10 +1081,10 @@ function rbCompactCaption(value, fallback = 'Instagram içeriği') {
 
 function rbInteractionDistribution() {
     const rows = [
-        { label: 'Beğeni', value: Number(rbState.likes) || 0, color: 'var(--nr-accent)' },
-        { label: 'Yorum', value: Number(rbState.comments) || 0, color: '#6f63ff' },
-        { label: 'Kaydetme', value: Number(rbState.saves) || 0, color: '#4d8df7' },
-        { label: 'Paylaşım', value: Number(rbState.shares) || 0, color: '#205ab7' },
+        { label: 'Beğeni', value: Number(rbState.likes) || 0, color: 'var(--nr-safe-accent)' },
+        { label: 'Yorum', value: Number(rbState.comments) || 0, color: 'color-mix(in srgb,var(--nr-accent) 72%,white)' },
+        { label: 'Kaydetme', value: Number(rbState.saves) || 0, color: 'color-mix(in srgb,var(--nr-accent) 48%,white)' },
+        { label: 'Paylaşım', value: Number(rbState.shares) || 0, color: 'color-mix(in srgb,var(--nr-accent) 72%,#17233f)' },
     ];
     const total = rows.reduce((sum, row) => sum + row.value, 0);
     let cursor = 0;

@@ -318,3 +318,17 @@
 .nr-performance-summary>.nr-footer { font-size:9.5px; }
 .nr-performance-summary>.nr-footer strong { color:#2e3a52; font-size:10.5px; }
 .nr-performance-summary>.nr-footer>span { color:#4f5c72; }
+
+/* V24: PDF baskisinda renk bandi olusturmayan, yumusak ve tek tonlu zeminler */
+.nr-cover { background:linear-gradient(138deg,#fff 0%,#fff 42%,color-mix(in srgb,var(--nr-accent) 5%,white) 64%,color-mix(in srgb,var(--nr-accent) 25%,white) 100%); }
+.nr-cover:after { display:none; }
+.nr-standard { background:linear-gradient(142deg,#fff 0%,#fff 57%,color-mix(in srgb,var(--nr-accent) 4%,white) 78%,color-mix(in srgb,var(--nr-accent) 10%,white) 100%); }
+.nr-standard:before { display:none; }
+.nr-performance-summary { background:linear-gradient(140deg,#fff 0%,#fff 44%,color-mix(in srgb,var(--nr-accent) 5%,white) 68%,color-mix(in srgb,var(--nr-accent) 23%,white) 100%); }
+.nr-performance-summary:after,.nr-summary-orb { display:none; }
+.nr-cover-logo { background:linear-gradient(145deg,color-mix(in srgb,var(--nr-accent) 62%,#172544),color-mix(in srgb,var(--nr-accent) 48%,#17233f)); }
+.nr-performance-summary>header>small { color:#59667b; text-shadow:none; }
+.nr-summary-dots { opacity:.2; background-image:radial-gradient(var(--nr-safe-accent) 1.4px,transparent 1.4px); }
+.nr-summary-kpis i { background:linear-gradient(135deg,color-mix(in srgb,var(--nr-accent) 66%,white),var(--nr-safe-accent)); }
+.nr-summary-comment>i { background:linear-gradient(135deg,color-mix(in srgb,var(--nr-accent) 66%,white),var(--nr-safe-accent)); }
+.nr-best-row>b { background:linear-gradient(145deg,color-mix(in srgb,var(--nr-accent) 66%,white),var(--nr-safe-accent)); }
