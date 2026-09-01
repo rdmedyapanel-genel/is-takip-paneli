@@ -21,6 +21,8 @@ Reklam sonuçları ve reklam kapakları iki aşamada alınır. Önce reklamları
 
 Reklam kapakları creative kimliği üzerinden yüksek çözünürlüklü görsel, bağlı Instagram medyası, video thumbnail'ı ve gönderi görseli sırasıyla denenerek alınır. Meta creative içindeki gerçek reklam açıklaması (`body`, gönderi mesajı ve dinamik reklam metinleri) alınarak Instagram gönderisinin açıklamasıyla öncelikli eşleştirilir. Reklam açıklaması mevcutsa tarih eşleştirmesi yapılmaz; böylece reklam ve gönderi farklı tarihlerde yayınlandığında yanlış kapak seçilmez. Açıklama alınamazsa reklam adı ve son seçenek olarak tarih denenir. Güncellemeden sonra eski taslaktaki reklam kartlarını yenilemek için **Meta'dan verileri getir** düğmesine yeniden basın.
 
+Rapor ayındaki ve son 12 gönderide eşleşmeyen reklam kapakları için Instagram hesabının son 300 gönderi/Reels arşivi ayrıca taranır. Bu tarama yalnızca kapağı eksik reklamlar bulunduğunda çalışır; eski aylarda yayınlanıp daha sonra reklama verilen videolar da açıklama üzerinden bulunabilir.
+
 Bulunan Meta kapakları, profil fotoğrafı ve gönderi görselleri süreli CDN bağlantılarının PDF ekranında engellenmemesi için imzalı `/api/meta/image-proxy` uç noktası üzerinden aynı site görseline dönüştürülür. Proxy çalışmazsa özgün Meta adresi otomatik olarak ikinci seçenek şeklinde denenir. Proxy yalnızca Meta/Facebook/Instagram görsel alan adlarına izin verir ve `META_APP_SECRET` ile imzalanır.
 
 Gönderiler, profil görünümü, organik istatistikler ve reklamlar birbirinden bağımsız içe aktarılır. Reklam servisi gecikse veya hata verse bile alınmış gönderiler ve istatistikler hemen ekrana uygulanır, yerel taslağa kaydedilir ve silinmez.

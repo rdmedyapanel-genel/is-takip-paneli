@@ -292,6 +292,7 @@ async function rbImportMetaContents() {
     renderReportBuilderPage();
 
     let adsImported = false;
+    let archiveMatchedAdCoverCount = 0;
     if (rbMetaConnection()?.adsRead !== false) {
         try {
             rbState.metaAdAccountsLoaded = false;
@@ -319,6 +320,21 @@ async function rbImportMetaContents() {
                         rbState.metaAds = rbFillAdThumbnailsFromMedia(mergedAds, mediaRows);
                     } catch (error) { warnings.push(`Reklam kapakları: ${error.message || 'alınamadı'}`); }
                 }
+                if (rbState.metaAds.some(ad => !rbAdImageSources(ad).length)) {
+                    try {
+                        const archiveData = await rbMetaJson(`/api/meta/media?companyId=${companyId}&history=300`, { timeoutMs: 30000 });
+                        const missingAds = rbState.metaAds.filter(ad => !rbAdImageSources(ad).length);
+                        const archiveMatches = rbFillAdThumbnailsFromMedia(missingAds, archiveData.media || []);
+                        const archiveById = new Map(archiveMatches.map(ad => [String(ad.id || ''), ad]));
+                        rbState.metaAds = rbState.metaAds.map(ad => {
+                            if (rbAdImageSources(ad).length) return ad;
+                            const matched = archiveById.get(String(ad.id || ''));
+                            if (!matched || !rbAdImageSources(matched).length) return ad;
+                            archiveMatchedAdCoverCount += 1;
+                            return { ...matched, thumbnailArchiveMatch: true };
+                        });
+                    } catch (error) { warnings.push(`Eski gönderi arşivi: ${error.message || 'taranamadı'}`); }
+                }
             } else if (!rbState.metaAdAccounts.length) {
                 warnings.push('Reklamlar: Erişilebilen reklam hesabı bulunamadı; firma Meta bağlantısını yeniden yapın.');
             } else {
@@ -334,7 +350,7 @@ async function rbImportMetaContents() {
     const matchedAdCoverCount = ads.filter(ad => String(ad.thumbnailSource || '').startsWith('instagram-media')).length;
     const dateMatchedAdCoverCount = ads.filter(ad => ad.thumbnailSource === 'instagram-media-date').length;
     const descriptionMatchedAdCoverCount = ads.filter(ad => ad.thumbnailSource === 'instagram-media-description').length;
-    const matchDetails = [descriptionMatchedAdCoverCount ? `${descriptionMatchedAdCoverCount} açıklama` : '', dateMatchedAdCoverCount ? `${dateMatchedAdCoverCount} tarih` : ''].filter(Boolean).join(', ');
+    const matchDetails = [descriptionMatchedAdCoverCount ? `${descriptionMatchedAdCoverCount} açıklama` : '', archiveMatchedAdCoverCount ? `${archiveMatchedAdCoverCount} eski gönderi arşivi` : '', dateMatchedAdCoverCount ? `${dateMatchedAdCoverCount} tarih` : ''].filter(Boolean).join(', ');
     const adMessage = adsImported ? ` ${ads.length} reklamın ayrı sonucu ve ${adCoverCount} kapak adayı eklendi; ${matchedAdCoverCount} tanesi Instagram gönderisiyle eşleşti${matchDetails ? ` (${matchDetails} eşleşmesi)` : ''}.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
     const insightMessage = insightsData?.hasData !== false && insightsData ? ' Organik istatistikler de güncellendi.' : (insightsData ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Var olan organik istatistikler korundu.');
     const warningMessage = warnings.length ? `\n\nAlınamayan bölümler:\n- ${warnings.join('\n- ')}` : '';

@@ -7,6 +7,8 @@ module.exports = async function handler(req, res) {
   const until = String(Array.isArray(req.query.until) ? req.query.until[0] : req.query.until || '');
   const latestValue = Array.isArray(req.query.latest) ? req.query.latest[0] : req.query.latest;
   const latest = Math.min(12, Math.max(0, Number(latestValue || 0) || 0));
+  const historyValue = Array.isArray(req.query.history) ? req.query.history[0] : req.query.history;
+  const history = Math.min(300, Math.max(0, Number(historyValue || 0) || 0));
   const connection = unpack(parseCookies(req)[tokenCookieName(companyId)]);
   if (!connection?.accessToken || !connection.igUserId) return res.status(401).json({ error: 'Meta hesabı bağlı değil.' });
 
@@ -17,17 +19,18 @@ module.exports = async function handler(req, res) {
     first.searchParams.set('access_token', connection.accessToken);
     let nextUrl = first.toString();
     const all = [];
-    for (let page = 0; nextUrl && page < (latest ? 1 : 6); page += 1) {
+    const maxPages = history ? Math.ceil(history / 50) : (latest ? 1 : 6);
+    for (let page = 0; nextUrl && page < maxPages; page += 1) {
       const payload = await graphJson(nextUrl);
       all.push(...(payload.data || []));
       nextUrl = payload.paging?.next || null;
     }
     const start = since ? new Date(`${since}T00:00:00Z`).getTime() : Number.NEGATIVE_INFINITY;
     const end = until ? new Date(`${until}T23:59:59Z`).getTime() : Number.POSITIVE_INFINITY;
-    const selected = latest ? all.slice(0, latest) : all.filter(item => {
+    const selected = history ? all.slice(0, history) : (latest ? all.slice(0, latest) : all.filter(item => {
       const time = item.timestamp ? new Date(item.timestamp).getTime() : 0;
       return time >= start && time <= end;
-    });
+    }));
     const media = selected.map(item => {
       const originalThumbnailUrl = item.thumbnail_url || item.media_url || '';
       const thumbnailUrl = imageProxyPath(originalThumbnailUrl) || originalThumbnailUrl;
@@ -60,6 +63,7 @@ module.exports = async function handler(req, res) {
         profilePictureFallbackUrl: profilePictureUrl !== originalProfilePictureUrl ? originalProfilePictureUrl : '',
       },
       media,
+      historyScanned: history ? all.length : 0,
     });
   } catch (caught) {
     return res.status(502).json({ error: caught instanceof Error ? caught.message : 'Instagram verileri alınamadı.' });
