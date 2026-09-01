@@ -188,3 +188,7 @@
 .nr-cover-logo { top:19%; width:158px; height:158px; overflow:visible; padding:0; border-radius:0; background:transparent; color:#fff; box-shadow:none; }
 .nr-cover-logo .rb-tinted-logo { width:100%; height:100%; background:#fff; }
 .nr-cover-logo>img { width:100%; height:100%; object-fit:contain; filter:brightness(0) invert(1); }
+
+/* V18: Hesap görünümü açıklama metninin üstüne binmez. */
+.nr-profile-shot-live { top:27%; bottom:7%; }
+.nr-profile-shot-live .nr-instagram-grid { width:65%; margin-bottom:1.5%; }

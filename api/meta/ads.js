@@ -73,19 +73,25 @@ async function resolvedMediaImage(detail, connection) {
   return '';
 }
 
-async function creativeDetails(adIds, connection) {
+async function adDetails(adIds, connection, includeImages = false) {
   const details = {};
   for (let index = 0; index < adIds.length; index += 40) {
     const ids = adIds.slice(index, index + 40);
     const adsUrl = new URL(`${GRAPH_URL}/`);
     adsUrl.searchParams.set('ids', ids.join(','));
-    adsUrl.searchParams.set('fields', 'id,name,status,creative');
+    adsUrl.searchParams.set('fields', 'id,name,status,effective_status,created_time,updated_time,adset{id,name,start_time,end_time},creative');
     adsUrl.searchParams.set('access_token', connection.userAccessToken);
-    const adsPayload = await graphJson(adsUrl.toString());
+    let adsPayload;
+    try {
+      adsPayload = await graphJson(adsUrl.toString());
+    } catch (_) {
+      adsUrl.searchParams.set('fields', 'id,name,status,effective_status,created_time,updated_time,creative');
+      adsPayload = await graphJson(adsUrl.toString());
+    }
     await Promise.all(Object.entries(adsPayload || {}).map(async ([id, ad]) => {
       const creativeId = String(ad?.creative?.id || '');
       let creative = ad?.creative || {};
-      if (creativeId) {
+      if (includeImages && creativeId) {
         const creativeUrl = new URL(`${GRAPH_URL}/${creativeId}`);
         creativeUrl.searchParams.set('fields', 'id,name,thumbnail_url,image_url,video_id,effective_object_story_id,effective_instagram_media_id,object_story_spec,asset_feed_spec');
         creativeUrl.searchParams.set('thumbnail_width', '720');
@@ -99,28 +105,24 @@ async function creativeDetails(adIds, connection) {
         }
       }
       details[id] = {
-        status: ad?.status || '',
-        thumbnailUrl: directCreativeImage(creative),
+        status: ad?.effective_status || ad?.status || '',
+        thumbnailUrl: includeImages ? directCreativeImage(creative) : '',
         creativeName: creative.name || '',
         instagramMediaId: creative.effective_instagram_media_id || '',
         objectStoryId: creative.effective_object_story_id || '',
         videoId: creative.video_id || creative.object_story_spec?.video_data?.video_id || '',
+        createdTime: ad?.created_time || '',
+        updatedTime: ad?.updated_time || '',
+        publishedTime: ad?.adset?.start_time || ad?.created_time || '',
       };
     }));
   }
-  await Promise.all(Object.values(details).map(async detail => {
-    if (!detail.thumbnailUrl) detail.thumbnailUrl = await resolvedMediaImage(detail, connection);
-  }));
+  if (includeImages) {
+    await Promise.all(Object.values(details).map(async detail => {
+      if (!detail.thumbnailUrl) detail.thumbnailUrl = await resolvedMediaImage(detail, connection);
+    }));
+  }
   return details;
-}
-
-function comparableText(value) {
-  return String(value || '')
-    .toLocaleLowerCase('tr-TR')
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/instagram\s+gonderisi\s*:?/g, '')
-    .replace(/[^a-z0-9çğıöşü]+/gi, ' ')
-    .trim();
 }
 
 module.exports = async function handler(req, res) {
@@ -129,6 +131,7 @@ module.exports = async function handler(req, res) {
   const accountId = String(Array.isArray(req.query.adAccountId) ? req.query.adAccountId[0] : req.query.adAccountId || '').replace(/^act_/, '').replace(/\D/g, '');
   const since = safeDate(Array.isArray(req.query.since) ? req.query.since[0] : req.query.since);
   const until = safeDate(Array.isArray(req.query.until) ? req.query.until[0] : req.query.until);
+  const includeImages = String(Array.isArray(req.query.includeImages) ? req.query.includeImages[0] : req.query.includeImages || '') === '1';
   const connection = unpack(parseCookies(req)[tokenCookieName(companyId)]);
   if (!connection?.userAccessToken || !connection.adsRead) return res.status(403).json({ error: 'Reklam okuma izni bulunamadı.' });
   if (!accountId || !since || !until) return res.status(400).json({ error: 'Reklam hesabı veya tarih aralığı eksik.' });
@@ -162,13 +165,13 @@ module.exports = async function handler(req, res) {
     ]);
     const insight = totalPayload.data?.[0] || {};
     const adIds = [...new Set(adInsights.map(row => String(row.ad_id || '')).filter(Boolean))];
-    let creativeByAd = {};
-    try { creativeByAd = await creativeDetails(adIds, connection); } catch (_) {}
+    let detailByAd = {};
+    try { detailByAd = await adDetails(adIds, connection, includeImages); } catch (_) {}
     const ads = adInsights.map(row => {
-      const creative = creativeByAd[String(row.ad_id || '')] || {};
+      const detail = detailByAd[String(row.ad_id || '')] || {};
       return {
         id: String(row.ad_id || ''),
-        name: row.ad_name || creative.creativeName || 'İsimsiz reklam',
+        name: row.ad_name || detail.creativeName || 'İsimsiz reklam',
         campaignName: row.campaign_name || '',
         adsetName: row.adset_name || '',
         spend: row.spend || '0',
@@ -177,10 +180,13 @@ module.exports = async function handler(req, res) {
         clicks: row.clicks || '0',
         profileVisits: String(profileVisits(row.actions) || ''),
         currency: row.account_currency || insight.account_currency || '',
-        thumbnailUrl: creative.thumbnailUrl ? imageProxyPath(creative.thumbnailUrl) : '',
-        thumbnailFallbackUrl: creative.thumbnailUrl || '',
-        status: creative.status || '',
-        instagramMediaId: creative.instagramMediaId || '',
+        thumbnailUrl: detail.thumbnailUrl ? imageProxyPath(detail.thumbnailUrl) : '',
+        thumbnailFallbackUrl: detail.thumbnailUrl || '',
+        status: detail.status || '',
+        instagramMediaId: detail.instagramMediaId || '',
+        createdTime: detail.createdTime || '',
+        updatedTime: detail.updatedTime || '',
+        publishedTime: detail.publishedTime || detail.createdTime || '',
       };
     }).sort((left, right) => Number(right.spend || 0) - Number(left.spend || 0));
     const visits = profileVisits(insight.actions);
@@ -191,6 +197,7 @@ module.exports = async function handler(req, res) {
       clicks: insight.clicks || '0',
       profileVisits: visits ? String(visits) : '',
       currency: insight.account_currency || '',
+      imagesIncluded: includeImages,
       ads,
     });
   } catch (caught) {

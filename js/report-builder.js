@@ -294,9 +294,11 @@ async function rbImportMetaContents() {
     let adsImported = false;
     if (rbMetaConnection()?.adsRead !== false) {
         try {
+            rbState.metaAdAccountsLoaded = false;
             await rbLoadMetaAdAccounts(false);
             if (rbState.adAccountId) {
-                const adsData = await rbMetaJson(`/api/meta/ads?companyId=${companyId}&adAccountId=${encodeURIComponent(rbState.adAccountId)}&since=${since}&until=${until}`, { timeoutMs: 25000 });
+                const adsUrl = `/api/meta/ads?companyId=${companyId}&adAccountId=${encodeURIComponent(rbState.adAccountId)}&since=${since}&until=${until}`;
+                const adsData = await rbMetaJson(adsUrl, { timeoutMs: 15000 });
                 rbState.adSpend = adsData.spend || '0';
                 rbState.adImpressions = adsData.impressions || '0';
                 rbState.adReach = adsData.reach || '0';
@@ -306,16 +308,32 @@ async function rbImportMetaContents() {
                 rbState.metaAds = rbFillAdThumbnailsFromMedia(Array.isArray(adsData.ads) ? adsData.ads : [], mediaRows);
                 if (adsData.profileVisits && insightsData?.profileVisits == null) rbState.profileVisits = adsData.profileVisits;
                 adsImported = true;
+                // Reklam sonuçları hızlıca gösterilir; creative kapakları ikinci ve bağımsız istekte tamamlanır.
+                rbStoreStateLocally();
+                renderReportBuilderPage();
+                if (rbState.metaAds.some(ad => !rbAdImageSources(ad).length)) {
+                    try {
+                        const detailedAdsData = await rbMetaJson(`${adsUrl}&includeImages=1`, { timeoutMs: 30000 });
+                        const currentById = new Map(rbState.metaAds.map(ad => [String(ad.id || ''), ad]));
+                        const mergedAds = (detailedAdsData.ads || []).map(ad => ({ ...currentById.get(String(ad.id || '')), ...ad }));
+                        rbState.metaAds = rbFillAdThumbnailsFromMedia(mergedAds, mediaRows);
+                    } catch (error) { warnings.push(`Reklam kapakları: ${error.message || 'alınamadı'}`); }
+                }
+            } else if (!rbState.metaAdAccounts.length) {
+                warnings.push('Reklamlar: Erişilebilen reklam hesabı bulunamadı; firma Meta bağlantısını yeniden yapın.');
+            } else {
+                warnings.push('Reklamlar: Firmaları Düzenle bölümünden reklam hesabını seçin.');
             }
         } catch (error) { warnings.push(`Reklamlar: ${error.message || 'alınamadı'}`); }
-    }
+    } else warnings.push('Reklamlar: Meta bağlantısında ads_read izni bulunmuyor; firmayı yeniden bağlayın.');
 
     rbStoreStateLocally();
     renderReportBuilderPage();
     const ads = Array.isArray(rbState.metaAds) ? rbState.metaAds : [];
     const adCoverCount = ads.filter(ad => rbAdImageSources(ad).length).length;
-    const matchedAdCoverCount = ads.filter(ad => ad.thumbnailSource === 'instagram-media').length;
-    const adMessage = adsImported ? ` ${ads.length} reklamın ayrı sonucu ve ${adCoverCount} kapak adayı eklendi; ${matchedAdCoverCount} tanesi Instagram gönderisiyle eşleşti.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
+    const matchedAdCoverCount = ads.filter(ad => String(ad.thumbnailSource || '').startsWith('instagram-media')).length;
+    const dateMatchedAdCoverCount = ads.filter(ad => ad.thumbnailSource === 'instagram-media-date').length;
+    const adMessage = adsImported ? ` ${ads.length} reklamın ayrı sonucu ve ${adCoverCount} kapak adayı eklendi; ${matchedAdCoverCount} tanesi Instagram gönderisiyle eşleşti${dateMatchedAdCoverCount ? ` (${dateMatchedAdCoverCount} tarih eşleşmesi)` : ''}.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
     const insightMessage = insightsData?.hasData !== false && insightsData ? ' Organik istatistikler de güncellendi.' : (insightsData ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Var olan organik istatistikler korundu.');
     const warningMessage = warnings.length ? `\n\nAlınamayan bölümler:\n- ${warnings.join('\n- ')}` : '';
     alert(`${rbState.contents.length} aylık paylaşım ve son ${rbState.profilePosts.length} gönderi raporda hazır.${insightMessage}${adMessage}${warningMessage}`);
@@ -328,8 +346,10 @@ async function rbLoadMetaAdAccounts(rerender = true) {
         const data = await response.json();
         rbState.metaAdAccountsLoaded = true;
         rbState.metaAdAccounts = response.ok && Array.isArray(data.accounts) ? data.accounts : [];
-        const configuredAccountId = rbCompany().reportAdAccountId || '';
-        if (!rbState.adAccountId && configuredAccountId) rbState.adAccountId = configuredAccountId;
+        const accountIds = new Set(rbState.metaAdAccounts.map(account => String(account.accountId || '')));
+        const configuredAccountId = String(rbCompany().reportAdAccountId || '');
+        if (!accountIds.has(String(rbState.adAccountId || ''))) rbState.adAccountId = '';
+        if (!rbState.adAccountId && accountIds.has(configuredAccountId)) rbState.adAccountId = configuredAccountId;
         if (!rbState.adAccountId && rbState.metaAdAccounts.length === 1) rbState.adAccountId = rbState.metaAdAccounts[0].accountId;
         if (rerender) renderReportBuilderPage();
         return rbState.metaAdAccounts;
@@ -392,6 +412,31 @@ function rbTextMatchScore(left, right) {
     return common >= 2 ? common / Math.min(leftWords.length, rightWords.length) : 0;
 }
 
+function rbDateValue(value) {
+    const matched = String(value || '').match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+    const parsed = matched ? new Date(`${matched}T12:00:00Z`).getTime() : NaN;
+    return Number.isFinite(parsed) ? parsed : null;
+}
+
+function rbMediaMatchByDate(ad, mediaRows) {
+    const adDate = rbDateValue(ad.publishedTime || ad.createdTime || ad.updatedTime);
+    if (adDate == null) return null;
+    const labels = [ad.name, ad.campaignName, ad.adsetName].filter(Boolean);
+    const candidates = mediaRows.map(media => {
+        const mediaDate = rbDateValue(media.date || media.timestamp);
+        if (mediaDate == null) return null;
+        const dayDifference = Math.abs(mediaDate - adDate) / 86400000;
+        const textScore = labels.length ? Math.max(...labels.map(label => rbTextMatchScore(label, media.caption))) : 0;
+        return { media, dayDifference, textScore };
+    }).filter(Boolean).filter(candidate => candidate.dayDifference <= 7)
+        .sort((left, right) => left.dayDifference - right.dayDifference || right.textScore - left.textScore);
+    const exactDay = candidates.filter(candidate => candidate.dayDifference === 0);
+    if (exactDay.length === 1) return exactDay[0].media;
+    if (exactDay.length > 1) return exactDay.sort((left, right) => right.textScore - left.textScore)[0].media;
+    if (candidates[0] && (candidates.length === 1 || candidates[0].textScore >= .25)) return candidates[0].media;
+    return null;
+}
+
 function rbFillAdThumbnailsFromMedia(ads, mediaRows) {
     return ads.map(ad => {
         const byId = mediaRows.find(media => String(media.id || '') === String(ad.instagramMediaId || ''));
@@ -412,10 +457,15 @@ function rbFillAdThumbnailsFromMedia(ads, mediaRows) {
                 .sort((left, right) => right.score - left.score)
                 .find(candidate => candidate.score >= .55)?.media;
         }
+        let matchSource = match ? 'instagram-media' : '';
+        if (!match) {
+            match = rbMediaMatchByDate(ad, mediaRows);
+            if (match) matchSource = 'instagram-media-date';
+        }
         const mediaSources = match ? rbImageSources(match.thumbnailUrl, match.thumbnailFallbackUrl, match.mediaUrl) : [];
         const creativeSources = rbImageSources(ad.thumbnailUrl, ad.thumbnailFallbackUrl, ad.creativeThumbnailUrl);
         const sources = rbImageSources(mediaSources, creativeSources);
-        return { ...ad, thumbnailUrl: sources[0] || '', thumbnailFallbackUrls: sources.slice(1), thumbnailSource: mediaSources.length ? 'instagram-media' : (ad.thumbnailSource || '') };
+        return { ...ad, thumbnailUrl: sources[0] || '', thumbnailFallbackUrls: sources.slice(1), thumbnailSource: mediaSources.length ? matchSource : (ad.thumbnailSource || '') };
     });
 }
 

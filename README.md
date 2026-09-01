@@ -17,7 +17,9 @@ Firma eklerken **Kaydet ve Meta Hesabı Seç** düğmesiyle doğru Instagram hes
 
 Bağlantı tamamlandığında seçili firmaya ait aylık gönderiler, takipçi bilgisi, organik istatistikler ve profil görünümündeki son 12 gönderi **Meta'dan verileri getir** düğmesiyle rapora alınır. Reklam izni varsa her reklamın kapak görseli ve ayrı performans değerleri PDF'de kartlar halinde gösterilir; reklam detaylarından sonra hesap düzeyindeki aylık toplam sayfası eklenir.
 
-Reklam kapakları creative kimliği üzerinden yüksek çözünürlüklü görsel, bağlı Instagram medyası, video thumbnail'ı ve gönderi görseli sırasıyla denenerek alınır. Tarayıcıda ayrıca reklam adı ile o ayın ve son 12 gönderinin açıklaması eşleştirilir. Birebir metin eşleşmesi bulunamazsa ortak anlamlı kelimelerle en güvenli eşleşme denenir. Güncellemeden sonra eski taslaktaki reklam kartlarını yenilemek için **Meta'dan verileri getir** düğmesine yeniden basın.
+Reklam sonuçları ve reklam kapakları iki aşamada alınır. Önce reklamların harcama, erişim, gösterim, tıklama ve başlangıç tarihleri hızlıca rapora eklenir; creative görselleri daha sonra bağımsız biçimde tamamlanır. Böylece kapak servisi gecikse bile reklam kartları kaybolmaz.
+
+Reklam kapakları creative kimliği üzerinden yüksek çözünürlüklü görsel, bağlı Instagram medyası, video thumbnail'ı ve gönderi görseli sırasıyla denenerek alınır. Tarayıcıda ayrıca reklam adı ile o ayın ve son 12 gönderinin açıklaması eşleştirilir. Metin eşleşmesi bulunamazsa reklam setinin başlangıç tarihi veya reklamın oluşturulma tarihi, Instagram gönderisinin yayın tarihiyle eşleştirilir. Güncellemeden sonra eski taslaktaki reklam kartlarını yenilemek için **Meta'dan verileri getir** düğmesine yeniden basın.
 
 Bulunan Meta kapakları, profil fotoğrafı ve gönderi görselleri süreli CDN bağlantılarının PDF ekranında engellenmemesi için imzalı `/api/meta/image-proxy` uç noktası üzerinden aynı site görseline dönüştürülür. Proxy çalışmazsa özgün Meta adresi otomatik olarak ikinci seçenek şeklinde denenir. Proxy yalnızca Meta/Facebook/Instagram görsel alan adlarına izin verir ve `META_APP_SECRET` ile imzalanır.
 
