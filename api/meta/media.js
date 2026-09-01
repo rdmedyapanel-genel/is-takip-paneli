@@ -1,4 +1,4 @@
-const { GRAPH_URL, graphJson, tokenCookieName, unpack, parseCookies } = require('../../lib/meta-common');
+const { GRAPH_URL, graphJson, tokenCookieName, unpack, parseCookies, imageProxyPath } = require('../../lib/meta-common');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -28,15 +28,20 @@ module.exports = async function handler(req, res) {
       const time = item.timestamp ? new Date(item.timestamp).getTime() : 0;
       return time >= start && time <= end;
     });
-    const media = selected.map(item => ({
-      id: item.id,
-      date: item.timestamp?.slice(0, 10) || '',
-      type: item.media_product_type === 'REELS' ? 'Reels' : 'Gönderi',
-      mediaType: item.media_type || '',
-      caption: item.caption || '',
-      permalink: item.permalink || '',
-      thumbnailUrl: item.thumbnail_url || item.media_url || '',
-    }));
+    const media = selected.map(item => {
+      const originalThumbnailUrl = item.thumbnail_url || item.media_url || '';
+      const thumbnailUrl = imageProxyPath(originalThumbnailUrl) || originalThumbnailUrl;
+      return {
+        id: item.id,
+        date: item.timestamp?.slice(0, 10) || '',
+        type: item.media_product_type === 'REELS' ? 'Reels' : 'Gönderi',
+        mediaType: item.media_type || '',
+        caption: item.caption || '',
+        permalink: item.permalink || '',
+        thumbnailUrl,
+        thumbnailFallbackUrl: thumbnailUrl !== originalThumbnailUrl ? originalThumbnailUrl : '',
+      };
+    });
     let profile = {};
     try {
       const profileUrl = new URL(`${GRAPH_URL}/${connection.igUserId}`);
@@ -44,12 +49,15 @@ module.exports = async function handler(req, res) {
       profileUrl.searchParams.set('access_token', connection.accessToken);
       profile = await graphJson(profileUrl.toString());
     } catch (_) {}
+    const originalProfilePictureUrl = profile.profile_picture_url || '';
+    const profilePictureUrl = imageProxyPath(originalProfilePictureUrl) || originalProfilePictureUrl;
     return res.status(200).json({
       username: profile.username || connection.username || '',
       profile: {
         followersCount: profile.followers_count ?? null,
         mediaCount: profile.media_count ?? null,
-        profilePictureUrl: profile.profile_picture_url || '',
+        profilePictureUrl,
+        profilePictureFallbackUrl: profilePictureUrl !== originalProfilePictureUrl ? originalProfilePictureUrl : '',
       },
       media,
     });

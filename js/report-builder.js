@@ -39,6 +39,41 @@ function rbStorageKey(companyId, period) {
     return `rdgrup-native-report-${companyId}-${period}`;
 }
 
+function rbContextKey() {
+    return 'rdgrup-native-report-context';
+}
+
+function rbRememberContext(companyId, period) {
+    if (!companyId || !/^\d{4}-\d{2}$/.test(String(period || ''))) return;
+    localStorage.setItem(rbContextKey(), JSON.stringify({ companyId, period }));
+}
+
+function rbPreferredPeriod(companyId) {
+    try {
+        const context = JSON.parse(localStorage.getItem(rbContextKey()) || 'null');
+        if (context?.companyId === companyId && /^\d{4}-\d{2}$/.test(String(context.period || ''))) return context.period;
+        const prefix = `rdgrup-native-report-${companyId}-`;
+        const savedPeriods = [];
+        const meaningfulPeriods = [];
+        for (let index = 0; index < localStorage.length; index += 1) {
+            const key = localStorage.key(index) || '';
+            if (!key.startsWith(prefix)) continue;
+            const period = key.slice(prefix.length);
+            if (!/^\d{4}-\d{2}$/.test(period)) continue;
+            savedPeriods.push(period);
+            try {
+                const saved = JSON.parse(localStorage.getItem(key) || 'null');
+                const hasLists = ['contents','profilePosts','metaAds'].some(field => Array.isArray(saved?.[field]) && saved[field].length);
+                const hasMetrics = ['views','reach','profileVisits','followers','likes','comments','saves','shares','adSpend','adImpressions','adReach','adClicks'].some(field => String(saved?.[field] || '').trim());
+                if (hasLists || hasMetrics || String(saved?.notes || '').trim()) meaningfulPeriods.push(period);
+            } catch (_) {}
+        }
+        if (meaningfulPeriods.length) return meaningfulPeriods.sort().at(-1);
+        if (savedPeriods.length) return savedPeriods.sort().at(-1);
+    } catch (_) {}
+    return rbCurrentPeriod();
+}
+
 function rbLoadState(companyId, period) {
     const empty = rbEmptyState(companyId, period);
     try {
@@ -185,6 +220,32 @@ async function rbDisconnectMetaForCompany(companyId) {
     rbOpenCompanyModal(companyId);
 }
 
+function rbStoreStateLocally() {
+    if (!rbState?.companyId || !rbState?.period) return;
+    localStorage.setItem(rbStorageKey(rbState.companyId, rbState.period), JSON.stringify(rbState));
+    rbRememberContext(rbState.companyId, rbState.period);
+}
+
+async function rbMetaJson(url, options = {}) {
+    const timeoutMs = Number(options.timeoutMs || 20000);
+    const controller = typeof AbortController === 'function' ? new AbortController() : null;
+    const timeout = controller ? setTimeout(() => controller.abort(), timeoutMs) : null;
+    try {
+        const response = await fetch(url, { credentials: 'same-origin', ...(controller ? { signal: controller.signal } : {}) });
+        const text = await response.text();
+        let data = {};
+        try { data = text ? JSON.parse(text) : {}; }
+        catch (_) { throw Object.assign(new Error('Sunucudan geçersiz yanıt alındı. Vercel yayınının tamamlandığından emin olun.'), { status: response.status }); }
+        if (!response.ok) throw Object.assign(new Error(data.error || 'Meta verisi alınamadı.'), { status: response.status, data });
+        return data;
+    } catch (error) {
+        if (error?.name === 'AbortError') throw new Error('Meta isteği zaman aşımına uğradı. Diğer veriler korunarak reklam bölümü atlandı.');
+        throw error;
+    } finally {
+        if (timeout) clearTimeout(timeout);
+    }
+}
+
 async function rbImportMetaContents() {
     if (!rbMetaConnection()) return rbConnectMeta();
     if (!rbIsOnlineMetaEnvironment()) return alert('Meta verileri çevrim içi GitHub/Vercel panelinden alınabilir.');
@@ -192,56 +253,72 @@ async function rbImportMetaContents() {
     const lastDay = new Date(year, month, 0).getDate();
     const since = `${rbState.period}-01`;
     const until = `${rbState.period}-${String(lastDay).padStart(2, '0')}`;
-    try {
-        const [periodResponse, latestResponse, insightsResponse] = await Promise.all([
-            fetch(`/api/meta/media?companyId=${encodeURIComponent(rbState.companyId)}&since=${since}&until=${until}`, { credentials: 'same-origin' }),
-            fetch(`/api/meta/media?companyId=${encodeURIComponent(rbState.companyId)}&latest=12`, { credentials: 'same-origin' }),
-            fetch(`/api/meta/insights?companyId=${encodeURIComponent(rbState.companyId)}&since=${since}&until=${until}`, { credentials: 'same-origin' })
-        ]);
-        const periodData = await periodResponse.json(); const latestData = await latestResponse.json(); const insightsData = await insightsResponse.json();
-        if (!periodResponse.ok) throw new Error(periodData.error || 'Meta gönderileri alınamadı.');
-        if (!latestResponse.ok) throw new Error(latestData.error || 'Profil görünümü alınamadı.');
+    const companyId = encodeURIComponent(rbState.companyId);
+    const [periodResult, latestResult, insightsResult] = await Promise.allSettled([
+        rbMetaJson(`/api/meta/media?companyId=${companyId}&since=${since}&until=${until}`),
+        rbMetaJson(`/api/meta/media?companyId=${companyId}&latest=12`),
+        rbMetaJson(`/api/meta/insights?companyId=${companyId}&since=${since}&until=${until}`)
+    ]);
+    const warnings = [];
+    let periodData = null;
+    let latestData = null;
+    let insightsData = null;
+    if (periodResult.status === 'fulfilled') {
+        periodData = periodResult.value;
         rbState.contents = (periodData.media || []).map(item => ({ id: item.id || rbUid(), date: item.date || '', type: item.type === 'Reels' ? 'Reels' : 'Gönderi' }));
+    } else warnings.push(`Aylık gönderiler: ${periodResult.reason?.message || 'alınamadı'}`);
+    if (latestResult.status === 'fulfilled') {
+        latestData = latestResult.value;
         rbState.profilePosts = latestData.media || [];
         rbState.metaProfile = { ...(latestData.profile || {}), username: latestData.username || '' };
         if (latestData.profile?.followersCount != null) rbState.followers = String(latestData.profile.followersCount);
-        if (insightsResponse.ok) {
-            ['views','reach','profileVisits','likes','comments','saves','shares'].forEach(key => {
-                if (insightsData[key] != null) rbState[key] = String(insightsData[key]);
-            });
-        }
-        let adsImported = false;
-        if (rbMetaConnection()?.adsRead !== false) {
-            await rbLoadMetaAdAccounts(false);
-            if (rbState.adAccountId) {
-                const adsResponse = await fetch(`/api/meta/ads?companyId=${encodeURIComponent(rbState.companyId)}&adAccountId=${encodeURIComponent(rbState.adAccountId)}&since=${since}&until=${until}`, { credentials: 'same-origin' });
-                const adsData = await adsResponse.json();
-                if (adsResponse.ok) {
-                    rbState.adSpend = adsData.spend || '0';
-                    rbState.adImpressions = adsData.impressions || '0';
-                    rbState.adReach = adsData.reach || '0';
-                    rbState.adClicks = adsData.clicks || '0';
-                    rbState.adCurrency = adsData.currency || 'TRY';
-                    rbState.metaAds = rbFillAdThumbnailsFromMedia(Array.isArray(adsData.ads) ? adsData.ads : [], [...(periodData.media || []), ...(latestData.media || [])]);
-                    if (adsData.profileVisits && insightsData.profileVisits == null) rbState.profileVisits = adsData.profileVisits;
-                    adsImported = true;
-                }
-            }
-        }
-        if (!insightsResponse.ok) {
+    } else warnings.push(`Hesap görünümü: ${latestResult.reason?.message || 'alınamadı'}`);
+    if (insightsResult.status === 'fulfilled') {
+        insightsData = insightsResult.value;
+        ['views','reach','profileVisits','likes','comments','saves','shares'].forEach(key => {
+            if (insightsData[key] != null) rbState[key] = String(insightsData[key]);
+        });
+    } else {
+        warnings.push(`Organik istatistikler: ${insightsResult.reason?.message || 'alınamadı'}`);
+        if ([401, 403].includes(Number(insightsResult.reason?.status))) {
             const connections = rbMetaConnections();
             if (connections[rbState.companyId]) connections[rbState.companyId].insightsRead = false;
             localStorage.setItem('rdgrup-panel-meta-connections', JSON.stringify(connections));
         }
-        renderReportBuilderPage();
-        const adCoverCount = rbState.metaAds.filter(ad => ad.thumbnailUrl).length;
-        const matchedAdCoverCount = rbState.metaAds.filter(ad => ad.thumbnailSource === 'instagram-media').length;
-        const adMessage = adsImported ? ` ${rbState.metaAds.length} reklamın ayrı sonucu ve ${adCoverCount} kapak görseli eklendi; ${matchedAdCoverCount} kapak Instagram gönderisiyle doğrudan eşleşti.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
-        const insightMessage = insightsResponse.ok && insightsData.hasData !== false ? ' Organik istatistikler de güncellendi.' : (insightsResponse.ok ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Organik istatistik iznini Firma ayarlarından hesabı yeniden bağlayarak güncelleyin.');
-        alert(`${rbState.contents.length} aylık paylaşım ve son ${rbState.profilePosts.length} gönderi Meta’dan getirildi.${insightMessage}${adMessage}`);
-    } catch (error) {
-        console.error(error); alert(error.message || 'Meta verileri alınamadı.');
     }
+
+    // Gönderiler ve organik istatistikler reklam servisini beklemeden ekrana ve taslağa yazılır.
+    rbStoreStateLocally();
+    renderReportBuilderPage();
+
+    let adsImported = false;
+    if (rbMetaConnection()?.adsRead !== false) {
+        try {
+            await rbLoadMetaAdAccounts(false);
+            if (rbState.adAccountId) {
+                const adsData = await rbMetaJson(`/api/meta/ads?companyId=${companyId}&adAccountId=${encodeURIComponent(rbState.adAccountId)}&since=${since}&until=${until}`, { timeoutMs: 25000 });
+                rbState.adSpend = adsData.spend || '0';
+                rbState.adImpressions = adsData.impressions || '0';
+                rbState.adReach = adsData.reach || '0';
+                rbState.adClicks = adsData.clicks || '0';
+                rbState.adCurrency = adsData.currency || 'TRY';
+                const mediaRows = [...(periodData?.media || []), ...(latestData?.media || []), ...(rbState.profilePosts || [])];
+                rbState.metaAds = rbFillAdThumbnailsFromMedia(Array.isArray(adsData.ads) ? adsData.ads : [], mediaRows);
+                if (adsData.profileVisits && insightsData?.profileVisits == null) rbState.profileVisits = adsData.profileVisits;
+                adsImported = true;
+            }
+        } catch (error) { warnings.push(`Reklamlar: ${error.message || 'alınamadı'}`); }
+    }
+
+    rbStoreStateLocally();
+    renderReportBuilderPage();
+    const ads = Array.isArray(rbState.metaAds) ? rbState.metaAds : [];
+    const adCoverCount = ads.filter(ad => rbAdImageSources(ad).length).length;
+    const matchedAdCoverCount = ads.filter(ad => ad.thumbnailSource === 'instagram-media').length;
+    const adMessage = adsImported ? ` ${ads.length} reklamın ayrı sonucu ve ${adCoverCount} kapak adayı eklendi; ${matchedAdCoverCount} tanesi Instagram gönderisiyle eşleşti.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
+    const insightMessage = insightsData?.hasData !== false && insightsData ? ' Organik istatistikler de güncellendi.' : (insightsData ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Var olan organik istatistikler korundu.');
+    const warningMessage = warnings.length ? `\n\nAlınamayan bölümler:\n- ${warnings.join('\n- ')}` : '';
+    alert(`${rbState.contents.length} aylık paylaşım ve son ${rbState.profilePosts.length} gönderi raporda hazır.${insightMessage}${adMessage}${warningMessage}`);
 }
 
 async function rbLoadMetaAdAccounts(rerender = true) {
@@ -285,6 +362,36 @@ function rbComparableText(value) {
     return String(value || '').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/instagram\s+gonderisi\s*:?/g, '').replace(/[^a-z0-9çğıöşü]+/gi, ' ').trim();
 }
 
+function rbImageSources(...values) {
+    return [...new Set(values.flat(Infinity).map(value => String(value || '').trim()).filter(Boolean))];
+}
+
+function rbImageMarkup(sources, alt, className = '') {
+    const urls = rbImageSources(sources);
+    if (!urls.length) return '';
+    const fallbacks = encodeURIComponent(JSON.stringify(urls.slice(1)));
+    return `<img src="${rbEscape(urls[0])}" data-rb-fallbacks="${fallbacks}" alt="${rbEscape(alt)}"${className ? ` class="${rbEscape(className)}"` : ''} onerror="rbUseNextImage(this)">`;
+}
+
+function rbUseNextImage(image) {
+    let remaining = [];
+    try { remaining = JSON.parse(decodeURIComponent(image.dataset.rbFallbacks || '%5B%5D')); } catch (_) {}
+    const next = remaining.shift();
+    if (!next) { image.remove(); return; }
+    image.dataset.rbFallbacks = encodeURIComponent(JSON.stringify(remaining));
+    image.src = next;
+}
+
+function rbTextMatchScore(left, right) {
+    const ignored = new Set(['instagram','gonderisi','gönderisi','reklam','reklami','reklamı','gonderi','gönderi','video','reels']);
+    const words = value => rbComparableText(value).split(' ').filter(word => word.length > 2 && !ignored.has(word));
+    const leftWords = words(left); const rightWords = words(right);
+    if (!leftWords.length || !rightWords.length) return 0;
+    const rightSet = new Set(rightWords);
+    const common = leftWords.filter(word => rightSet.has(word)).length;
+    return common >= 2 ? common / Math.min(leftWords.length, rightWords.length) : 0;
+}
+
 function rbFillAdThumbnailsFromMedia(ads, mediaRows) {
     return ads.map(ad => {
         const byId = mediaRows.find(media => String(media.id || '') === String(ad.instagramMediaId || ''));
@@ -299,14 +406,27 @@ function rbFillAdThumbnailsFromMedia(ads, mediaRows) {
                 return captionLead.length >= 18 && (adText.includes(captionLead) || caption.includes(adLead));
             });
         }
-        return match?.thumbnailUrl ? { ...ad, thumbnailUrl: match.thumbnailUrl, thumbnailSource: 'instagram-media' } : ad;
+        if (!match) {
+            const adLabels = [ad.name, ad.campaignName, ad.adsetName].filter(Boolean);
+            match = mediaRows.map(media => ({ media, score: Math.max(...adLabels.map(label => rbTextMatchScore(label, media.caption))) }))
+                .sort((left, right) => right.score - left.score)
+                .find(candidate => candidate.score >= .55)?.media;
+        }
+        const mediaSources = match ? rbImageSources(match.thumbnailUrl, match.thumbnailFallbackUrl, match.mediaUrl) : [];
+        const creativeSources = rbImageSources(ad.thumbnailUrl, ad.thumbnailFallbackUrl, ad.creativeThumbnailUrl);
+        const sources = rbImageSources(mediaSources, creativeSources);
+        return { ...ad, thumbnailUrl: sources[0] || '', thumbnailFallbackUrls: sources.slice(1), thumbnailSource: mediaSources.length ? 'instagram-media' : (ad.thumbnailSource || '') };
     });
+}
+
+function rbAdImageSources(ad) {
+    return rbImageSources(ad?.thumbnailUrl, ad?.thumbnailFallbackUrls, ad?.thumbnailFallbackUrl, ad?.creativeThumbnailUrl);
 }
 
 function rbAdDetailCards() {
     const ads = Array.isArray(rbState?.metaAds) ? rbState.metaAds : [];
     if (!ads.length) return '<div class="rb-ad-empty"><i class="fa-regular fa-images"></i><span>Meta’dan verileri getirdiğinizde her reklamın kapağı ve sonuçları burada görünür.</span></div>';
-    return `<div class="rb-ad-list">${ads.map(ad => `<article class="rb-ad-card"><div class="rb-ad-thumb"><div class="rb-ad-image-fallback"><i class="fa-solid fa-photo-film"></i><span>Kapak alınamadı</span></div>${ad.thumbnailUrl ? `<img src="${rbEscape(ad.thumbnailUrl)}" alt="${rbEscape(ad.name || 'Reklam')} kapak görseli" onerror="this.remove()">` : ''}</div><div class="rb-ad-copy"><small>${rbEscape(ad.campaignName || 'Meta reklam kampanyası')}</small><strong>${rbEscape(ad.name || 'İsimsiz reklam')}</strong><span>${rbEscape(ad.adsetName || '')}</span><div><p><b>${rbEscape(rbFormatMoney(ad.spend, ad.currency))}</b><small>Harcama</small></p><p><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></p><p><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></p><p><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></p></div></div></article>`).join('')}</div>`;
+    return `<div class="rb-ad-list">${ads.map(ad => `<article class="rb-ad-card"><div class="rb-ad-thumb"><div class="rb-ad-image-fallback"><i class="fa-solid fa-photo-film"></i><span>Kapak alınamadı</span></div>${rbImageMarkup(rbAdImageSources(ad), `${ad.name || 'Reklam'} kapak görseli`)}</div><div class="rb-ad-copy"><small>${rbEscape(ad.campaignName || 'Meta reklam kampanyası')}</small><strong>${rbEscape(ad.name || 'İsimsiz reklam')}</strong><span>${rbEscape(ad.adsetName || '')}</span><div><p><b>${rbEscape(rbFormatMoney(ad.spend, ad.currency))}</b><small>Harcama</small></p><p><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></p><p><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></p><p><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></p></div></div></article>`).join('')}</div>`;
 }
 
 function rbFormatDate(value) {
@@ -318,7 +438,7 @@ function rbEnsureState() {
     const firstCompany = dbReportCompanies[0];
     if (!firstCompany) { rbState = rbEmptyState('', rbCurrentPeriod()); return; }
     const companyExists = rbState && dbReportCompanies.some(item => item.docId === rbState.companyId);
-    if (!companyExists) rbState = rbLoadState(firstCompany.docId, rbCurrentPeriod());
+    if (!companyExists) rbState = rbLoadState(firstCompany.docId, rbPreferredPeriod(firstCompany.docId));
 }
 
 function renderReportBuilderPage() {
@@ -435,6 +555,7 @@ function rbSwitchContext() {
     const companyId = document.getElementById('rb-company')?.value || '';
     const period = document.getElementById('rb-period')?.value || rbCurrentPeriod();
     rbState = rbLoadState(companyId, period);
+    rbRememberContext(companyId, period);
     renderReportBuilderPage();
 }
 
@@ -798,9 +919,9 @@ function rbProfilePreview(company) {
     if (posts.length) {
         const username = rbState.metaProfile?.username || rbMetaConnection()?.username || String(company.instagram || 'instagram').replace(/^@/, '');
         const metaAvatar = rbState.metaProfile?.profilePictureUrl || '';
-        const avatarMarkup = metaAvatar ? `<img src="${rbEscape(metaAvatar)}" alt="${rbEscape(username)} profil fotoğrafı">` : (company.reportLogo || company.logo ? rbCompanyLogo(company) : `<span>${rbEscape(String(company.name || 'RD').slice(0, 2).toUpperCase())}</span>`);
-        const grid = posts.map(post => post.thumbnailUrl
-            ? `<a href="${rbEscape(post.permalink || '#')}" target="_blank" rel="noopener"><img src="${rbEscape(post.thumbnailUrl)}" alt="Instagram gönderisi"><i class="fa-brands ${post.type === 'Reels' ? 'fa-instagram' : 'fa-instagram'}"></i></a>`
+        const avatarMarkup = metaAvatar ? rbImageMarkup([metaAvatar, rbState.metaProfile?.profilePictureFallbackUrl], `${username} profil fotoğrafı`) : (company.reportLogo || company.logo ? rbCompanyLogo(company) : `<span>${rbEscape(String(company.name || 'RD').slice(0, 2).toUpperCase())}</span>`);
+        const grid = posts.map(post => rbImageSources(post.thumbnailUrl, post.thumbnailFallbackUrl).length
+            ? `<a href="${rbEscape(post.permalink || '#')}" target="_blank" rel="noopener">${rbImageMarkup([post.thumbnailUrl, post.thumbnailFallbackUrl], 'Instagram gönderisi')}<i class="fa-brands ${post.type === 'Reels' ? 'fa-instagram' : 'fa-instagram'}"></i></a>`
             : '<div class="nr-instagram-empty"><i class="fa-regular fa-image"></i></div>').join('');
         return `<div class="nr-profile-shot nr-profile-shot-live"><div class="nr-instagram-profile"><div class="nr-instagram-bar"><i class="fa-brands fa-instagram"></i><b>Instagram</b></div><div class="nr-instagram-head"><div class="nr-instagram-avatar">${avatarMarkup}</div><div class="nr-instagram-identity"><strong>@${rbEscape(username)}</strong><span>${rbEscape(company.name || '')}</span></div><div class="nr-instagram-stats"><p><b>${rbFormatNumber(rbState.metaProfile?.mediaCount)}</b><span>gönderi</span></p><p><b>${rbFormatNumber(rbState.metaProfile?.followersCount ?? rbState.followers)}</b><span>takipçi</span></p><p><b>${posts.length}</b><span>son içerik</span></p></div></div><div class="nr-instagram-grid">${grid}</div></div></div>`;
     }
@@ -832,7 +953,7 @@ function rbOpenPreview() {
         const adCards = adChunk.map((ad, adIndex) => {
             const adName = String(ad.name || 'İsimsiz reklam');
             const contextLabel = [ad.campaignName, ad.adsetName].find(label => label && String(label).trim().toLocaleLowerCase('tr-TR') !== adName.trim().toLocaleLowerCase('tr-TR')) || 'Meta reklam kampanyası';
-            return `<article class="nr-ad-card"><div class="nr-ad-image"><div class="nr-ad-image-fallback"><i class="fa-solid fa-photo-film"></i><span>Kapak görseli alınamadı</span></div>${ad.thumbnailUrl ? `<img src="${rbEscape(ad.thumbnailUrl)}" alt="${rbEscape(adName)} kapak görseli" onerror="this.remove()">` : ''}</div><div class="nr-ad-card-copy"><small>REKLAM ${String(index + adIndex + 1).padStart(2, '0')}</small><h3>${rbEscape(adName)}</h3><p>${rbEscape(contextLabel)}</p><div><span><b>${rbEscape(rbFormatMoney(ad.spend, ad.currency))}</b><small>Harcama</small></span><span><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></span><span><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></span><span><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></span></div></div></article>`;
+            return `<article class="nr-ad-card"><div class="nr-ad-image"><div class="nr-ad-image-fallback"><i class="fa-solid fa-photo-film"></i><span>Kapak görseli alınamadı</span></div>${rbImageMarkup(rbAdImageSources(ad), `${adName} kapak görseli`)}</div><div class="nr-ad-card-copy"><small>REKLAM ${String(index + adIndex + 1).padStart(2, '0')}</small><h3>${rbEscape(adName)}</h3><p>${rbEscape(contextLabel)}</p><div><span><b>${rbEscape(rbFormatMoney(ad.spend, ad.currency))}</b><small>Harcama</small></span><span><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></span><span><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></span><span><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></span></div></div></article>`;
         }).join('');
         pages += rbStandardPage('ÜCRETLİ MEDYA', `REKLAM <span>DETAYLARI</span>`, `<p class="nr-lead">Bu dönemde yayınlanan reklamların görseli ve ayrı sonuçları.</p><div class="nr-ad-grid">${adCards}</div>`, page++);
     }

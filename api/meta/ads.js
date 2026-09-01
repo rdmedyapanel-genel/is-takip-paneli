@@ -123,30 +123,6 @@ function comparableText(value) {
     .trim();
 }
 
-async function instagramMediaLibrary(connection) {
-  if (!connection.igUserId || !connection.accessToken) return [];
-  const url = new URL(`${GRAPH_URL}/${connection.igUserId}/media`);
-  url.searchParams.set('fields', 'id,caption,media_type,thumbnail_url,media_url');
-  url.searchParams.set('limit', '100');
-  url.searchParams.set('access_token', connection.accessToken);
-  return pagedGraph(url.toString(), 4);
-}
-
-function matchingInstagramImage(ad, mediaRows) {
-  const byId = mediaRows.find(media => String(media.id || '') === String(ad.instagramMediaId || ''));
-  if (byId) return byId.thumbnail_url || byId.media_url || '';
-  const adText = comparableText(ad.name);
-  if (!adText) return '';
-  const match = mediaRows.find(media => {
-    const caption = comparableText(media.caption);
-    if (!caption) return false;
-    const captionLead = caption.slice(0, Math.min(48, caption.length));
-    const adLead = adText.slice(0, Math.min(48, adText.length));
-    return captionLead.length >= 18 && (adText.includes(captionLead) || caption.includes(adLead));
-  });
-  return match?.thumbnail_url || match?.media_url || '';
-}
-
 module.exports = async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   const companyId = String(Array.isArray(req.query.companyId) ? req.query.companyId[0] : req.query.companyId || '');
@@ -201,19 +177,12 @@ module.exports = async function handler(req, res) {
         clicks: row.clicks || '0',
         profileVisits: String(profileVisits(row.actions) || ''),
         currency: row.account_currency || insight.account_currency || '',
-        thumbnailUrl: creative.thumbnailUrl || '',
+        thumbnailUrl: creative.thumbnailUrl ? imageProxyPath(creative.thumbnailUrl) : '',
+        thumbnailFallbackUrl: creative.thumbnailUrl || '',
         status: creative.status || '',
         instagramMediaId: creative.instagramMediaId || '',
       };
     }).sort((left, right) => Number(right.spend || 0) - Number(left.spend || 0));
-    try {
-      const mediaRows = await instagramMediaLibrary(connection);
-      ads.forEach(ad => {
-        const matchedImage = matchingInstagramImage(ad, mediaRows);
-        if (matchedImage) { ad.thumbnailUrl = matchedImage; ad.thumbnailSource = 'instagram-media'; }
-      });
-    } catch (_) {}
-    ads.forEach(ad => { if (ad.thumbnailUrl && ad.thumbnailSource !== 'instagram-media') ad.thumbnailUrl = imageProxyPath(ad.thumbnailUrl); });
     const visits = profileVisits(insight.actions);
     return res.status(200).json({
       spend: insight.spend || '0',
