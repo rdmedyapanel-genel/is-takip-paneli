@@ -206,13 +206,14 @@ module.exports = async function handler(req, res) {
         instagramMediaId: creative.instagramMediaId || '',
       };
     }).sort((left, right) => Number(right.spend || 0) - Number(left.spend || 0));
-    if (ads.some(ad => !ad.thumbnailUrl)) {
-      try {
-        const mediaRows = await instagramMediaLibrary(connection);
-        ads.forEach(ad => { if (!ad.thumbnailUrl) ad.thumbnailUrl = matchingInstagramImage(ad, mediaRows); });
-      } catch (_) {}
-    }
-    ads.forEach(ad => { if (ad.thumbnailUrl) ad.thumbnailUrl = imageProxyPath(ad.thumbnailUrl); });
+    try {
+      const mediaRows = await instagramMediaLibrary(connection);
+      ads.forEach(ad => {
+        const matchedImage = matchingInstagramImage(ad, mediaRows);
+        if (matchedImage) { ad.thumbnailUrl = matchedImage; ad.thumbnailSource = 'instagram-media'; }
+      });
+    } catch (_) {}
+    ads.forEach(ad => { if (ad.thumbnailUrl && ad.thumbnailSource !== 'instagram-media') ad.thumbnailUrl = imageProxyPath(ad.thumbnailUrl); });
     const visits = profileVisits(insight.actions);
     return res.status(200).json({
       spend: insight.spend || '0',

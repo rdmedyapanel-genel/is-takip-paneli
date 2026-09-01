@@ -235,7 +235,8 @@ async function rbImportMetaContents() {
         }
         renderReportBuilderPage();
         const adCoverCount = rbState.metaAds.filter(ad => ad.thumbnailUrl).length;
-        const adMessage = adsImported ? ` ${rbState.metaAds.length} reklamın ayrı sonucu, ${adCoverCount} kapak görseli ve hesap toplamı eklendi.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
+        const matchedAdCoverCount = rbState.metaAds.filter(ad => ad.thumbnailSource === 'instagram-media').length;
+        const adMessage = adsImported ? ` ${rbState.metaAds.length} reklamın ayrı sonucu ve ${adCoverCount} kapak görseli eklendi; ${matchedAdCoverCount} kapak Instagram gönderisiyle doğrudan eşleşti.` : (rbState.metaAdAccounts.length > 1 && !rbState.adAccountId ? ' Reklamlar için Firmaları Düzenle bölümünden reklam hesabını bir kez seçin.' : '');
         const insightMessage = insightsResponse.ok && insightsData.hasData !== false ? ' Organik istatistikler de güncellendi.' : (insightsResponse.ok ? ' Seçilen dönem için Meta organik istatistik verisi bulunamadı.' : ' Organik istatistik iznini Firma ayarlarından hesabı yeniden bağlayarak güncelleyin.');
         alert(`${rbState.contents.length} aylık paylaşım ve son ${rbState.profilePosts.length} gönderi Meta’dan getirildi.${insightMessage}${adMessage}`);
     } catch (error) {
@@ -286,7 +287,6 @@ function rbComparableText(value) {
 
 function rbFillAdThumbnailsFromMedia(ads, mediaRows) {
     return ads.map(ad => {
-        if (ad.thumbnailUrl) return ad;
         const byId = mediaRows.find(media => String(media.id || '') === String(ad.instagramMediaId || ''));
         let match = byId;
         if (!match) {
@@ -299,7 +299,7 @@ function rbFillAdThumbnailsFromMedia(ads, mediaRows) {
                 return captionLead.length >= 18 && (adText.includes(captionLead) || caption.includes(adLead));
             });
         }
-        return match?.thumbnailUrl ? { ...ad, thumbnailUrl: match.thumbnailUrl } : ad;
+        return match?.thumbnailUrl ? { ...ad, thumbnailUrl: match.thumbnailUrl, thumbnailSource: 'instagram-media' } : ad;
     });
 }
 
