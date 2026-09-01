@@ -332,3 +332,22 @@
 .nr-summary-kpis i { background:linear-gradient(135deg,color-mix(in srgb,var(--nr-accent) 66%,white),var(--nr-safe-accent)); }
 .nr-summary-comment>i { background:linear-gradient(135deg,color-mix(in srgb,var(--nr-accent) 66%,white),var(--nr-safe-accent)); }
 .nr-best-row>b { background:linear-gradient(145deg,color-mix(in srgb,var(--nr-accent) 66%,white),var(--nr-safe-accent)); }
+
+/* V25: Tam renk kapak, beyaz on plan ve geometrik cizgi detaylari */
+.nr-cover { color:#fff; background:linear-gradient(138deg,color-mix(in srgb,var(--nr-accent) 78%,#17233f),color-mix(in srgb,var(--nr-accent) 56%,#101929)); }
+.nr-cover-rail { display:none; }
+.nr-cover:before { content:''; display:block; position:absolute; z-index:0; top:-28%; right:-34%; width:590px; height:590px; border:1px solid rgba(255,255,255,.19); border-radius:50%; background:none; box-shadow:0 0 0 72px rgba(255,255,255,.07),0 0 0 148px rgba(255,255,255,.045); opacity:1; }
+.nr-cover:after { content:''; display:block; position:absolute; z-index:0; top:-9%; right:7%; bottom:auto; left:auto; width:265px; height:125px; border:0; border-radius:0; background:repeating-linear-gradient(90deg,transparent 0 19px,rgba(255,255,255,.15) 19px 21px); transform:skewY(-11deg); opacity:1; }
+.nr-cover-brand { top:5.5%; left:8%; right:8%; color:#fff; border-bottom-color:rgba(255,255,255,.28); font-size:13px; }
+.nr-cover-brand span { color:#fff; opacity:.72; }
+.nr-cover-logo { top:14%; left:8%; width:330px; height:270px; overflow:visible; padding:0; border:0; border-radius:0; background:transparent; color:#fff; box-shadow:none; }
+.nr-cover-logo .rb-tinted-logo { width:100%; height:100%; background:#fff; }
+.nr-cover-logo>img { width:100%; height:100%; object-fit:contain; filter:brightness(0) invert(1); }
+.nr-cover-logo>span:not(.rb-tinted-logo) { color:#fff; font-size:72px; text-shadow:0 5px 22px rgba(0,0,0,.16); }
+.nr-cover-copy { top:47%; left:8%; right:8%; }
+.nr-cover-copy>span { color:rgba(255,255,255,.82); font-size:10.5px; }
+.nr-cover-copy h1 { max-width:90%; color:#fff; font-size:54px; text-shadow:0 3px 18px rgba(0,0,0,.12); }
+.nr-cover-copy p { color:rgba(255,255,255,.82); font-size:15px; }
+.nr-cover-period { left:8%; bottom:10.5%; min-width:260px; padding:17px 21px; border:1px solid rgba(255,255,255,.38); border-left-width:1px; background:rgba(255,255,255,.10); color:#fff; box-shadow:0 16px 38px rgba(8,15,28,.14); }
+.nr-cover-period small { color:rgba(255,255,255,.72); }
+.nr-cover-period strong { color:#fff; }

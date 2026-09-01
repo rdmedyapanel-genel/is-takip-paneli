@@ -44,3 +44,5 @@ Kapak, Genel Performans Özeti ile aynı editoryal ve yumuşak görsel dilde haz
 Tüm PDF sayfalarında başlıklar, açıklamalar, istatistik değerleri, reklam bilgileri, Instagram hesap bilgileri ve alt bilgiler büyütülmüş ve kontrastı artırılmıştır. Daha büyük içerik satırlarının çakışmaması için paylaşım listeleri sayfa başına en fazla 12 kayıtla bölünür.
 
 PDF motorlarının büyük dairesel geçişleri keskin renk bandı şeklinde basmasını önlemek için kapak, performans özeti ve standart sayfalardaki zeminler tek tonlu ve yumuşak doğrusal geçişlere dönüştürülmüştür. Firma rengi korunur; arka planda mor veya gri ikinci bir renk üretilmez.
+
+Kapakta soldaki dikey şerit kullanılmaz. Kapağın tamamı firma renginden üretilen, beyaz metin ve logonun okunmasını sağlayan koyu bir tona dönüşür. Logo kutusuz ve daha büyük gösterilir; ince dairesel çizgiler ile alt bölümdeki paralel çizgiler kapağa sade bir geometrik hareket kazandırır.
