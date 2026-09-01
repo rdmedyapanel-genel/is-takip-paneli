@@ -1,4 +1,5 @@
 const rbMonthNames = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+const rbAdVatRate = 0.20;
 let rbState = null;
 let rbPendingCompanyLogo = '';
 let rbPendingCompanyLogoTint = true;
@@ -400,6 +401,15 @@ function rbFormatMoney(value, currency = 'TRY') {
     catch (_) { return `${new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }).format(parsed)} ₺`; }
 }
 
+function rbAdSpendWithVat(value) {
+    const parsed = Number(String(value || '').replace(/[^0-9.,-]/g, '').replace(',', '.'));
+    return Number.isFinite(parsed) ? parsed * (1 + rbAdVatRate) : value;
+}
+
+function rbFormatAdSpend(value, currency = 'TRY') {
+    return rbFormatMoney(rbAdSpendWithVat(value), currency);
+}
+
 function rbComparableText(value) {
     return String(value || '').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/instagram\s+gonderisi\s*:?/g, '').replace(/[^a-z0-9çğıöşü]+/gi, ' ').trim();
 }
@@ -561,7 +571,7 @@ function rbBuildTopContents(mediaRows) {
 function rbAdDetailCards() {
     const ads = Array.isArray(rbState?.metaAds) ? rbState.metaAds : [];
     if (!ads.length) return '<div class="rb-ad-empty"><i class="fa-regular fa-images"></i><span>Meta’dan verileri getirdiğinizde her reklamın kapağı ve sonuçları burada görünür.</span></div>';
-    return `<div class="rb-ad-list">${ads.map(ad => `<article class="rb-ad-card"><div class="rb-ad-thumb"><div class="rb-ad-image-fallback"><i class="fa-solid fa-photo-film"></i><span>Kapak alınamadı</span></div>${rbImageMarkup(rbAdImageSources(ad), `${ad.name || 'Reklam'} kapak görseli`)}</div><div class="rb-ad-copy"><small>${rbEscape(ad.campaignName || 'Meta reklam kampanyası')}</small><strong>${rbEscape(ad.name || 'İsimsiz reklam')}</strong><span>${rbEscape(ad.adsetName || '')}</span><div><p><b>${rbEscape(rbFormatMoney(ad.spend, ad.currency))}</b><small>Harcama</small></p><p><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></p><p><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></p><p><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></p></div></div></article>`).join('')}</div>`;
+    return `<div class="rb-ad-list">${ads.map(ad => `<article class="rb-ad-card"><div class="rb-ad-thumb"><div class="rb-ad-image-fallback"><i class="fa-solid fa-photo-film"></i><span>Kapak alınamadı</span></div>${rbImageMarkup(rbAdImageSources(ad), `${ad.name || 'Reklam'} kapak görseli`)}</div><div class="rb-ad-copy"><small>${rbEscape(ad.campaignName || 'Meta reklam kampanyası')}</small><strong>${rbEscape(ad.name || 'İsimsiz reklam')}</strong><span>${rbEscape(ad.adsetName || '')}</span><div><p><b>${rbEscape(rbFormatAdSpend(ad.spend, ad.currency))}</b><small>Harcama · KDV dahil</small></p><p><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></p><p><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></p><p><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></p></div></div></article>`).join('')}</div>`;
 }
 
 function rbFormatDate(value) {
@@ -635,7 +645,7 @@ function renderReportBuilderPage() {
 
                     <article class="rb-panel">
                         <div class="rb-panel-head"><b>06</b><div><h3>Meta reklamları</h3><p>Her reklamın kapak görseli ve kendi sonucu; ardından hesap toplamı.</p></div></div>
-                        <div class="rb-fields metrics">${rbMetricInput('adSpend','Toplam harcama')}${rbMetricInput('adImpressions','Gösterim')}${rbMetricInput('adReach','Reklam erişimi')}${rbMetricInput('adClicks','Tıklama')}</div>
+                        <div class="rb-fields metrics">${rbMetricInput('adSpend','Meta harcaması (KDV hariç)')}${rbMetricInput('adImpressions','Gösterim')}${rbMetricInput('adReach','Reklam erişimi')}${rbMetricInput('adClicks','Tıklama')}</div>
                         ${rbAdDetailCards()}
                     </article>
 
@@ -1117,9 +1127,9 @@ function rbOpenPreview() {
     let page = 1;
     const sorted = [...rbState.contents].sort((a, b) => String(a.date).localeCompare(String(b.date)));
     const chunks = [];
-    for (let index = 0; index < sorted.length; index += 14) chunks.push(sorted.slice(index, index + 14));
+    for (let index = 0; index < sorted.length; index += 12) chunks.push(sorted.slice(index, index + 12));
     if (!chunks.length) chunks.push([]);
-    let pages = `<section class="nr-page nr-cover"><div class="nr-cover-rail"></div><div class="nr-cover-brand">RDGRUP <span>MEDYA</span></div><div class="nr-cover-logo">${rbCompanyLogo(company)}</div><div class="nr-cover-copy"><span>AYLIK HİZMET RAPORU</span><h1>${rbEscape(company.name || '')}</h1><p>Dijital performans, içerik ve reklam özeti</p></div><div class="nr-cover-period"><small>RAPOR DÖNEMİ</small><strong>${rbEscape(rbPeriodLabel().toUpperCase())}</strong></div></section>`;
+    let pages = `<section class="nr-page nr-cover"><div class="nr-cover-rail"></div><div class="nr-cover-brand">RDGRUP <span>MEDYA</span></div><div class="nr-cover-logo">${rbCompanyLogo(company)}</div><div class="nr-cover-copy"><span>AYLIK SOSYAL MEDYA RAPORU</span><h1>${rbEscape(company.name || '')}</h1><p>Dijital performans, içerik ve reklam sonuçları</p></div><div class="nr-cover-period"><small>RAPOR DÖNEMİ</small><strong>${rbEscape(rbPeriodLabel().toUpperCase())}</strong></div></section>`;
     pages += rbPerformanceSummaryPage(company, page++);
     chunks.forEach((chunk, chunkIndex) => {
         const rows = chunk.length ? chunk.map(item => `<p><b>${rbEscape(rbFormatDate(item.date))}:</b><span>${rbEscape(item.type)} ve Story Paylaşımı</span></p>`).join('') : '<div class="nr-empty">Bu dönem için paylaşım eklenmedi.</div>';
@@ -1135,11 +1145,11 @@ function rbOpenPreview() {
         const adCards = adChunk.map((ad, adIndex) => {
             const adName = String(ad.name || 'İsimsiz reklam');
             const contextLabel = [ad.campaignName, ad.adsetName].find(label => label && String(label).trim().toLocaleLowerCase('tr-TR') !== adName.trim().toLocaleLowerCase('tr-TR')) || 'Meta reklam kampanyası';
-            return `<article class="nr-ad-card"><div class="nr-ad-image"><div class="nr-ad-image-fallback"><i class="fa-solid fa-photo-film"></i><span>Kapak görseli alınamadı</span></div>${rbImageMarkup(rbAdImageSources(ad), `${adName} kapak görseli`)}</div><div class="nr-ad-card-copy"><small>REKLAM ${String(index + adIndex + 1).padStart(2, '0')}</small><h3>${rbEscape(adName)}</h3><p>${rbEscape(contextLabel)}</p><div><span><b>${rbEscape(rbFormatMoney(ad.spend, ad.currency))}</b><small>Harcama</small></span><span><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></span><span><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></span><span><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></span></div></div></article>`;
+            return `<article class="nr-ad-card"><div class="nr-ad-image"><div class="nr-ad-image-fallback"><i class="fa-solid fa-photo-film"></i><span>Kapak görseli alınamadı</span></div>${rbImageMarkup(rbAdImageSources(ad), `${adName} kapak görseli`)}</div><div class="nr-ad-card-copy"><small>REKLAM ${String(index + adIndex + 1).padStart(2, '0')}</small><h3>${rbEscape(adName)}</h3><p>${rbEscape(contextLabel)}</p><div><span><b>${rbEscape(rbFormatAdSpend(ad.spend, ad.currency))}</b><small>Harcama · KDV dahil</small></span><span><b>${rbEscape(rbFormatNumber(ad.reach))}</b><small>Erişim</small></span><span><b>${rbEscape(rbFormatNumber(ad.impressions))}</b><small>Gösterim</small></span><span><b>${rbEscape(rbFormatNumber(ad.clicks))}</b><small>Tıklama</small></span></div></div></article>`;
         }).join('');
         pages += rbStandardPage('ÜCRETLİ MEDYA', `REKLAM <span>DETAYLARI</span>`, `<p class="nr-lead">Bu dönemde yayınlanan reklamların görseli ve ayrı sonuçları.</p><div class="nr-ad-grid">${adCards}</div>`, page++);
     }
-    if ([rbState.adSpend,rbState.adImpressions,rbState.adReach,rbState.adClicks].some(Boolean)) pages += rbStandardPage('ÜCRETLİ MEDYA', `REKLAMLAR <span>TOPLAM</span>`, `<p class="nr-lead">Tüm reklamların hesap düzeyindeki aylık toplam sonucu.</p><div class="nr-metrics nr-ad-metrics">${rbPreviewMetric('Toplam Harcama',rbFormatMoney(rbState.adSpend, rbState.adCurrency))}${rbPreviewMetric('Gösterim',rbState.adImpressions)}${rbPreviewMetric('Erişim',rbState.adReach,true)}${rbPreviewMetric('Tıklama',rbState.adClicks,true)}</div>`, page++);
+    if ([rbState.adSpend,rbState.adImpressions,rbState.adReach,rbState.adClicks].some(Boolean)) pages += rbStandardPage('ÜCRETLİ MEDYA', `REKLAMLAR <span>TOPLAM</span>`, `<p class="nr-lead">Meta harcamasına %20 KDV eklenmiş, hesaptan çekilen aylık toplam sonuç.</p><div class="nr-metrics nr-ad-metrics">${rbPreviewMetric('Toplam Harcama · KDV Dahil',rbFormatAdSpend(rbState.adSpend, rbState.adCurrency))}${rbPreviewMetric('Gösterim',rbState.adImpressions)}${rbPreviewMetric('Erişim',rbState.adReach,true)}${rbPreviewMetric('Tıklama',rbState.adClicks,true)}</div>`, page++);
     if (rbState.notes.trim()) pages += rbStandardPage('AYLIK DEĞERLENDİRME', `SONUÇ VE <span>ÖNERİLER</span>`, `<p class="nr-lead">Ayın kısa değerlendirmesi ve sonraki dönem odağı.</p><div class="nr-notes">${rbEscape(rbState.notes).replace(/\n/g,'<br>')}</div>`, page++);
 
     const modal = document.createElement('div');

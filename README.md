@@ -32,3 +32,13 @@ Gönderiler, profil görünümü, organik istatistikler ve reklamlar birbirinden
 PDF'nin kapaktan sonraki ilk sayfası, firma için seçilen renge uyarlanan editoryal bir **Genel Performans Özeti** olarak hazırlanır. Bu sayfada toplam erişim, etkileşim, takipçi sayısı, paylaşılan içerik, etkileşim dağılımı ve otomatik kısa değerlendirme birlikte gösterilir.
 
 **Meta'dan verileri getir** işlemi seçili ayın gönderi bazlı erişim ve etkileşim istatistiklerini de alır. Gönderiler önce erişime, erişim yoksa görüntülenme ve etkileşime göre sıralanır; en güçlü üç içerik kapak görseli, açıklaması, erişimi ve etkileşimiyle **En İyi İçerikler** alanına otomatik eklenir. Bir içerik satırına tıklandığında ilgili Instagram gönderisi açılır.
+
+## Reklam harcamalarında KDV
+
+Meta Reklam API'sinden alınan harcama ham, KDV hariç değer olarak taslakta saklanır. Paneldeki reklam kartları ve PDF raporundaki reklam detayları ile toplam harcama gösterilirken bu tutara otomatik olarak **%20 KDV** eklenir. Böylece raporda Meta'nın hesaptan çekeceği KDV dahil tutar görünür; veri tekrar çekildiğinde KDV ikinci kez eklenmez.
+
+## PDF tasarım ve okunabilirlik
+
+Kapak, Genel Performans Özeti ile aynı editoryal ve yumuşak görsel dilde hazırlanır. Firma logosu büyük, beyaz ve firma renginden üretilen koyu bir yüzey üzerinde gösterilir. Firma için açık bir renk seçilmiş olsa bile başlık ve bilgi metinlerinde otomatik koyulaştırılmış güvenli bir ton kullanılır.
+
+Tüm PDF sayfalarında başlıklar, açıklamalar, istatistik değerleri, reklam bilgileri, Instagram hesap bilgileri ve alt bilgiler büyütülmüş ve kontrastı artırılmıştır. Daha büyük içerik satırlarının çakışmaması için paylaşım listeleri sayfa başına en fazla 12 kayıtla bölünür.
