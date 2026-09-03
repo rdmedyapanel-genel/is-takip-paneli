@@ -2,6 +2,8 @@
 
 Panelin **Medya** bölümündeki **Rapor Oluştur** sayfasından rapor firmaları yönetilebilir, aylık rapor hazırlanabilir ve PDF çıktısı alınabilir. Rapor firmaları normal iş takip firmalarından ayrı bir listede tutulur; iki alan birbirine karışmaz.
 
+PDF kaydedilirken önerilen dosya adı firma ve rapor dönemine göre otomatik hazırlanır. Örneğin Gülçimen Aspava Mustafa Kemal firmasının Haziran 2025 raporu `Gülçimen Aspava Mustafa Kemal 2025 - Haziran Ayı Aylık Rapor.pdf` adıyla önerilir.
+
 ## Meta bağlantısı
 
 Meta uygulama şifresi site dosyalarına yazılmaz. GitHub deposu Vercel'e bağlıyken Vercel'de **Settings > Environment Variables** alanına şu değişkenleri ekleyin:
@@ -26,6 +28,28 @@ Rapor ayındaki ve son 12 gönderide eşleşmeyen reklam kapakları için Instag
 Bulunan Meta kapakları, profil fotoğrafı ve gönderi görselleri süreli CDN bağlantılarının PDF ekranında engellenmemesi için imzalı `/api/meta/image-proxy` uç noktası üzerinden aynı site görseline dönüştürülür. Proxy çalışmazsa özgün Meta adresi otomatik olarak ikinci seçenek şeklinde denenir. Proxy yalnızca Meta/Facebook/Instagram görsel alan adlarına izin verir ve `META_APP_SECRET` ile imzalanır.
 
 Gönderiler, profil görünümü, organik istatistikler ve reklamlar birbirinden bağımsız içe aktarılır. Reklam servisi gecikse veya hata verse bile alınmış gönderiler ve istatistikler hemen ekrana uygulanır, yerel taslağa kaydedilir ve silinmez.
+
+## Google Ads bağlantısı
+
+Google reklamı kullanılan firmalar için **Firmaları Düzenle > Düzenle > Google Ads’e bağlan** adımı kullanılır. Google izni tamamlandığında erişilebilen reklam hesapları listelenir ve doğru hesap firmaya bir kez kaydedilir. Ardından rapor ekranındaki **Google Ads verilerini getir** düğmesi seçili ayın kampanya sonuçlarını alır.
+
+Google Ads bağlantısı için Google Cloud projesinde **Google Ads API** etkinleştirilmeli, OAuth istemcisi **Web application** türünde oluşturulmalı ve OAuth izin ekranına `https://www.googleapis.com/auth/adwords` kapsamı eklenmelidir. Google Ads yönetici hesabındaki API Center bölümünden ayrıca bir geliştirici anahtarı gerekir.
+
+Google Cloud OAuth istemcisindeki **Authorized redirect URIs** alanına aşağıdaki adres eklenir:
+
+`https://site-adiniz.vercel.app/api/google-ads/callback`
+
+Vercel'de **Settings > Environment Variables** alanına şu değişkenler eklenir:
+
+- `GOOGLE_ADS_CLIENT_ID`
+- `GOOGLE_ADS_CLIENT_SECRET`
+- `GOOGLE_ADS_DEVELOPER_TOKEN`
+- `GOOGLE_ADS_REDIRECT_URI` — örnek: `https://site-adiniz.vercel.app/api/google-ads/callback`
+- `GOOGLE_ADS_API_VERSION` — `v25`
+
+OAuth izin ekranı **Testing** durumundaysa Google yenileme anahtarı yedi gün sonra sona erebilir. Sürekli kullanım için uygulamayı uygun kullanıcı türü ve yayın durumuyla yapılandırın. İstemci gizli anahtarı ve geliştirici anahtarı GitHub dosyalarına yazılmaz; yalnızca Vercel ortam değişkenlerinde tutulur.
+
+Google Ads API’den kampanya adı, kampanya türü, harcama, gösterim, tıklama ve dönüşüm bilgileri alınır. Panelde kampanya bazında gösterilir; toplam harcama, gösterim, tıklama, dönüşüm, ortalama tıklama maliyeti ve en yüksek harcamalı kampanyalar PDF’in son sayfasına otomatik eklenir. Google Ads bağlantısı olmayan firmaların raporuna bu sayfa eklenmez.
 
 ## Genel Performans Özeti ve en iyi içerikler
 

@@ -351,3 +351,69 @@
 .nr-cover-period { left:8%; bottom:10.5%; min-width:260px; padding:17px 21px; border:1px solid rgba(255,255,255,.38); border-left-width:1px; background:rgba(255,255,255,.10); color:#fff; box-shadow:0 16px 38px rgba(8,15,28,.14); }
 .nr-cover-period small { color:rgba(255,255,255,.72); }
 .nr-cover-period strong { color:#fff; }
+
+/* V28: Firma bazli Google Ads baglantisi, kampanya kartlari ve PDF son sayfasi */
+.rb-google-card { display:grid; grid-template-columns:38px minmax(0,1fr) auto; align-items:center; gap:10px; margin:0 15px 14px; padding:11px 12px; border:1px solid #cfe0fa; border-radius:10px; background:linear-gradient(135deg,#f4f8ff,#fff); }
+.rb-google-card.connected { border-color:#b9e4cc; background:linear-gradient(135deg,#f2fbf6,#fff); }
+.rb-google-icon { width:36px; height:36px; display:grid; place-items:center; border-radius:9px; background:#1a73e8; color:#fff; font-size:17px; }
+.rb-google-card.connected .rb-google-icon { background:#188038; }
+.rb-google-card>div:nth-child(2) { min-width:0; display:grid; gap:3px; }
+.rb-google-card strong { color:#25303c; font-size:10px; }
+.rb-google-card span { color:#78828f; font-size:8px; line-height:1.45; }
+.rb-google-actions button { min-height:34px; padding:7px 10px; border:0; border-radius:7px; background:#1a73e8; color:#fff; font:750 8px 'Poppins',sans-serif; cursor:pointer; }
+.rb-google-card.connected .rb-google-actions button { background:#188038; }
+
+.rb-company-meta.rb-company-google { border-color:#cfe0fa; background:#f4f8ff; }
+.rb-company-meta.rb-company-google>span { background:#1a73e8; }
+.rb-company-meta.rb-company-google.connected { border-color:#b9e4cc; background:#f2fbf6; }
+.rb-company-meta.rb-company-google.connected>span { background:#188038; }
+.rb-company-google .rb-company-meta-actions button { background:#1a73e8; }
+.rb-company-google.connected .rb-company-meta-actions button { background:#188038; }
+.rb-company-google .rb-company-meta-actions button.danger { background:#fff; color:#ad4350; }
+.rb-company-google-badge.connected { border-color:#b9e4cc; background:#f1fbf6; color:#18764f; }
+.rb-google-dialog-head>span { background:#1a73e8; }
+.rb-google-account>span { background:#fff; color:#1a73e8; box-shadow:inset 0 0 0 1px #dbe7f8; }
+.rb-google-account:hover { border-color:#91b9ee; background:#f6f9ff; }
+
+.rb-google-campaign-list { display:grid; gap:7px; padding:0 15px 16px; }
+.rb-google-campaign-list>article { display:grid; grid-template-columns:35px minmax(150px,1fr) repeat(4,minmax(72px,.55fr)); align-items:center; gap:9px; padding:10px 11px; border:1px solid #e0e5ec; border-radius:9px; background:#fff; }
+.rb-google-campaign-list>article>span { width:32px; height:32px; display:grid; place-items:center; border-radius:8px; background:#edf4ff; color:#1a73e8; }
+.rb-google-campaign-list>article>div { min-width:0; display:grid; gap:2px; }
+.rb-google-campaign-list>article>div small { color:#7d8795; font-size:7px; text-transform:capitalize; }
+.rb-google-campaign-list>article>div strong { overflow:hidden; color:#27313e; font-size:9px; text-overflow:ellipsis; white-space:nowrap; }
+.rb-google-campaign-list>article>p { display:grid; gap:2px; margin:0; padding-left:8px; border-left:1px solid #e8ebef; }
+.rb-google-campaign-list>article>p b { color:#26313f; font-size:9px; }
+.rb-google-campaign-list>article>p small { color:#929aa5; font-size:7px; }
+.rb-google-empty i { color:#1a73e8; }
+
+.nr-google-kpis { position:relative; z-index:2; display:grid; grid-template-columns:repeat(4,1fr); gap:11px; margin-top:4.5%; }
+.nr-google-kpis>article { min-height:118px; display:flex; flex-direction:column; justify-content:center; gap:8px; padding:15px; border:1px solid #fff; border-radius:15px; background:#fffffff0; box-shadow:0 13px 32px rgba(36,54,91,.09); }
+.nr-google-kpis i { width:34px; height:34px; display:grid; place-items:center; border-radius:50%; background:var(--nr-safe-accent); color:#fff; font-size:13px; }
+.nr-google-kpis span { color:#536078; font-size:9px; }
+.nr-google-kpis b { overflow:hidden; color:#172137; font-size:18px; text-overflow:ellipsis; white-space:nowrap; }
+.nr-google-secondary { position:relative; z-index:2; min-height:61px; display:grid; grid-template-columns:1fr 1fr 1fr; align-items:center; gap:12px; margin-top:12px; padding:11px 16px; border:1px solid #dce4ef; border-radius:13px; background:#fff; box-shadow:0 10px 26px rgba(36,54,91,.07); }
+.nr-google-secondary>span { display:flex; align-items:center; gap:9px; color:#1a73e8; font-size:12px; font-weight:850; }
+.nr-google-secondary>span i { width:28px; height:28px; display:grid; place-items:center; border-radius:8px; background:#edf4ff; }
+.nr-google-secondary p { display:grid; gap:3px; margin:0; padding-left:12px; border-left:1px solid #e1e6ee; }
+.nr-google-secondary small { color:#68758a; font-size:8px; }
+.nr-google-secondary b { color:#172137; font-size:13px; }
+.nr-google-campaigns { position:relative; z-index:2; margin-top:18px; }
+.nr-google-campaigns>h3 { margin:0 0 10px; color:#1b2740; font-size:14px; }
+.nr-google-campaigns>div { display:grid; gap:7px; }
+.nr-google-campaigns article { min-height:50px; display:grid; grid-template-columns:34px minmax(0,1fr) 86px 66px 70px; align-items:center; gap:10px; padding:8px 11px; border:1px solid #e0e5ed; border-radius:11px; background:#fffffff2; box-shadow:0 8px 20px rgba(37,52,88,.055); }
+.nr-google-campaigns article>b { width:31px; height:31px; display:grid; place-items:center; border-radius:9px; background:var(--nr-safe-accent); color:#fff; font-size:10px; }
+.nr-google-campaigns article>div { min-width:0; display:grid; gap:3px; }
+.nr-google-campaigns article>div small { color:#708097; font-size:7px; text-transform:capitalize; }
+.nr-google-campaigns article>div strong { overflow:hidden; color:#202b40; font-size:9.5px; text-overflow:ellipsis; white-space:nowrap; }
+.nr-google-campaigns article>p { display:grid; gap:3px; margin:0; padding-left:9px; border-left:1px solid #e1e6ed; }
+.nr-google-campaigns article>p span { color:#718096; font-size:7px; }
+.nr-google-campaigns article>p b { color:#172137; font-size:10.5px; }
+.nr-google-empty { padding:18px; border:1px dashed #ccd5e1; border-radius:11px; color:#69778d; font-size:9px; text-align:center; }
+
+@media (max-width:720px) {
+    .rb-google-card { grid-template-columns:38px 1fr; }
+    .rb-google-actions { grid-column:1/3; }
+    .rb-google-actions button { width:100%; }
+    .rb-google-campaign-list>article { grid-template-columns:35px 1fr 1fr; }
+    .rb-google-campaign-list>article>p { grid-column:auto; }
+}
