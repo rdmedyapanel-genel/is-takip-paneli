@@ -51,6 +51,8 @@ OAuth izin ekranı **Testing** durumundaysa Google yenileme anahtarı yedi gün 
 
 Google Ads API’den kampanya adı, kampanya türü, harcama, gösterim, tıklama ve dönüşüm bilgileri alınır. Panelde kampanya bazında gösterilir; toplam harcama, gösterim, tıklama, dönüşüm, ortalama tıklama maliyeti ve en yüksek harcamalı kampanyalar PDF’in son sayfasına otomatik eklenir. Google Ads bağlantısı olmayan firmaların raporuna bu sayfa eklenmez.
 
+Google Ads geliştirici erişimi onaylanana kadar aynı bölüm manuel yedek akışla kullanılabilir. Rapor hazırlanırken **Bu firma için Google reklamı var** seçeneği işaretlenir, Google Ads performans özetinin ekran görüntüsü yüklenir ve ekrandaki harcama, gösterim, tıklama, yerel işlem ile telefon araması değerleri alanlara yazılır. PDF'in son sayfasında bu beş değer tasarımlı kartlarla, yüklenen ekran görüntüsü ise kaynak görünümüyle birlikte gösterilir. Ekran görüntüsü yalnızca ilgili firma ve ayın bu tarayıcıdaki taslağında saklanır; API bağlantısı hazır olduğunda otomatik veri akışı aynı bölümü kullanmaya devam eder.
+
 ## Genel Performans Özeti ve en iyi içerikler
 
 PDF'nin kapaktan sonraki ilk sayfası, firma için seçilen renge uyarlanan editoryal bir **Genel Performans Özeti** olarak hazırlanır. Bu sayfada toplam erişim, etkileşim, takipçi sayısı, paylaşılan içerik, etkileşim dağılımı ve otomatik kısa değerlendirme birlikte gösterilir.

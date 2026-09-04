@@ -32,6 +32,10 @@ function rbEmptyState(companyId, period) {
         adAccountId: company.reportAdAccountId || '',
         googleAdsCampaigns: [],
         googleAdsSpend: '', googleAdsImpressions: '', googleAdsClicks: '', googleAdsConversions: '', googleAdsConversionValue: '',
+        googleAdsEnabled: false,
+        googleAdsScreenshot: '',
+        googleAdsLocalActions: '',
+        googleAdsPhoneCalls: '',
         googleAdsCurrency: company.reportGoogleAdsCurrency || 'TRY',
         views: '', reach: '', profileVisits: '', followers: '',
         likes: '', comments: '', saves: '', shares: '',
@@ -95,6 +99,10 @@ function rbLoadState(companyId, period) {
             metaAdAccounts: Array.isArray(saved.metaAdAccounts) ? saved.metaAdAccounts : [],
             metaAds: Array.isArray(saved.metaAds) ? saved.metaAds : [],
             googleAdsCampaigns: Array.isArray(saved.googleAdsCampaigns) ? saved.googleAdsCampaigns : [],
+            googleAdsEnabled: saved.googleAdsEnabled === true || Boolean(saved.googleAdsScreenshot) || ['googleAdsSpend','googleAdsImpressions','googleAdsClicks','googleAdsConversions','googleAdsLocalActions','googleAdsPhoneCalls'].some(field => String(saved[field] || '').trim()) || (Array.isArray(saved.googleAdsCampaigns) && saved.googleAdsCampaigns.length > 0),
+            googleAdsScreenshot: typeof saved.googleAdsScreenshot === 'string' ? saved.googleAdsScreenshot : '',
+            googleAdsLocalActions: saved.googleAdsLocalActions ?? '',
+            googleAdsPhoneCalls: saved.googleAdsPhoneCalls ?? '',
             adAccountId: empty.adAccountId || saved.adAccountId || ''
         } : empty;
     } catch (_) { return empty; }
@@ -402,6 +410,7 @@ async function rbImportGoogleAds() {
         rbState.googleAdsConversionValue = String(data.conversionValue ?? '0');
         rbState.googleAdsCurrency = data.currency || company.reportGoogleAdsCurrency || 'TRY';
         rbState.googleAdsCampaigns = Array.isArray(data.campaigns) ? data.campaigns : [];
+        rbState.googleAdsEnabled = true;
         rbStoreStateLocally();
         renderReportBuilderPage();
         alert(`${rbState.googleAdsCampaigns.length} Google Ads kampanyasının aylık sonucu rapora eklendi.`);
@@ -573,6 +582,52 @@ function rbPrintReport() {
     document.title = rbPdfDocumentTitle();
     window.addEventListener('afterprint', () => { document.title = previousTitle; }, { once: true });
     window.print();
+}
+
+function rbToggleGoogleAds(enabled) {
+    if (!rbState) return;
+    rbState.googleAdsEnabled = enabled === true;
+    rbStoreStateLocally();
+    renderReportBuilderPage();
+}
+
+function rbSetGoogleAdsScreenshot(event) {
+    const file = event.target.files?.[0];
+    if (!file || !rbState) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        const image = new Image();
+        image.onload = () => {
+            try {
+                const maxWidth = 1600;
+                const maxHeight = 900;
+                const ratio = Math.min(1, maxWidth / image.width, maxHeight / image.height);
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(image.width * ratio));
+                canvas.height = Math.max(1, Math.round(image.height * ratio));
+                const context = canvas.getContext('2d');
+                context.fillStyle = '#ffffff';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                rbState.googleAdsScreenshot = canvas.toDataURL('image/jpeg', .88);
+                rbState.googleAdsEnabled = true;
+                rbStoreStateLocally();
+                renderReportBuilderPage();
+            } catch (_) {
+                alert('Google Ads ekran görüntüsü hazırlanamadı. PNG veya JPG olarak tekrar deneyin.');
+            }
+        };
+        image.onerror = () => alert('Bu görsel açılamadı. PNG veya JPG olarak tekrar deneyin.');
+        image.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function rbRemoveGoogleAdsScreenshot() {
+    if (!rbState) return;
+    rbState.googleAdsScreenshot = '';
+    rbStoreStateLocally();
+    renderReportBuilderPage();
 }
 
 function rbFormatNumber(value) {
@@ -850,9 +905,15 @@ function renderReportBuilderPage() {
                     </article>
 
                     <article class="rb-panel">
-                        <div class="rb-panel-head"><b>07</b><div><h3>Google reklamları</h3><p>Kampanya harcamaları ve sonuçları Google Ads API’den alınır.</p></div><div class="rb-panel-actions">${googleAdsConnection && company.reportGoogleAdsCustomerId ? '<button type="button" onclick="rbImportGoogleAds()">Google Ads’den getir</button>' : `<button type="button" onclick="rbOpenCompanyModal('${rbEscape(company.docId || '')}')">Hesap bağla</button>`}</div></div>
-                        <div class="rb-fields metrics">${rbMetricInput('googleAdsSpend','Google Ads harcaması')}${rbMetricInput('googleAdsImpressions','Gösterim')}${rbMetricInput('googleAdsClicks','Tıklama')}${rbMetricInput('googleAdsConversions','Dönüşüm')}</div>
-                        ${rbGoogleAdsCampaignCards()}
+                        <div class="rb-panel-head"><b>07</b><div><h3>Google reklamları</h3><p>API hazır olana kadar ekran görüntüsüyle; sonrasında otomatik olarak rapora eklenir.</p></div><div class="rb-panel-actions">${googleAdsConnection && company.reportGoogleAdsCustomerId ? '<button type="button" onclick="rbImportGoogleAds()">Google Ads’den getir</button>' : `<button type="button" onclick="rbOpenCompanyModal('${rbEscape(company.docId || '')}')">Hesap bağla</button>`}</div></div>
+                        <label class="rb-google-toggle"><input type="checkbox" ${rbState.googleAdsEnabled ? 'checked' : ''} onchange="rbToggleGoogleAds(this.checked)"><span><b>Bu firma için Google reklamı var</b><small>İşaretlendiğinde Google Ads bölümü PDF’in sonuna eklenir.</small></span></label>
+                        ${rbState.googleAdsEnabled ? `<div class="rb-google-manual">
+                            <div class="rb-google-manual-head"><div><strong>Google Ads ekran görüntüsü</strong><span>Google Ads özet ekranını yükleyin; görsel PDF’e kaynak görünümü olarak eklenir.</span></div>${rbState.googleAdsScreenshot ? '<button type="button" onclick="rbRemoveGoogleAdsScreenshot()"><i class="fa-regular fa-trash-can"></i> Görseli kaldır</button>' : ''}</div>
+                            <label class="rb-google-proof-upload"><input type="file" accept="image/png,image/jpeg,image/webp" onchange="rbSetGoogleAdsScreenshot(event)" hidden>${rbState.googleAdsScreenshot ? `<img src="${rbEscape(rbState.googleAdsScreenshot)}" alt="Google Ads özet ekranı"><span><i class="fa-solid fa-rotate"></i> Ekran görüntüsünü değiştir</span>` : '<i class="fa-regular fa-image"></i><strong>Ekran görüntüsü yükle</strong><span>PNG, JPG veya WebP</span>'}</label>
+                            <p class="rb-google-manual-note"><i class="fa-solid fa-circle-info"></i> Görseldeki değerleri aşağıya tam sayı olarak yazın; örneğin 344 B için 344000.</p>
+                            <div class="rb-fields metrics google-manual">${rbMetricInput('googleAdsSpend','Google Ads harcaması')}${rbMetricInput('googleAdsImpressions','Gösterim')}${rbMetricInput('googleAdsClicks','Tıklama')}${rbMetricInput('googleAdsLocalActions','Yerel işlemler')}${rbMetricInput('googleAdsPhoneCalls','Telefon araması tıklamaları')}</div>
+                            ${rbGoogleAdsCampaignCards()}
+                        </div>` : '<div class="rb-google-disabled"><i class="fa-brands fa-google"></i><span>Google reklamı yoksa bu bölüm raporda gösterilmez.</span></div>'}
                     </article>
 
                     <article class="rb-panel">
@@ -1254,7 +1315,7 @@ function rbSetProfileImage(event) {
 async function rbSaveDraft() {
     if (!rbState?.companyId) return alert('Önce firma seçin.');
     localStorage.setItem(rbStorageKey(rbState.companyId, rbState.period), JSON.stringify(rbState));
-    const remoteState = { ...rbState, profileImage: '', updatedAt: new Date().toISOString(), updatedBy: currentUser?.id || '' };
+    const remoteState = { ...rbState, profileImage: '', googleAdsScreenshot: '', updatedAt: new Date().toISOString(), updatedBy: currentUser?.id || '' };
     try {
         await db.collection('monthly_reports').doc(`${rbState.companyId}_${rbState.period}`).set(remoteState, { merge: true });
         if (rbCompany().docId) await db.collection('report_companies').doc(rbCompany().docId).set({ reportColor: rbState.accent }, { merge: true });
@@ -1343,7 +1404,14 @@ function rbGoogleAdsReportPage(pageNumber) {
     const campaigns = Array.isArray(rbState.googleAdsCampaigns) ? rbState.googleAdsCampaigns.slice(0, 6) : [];
     const cpc = Number(rbState.googleAdsClicks) > 0 ? Number(rbState.googleAdsSpend || 0) / Number(rbState.googleAdsClicks) : 0;
     const rows = campaigns.length ? campaigns.map((campaign, index) => `<article><b>${String(index + 1).padStart(2, '0')}</b><div><small>${rbEscape(String(campaign.type || 'Kampanya').replaceAll('_', ' '))}</small><strong>${rbEscape(campaign.name || 'İsimsiz kampanya')}</strong></div><p><span>Harcama</span><b>${rbEscape(rbFormatMoney(campaign.spend, rbState.googleAdsCurrency))}</b></p><p><span>Tıklama</span><b>${rbEscape(rbFormatNumber(campaign.clicks))}</b></p><p><span>Dönüşüm</span><b>${rbEscape(rbFormatDecimal(campaign.conversions))}</b></p></article>`).join('') : '<div class="nr-google-empty">Bu dönem için kampanya kırılımı bulunmuyor.</div>';
-    const body = `<p class="nr-lead">Seçilen Google Ads hesabının ${rbEscape(rbPeriodLabel())} kampanya ve toplam sonuçları.</p><div class="nr-google-kpis"><article><i class="fa-solid fa-wallet"></i><span>Toplam Harcama</span><b>${rbEscape(rbFormatMoney(rbState.googleAdsSpend, rbState.googleAdsCurrency))}</b></article><article><i class="fa-regular fa-eye"></i><span>Gösterim</span><b>${rbEscape(rbFormatNumber(rbState.googleAdsImpressions))}</b></article><article><i class="fa-solid fa-arrow-pointer"></i><span>Tıklama</span><b>${rbEscape(rbFormatNumber(rbState.googleAdsClicks))}</b></article><article><i class="fa-solid fa-bullseye"></i><span>Dönüşüm</span><b>${rbEscape(rbFormatDecimal(rbState.googleAdsConversions))}</b></article></div><div class="nr-google-secondary"><span><i class="fa-brands fa-google"></i> Google Ads</span><p><small>Ortalama Tıklama Maliyeti</small><b>${rbEscape(rbFormatMoney(cpc, rbState.googleAdsCurrency))}</b></p><p><small>Kampanya Sayısı</small><b>${rbFormatNumber(rbState.googleAdsCampaigns.length)}</b></p></div><section class="nr-google-campaigns"><h3>En Yüksek Harcamalı Kampanyalar</h3><div>${rows}</div></section>`;
+    const hasManualSummary = Boolean(rbState.googleAdsScreenshot || String(rbState.googleAdsLocalActions || '').trim() || String(rbState.googleAdsPhoneCalls || '').trim());
+    const kpis = hasManualSummary
+        ? `<div class="nr-google-kpis nr-google-kpis-five"><article><i class="fa-solid fa-wallet"></i><span>Toplam Harcama</span><b>${rbEscape(rbFormatMoney(rbState.googleAdsSpend, rbState.googleAdsCurrency))}</b></article><article><i class="fa-regular fa-eye"></i><span>Gösterim</span><b>${rbEscape(rbFormatNumber(rbState.googleAdsImpressions))}</b></article><article><i class="fa-solid fa-arrow-pointer"></i><span>Tıklama</span><b>${rbEscape(rbFormatNumber(rbState.googleAdsClicks))}</b></article><article><i class="fa-solid fa-location-dot"></i><span>Yerel İşlemler</span><b>${rbEscape(rbFormatNumber(rbState.googleAdsLocalActions))}</b></article><article><i class="fa-solid fa-phone"></i><span>Telefon Araması</span><b>${rbEscape(rbFormatNumber(rbState.googleAdsPhoneCalls))}</b></article></div>`
+        : `<div class="nr-google-kpis"><article><i class="fa-solid fa-wallet"></i><span>Toplam Harcama</span><b>${rbEscape(rbFormatMoney(rbState.googleAdsSpend, rbState.googleAdsCurrency))}</b></article><article><i class="fa-regular fa-eye"></i><span>Gösterim</span><b>${rbEscape(rbFormatNumber(rbState.googleAdsImpressions))}</b></article><article><i class="fa-solid fa-arrow-pointer"></i><span>Tıklama</span><b>${rbEscape(rbFormatNumber(rbState.googleAdsClicks))}</b></article><article><i class="fa-solid fa-bullseye"></i><span>Dönüşüm</span><b>${rbEscape(rbFormatDecimal(rbState.googleAdsConversions))}</b></article></div>`;
+    const screenshot = rbState.googleAdsScreenshot ? `<figure class="nr-google-proof"><figcaption><i class="fa-brands fa-google"></i><span><b>Google Ads performans özeti</b><small>Yüklenen hesap ekranı</small></span></figcaption><img src="${rbEscape(rbState.googleAdsScreenshot)}" alt="Google Ads performans özet ekranı"></figure>` : '';
+    const detail = screenshot || `<section class="nr-google-campaigns"><h3>En Yüksek Harcamalı Kampanyalar</h3><div>${rows}</div></section>`;
+    const sourceLabel = screenshot ? 'Manuel ekran özeti' : 'Otomatik API verisi';
+    const body = `<p class="nr-lead">${rbEscape(rbPeriodLabel())} dönemine ait Google Ads reklam sonuçları.</p>${kpis}<div class="nr-google-secondary"><span><i class="fa-brands fa-google"></i> Google Ads</span><p><small>Ortalama Tıklama Maliyeti</small><b>${rbEscape(rbFormatMoney(cpc, rbState.googleAdsCurrency))}</b></p><p><small>Veri Kaynağı</small><b>${rbEscape(sourceLabel)}</b></p></div>${detail}`;
     return rbStandardPage('ÜCRETLİ ARAMA VE GÖRÜNTÜLÜ REKLAM', `GOOGLE ADS <span>SONUÇLARI</span>`, body, pageNumber);
 }
 
@@ -1379,7 +1447,7 @@ function rbOpenPreview() {
     }
     if ([rbState.adSpend,rbState.adImpressions,rbState.adReach,rbState.adClicks].some(Boolean)) pages += rbStandardPage('ÜCRETLİ MEDYA', `REKLAMLAR <span>TOPLAM</span>`, `<p class="nr-lead">Meta harcamasına %20 KDV eklenmiş, hesaptan çekilen aylık toplam sonuç.</p><div class="nr-metrics nr-ad-metrics">${rbPreviewMetric('Toplam Harcama · KDV Dahil',rbFormatAdSpend(rbState.adSpend, rbState.adCurrency))}${rbPreviewMetric('Gösterim',rbState.adImpressions)}${rbPreviewMetric('Erişim',rbState.adReach,true)}${rbPreviewMetric('Tıklama',rbState.adClicks,true)}</div>`, page++);
     if (rbState.notes.trim()) pages += rbStandardPage('AYLIK DEĞERLENDİRME', `SONUÇ VE <span>ÖNERİLER</span>`, `<p class="nr-lead">Ayın kısa değerlendirmesi ve sonraki dönem odağı.</p><div class="nr-notes">${rbEscape(rbState.notes).replace(/\n/g,'<br>')}</div>`, page++);
-    if ([rbState.googleAdsSpend,rbState.googleAdsImpressions,rbState.googleAdsClicks,rbState.googleAdsConversions].some(value => String(value || '').trim()) || rbState.googleAdsCampaigns.length) pages += rbGoogleAdsReportPage(page++);
+    if (rbState.googleAdsEnabled || rbState.googleAdsScreenshot || [rbState.googleAdsSpend,rbState.googleAdsImpressions,rbState.googleAdsClicks,rbState.googleAdsConversions,rbState.googleAdsLocalActions,rbState.googleAdsPhoneCalls].some(value => String(value || '').trim()) || rbState.googleAdsCampaigns.length) pages += rbGoogleAdsReportPage(page++);
 
     const modal = document.createElement('div');
     modal.id = 'native-report-modal'; modal.className = 'native-report-modal'; modal.style.setProperty('--nr-accent', accent);
