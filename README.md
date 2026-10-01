@@ -74,3 +74,23 @@ Etkileşim dağılımı grafiğinde firma renginin çok koyu, ana, orta-açık v
 PDF motorlarının büyük dairesel geçişleri keskin renk bandı şeklinde basmasını önlemek için kapak, performans özeti ve standart sayfalardaki zeminler tek tonlu ve yumuşak doğrusal geçişlere dönüştürülmüştür. Firma rengi korunur; arka planda mor veya gri ikinci bir renk üretilmez.
 
 Kapakta soldaki dikey şerit kullanılmaz. Kapağın tamamı firma renginden üretilen, beyaz metin ve logonun okunmasını sağlayan koyu bir tona dönüşür. Logo kutusuz ve daha büyük gösterilir; ince dairesel çizgiler ile alt bölümdeki paralel çizgiler kapağa sade bir geometrik hareket kazandırır.
+
+## İstatistik sayfası
+
+Medya menüsüne **İstatistik** eklendi. Menü ve sayfa erişimi, `users` koleksiyonundan yüklenen rolü `admin` olan kullanıcılarla sınırlıdır (büyük/küçük harf fark etmez). Yönetici rolü bu sayfayı açamaz. Yerel oturumdaki rol yerine veritabanından yüklenen kullanıcı rolü esas alınır.
+
+Ay seçici, önceki/sonraki ay düğmeleri ve **Bu Ay** ile geçmiş dönemler görüntülenebilir. Üstte dört toplam, altta personel bazında döküm bulunur:
+
+- **Checkliste Yazılan Madde:** seçili şirket ve aydaki `checklists.notes` alanlarının boş olmayan maddeleri.
+- **Hazırlanan Tasarım / Video:** Paylaşım Takvimi’nde `hazirlandi === true` olan ilgili türlerin `adet` toplamı; paylaşılmış olma şartı aranmaz.
+- **Yapılan Paylaşım:** `paylasildi === true` olan tüm içerik türlerinin `adet` toplamı; hazırlanmış olma şartı aranmaz.
+
+Görevler `holding || firma`, `tarih` ve varsa `rdgrup_paylasim` kategorisine göre filtrelenir. Aylık dönem görev kartının takvim tarihidir; panel hazırlama/paylaşma işlem tarihini saklamadığı için işlem tarihine göre rapor sunulmaz. Genel Ajanda ve çekim sayıları bu dört toplama dahil değildir. Görevlerde kişi adları saklandığından aynı adlı birden fazla kişi varsa kayıt ayrı bir “isim eşleşmesi belirsiz” satırında gösterilir; iki kişiye birden yazılmaz. Silinmiş veya atanmamış kişilerin kayıtları da toplamdan kaybolmaz.
+
+Geçmiş bir ayda **Geçmiş Ay Verisi Ekle / Düzenle** bölümünden kişi başına dört ek değer girilebilir. Bunlar otomatik kayıtlara ilave edilir. Takvim/checklistte bulunan işler tekrar girilmemelidir. Kayıtlar `statistics_adjustments` koleksiyonunda şirket + ay + kullanıcı anahtarıyla tutulur; aynı kişiye aynı ay için yeniden kaydetmek ek değerleri değiştirir, biriktirmez. Ek değerleri kaldırmak için dört alanı sıfırlayıp kaydedin. Not ve güncelleyen kullanıcı da saklanır. Yeni bir Firebase indeksi gerekmez.
+
+**Erişim sınırı:** Bu arşivdeki mevcut giriş sistemi Firebase Authentication kullanmıyor; kullanıcı oturumu `localStorage` üzerinden tutuluyor. Eklenen rol kontrolleri menü/sayfa/uygulama işlemi düzeyindedir. Tarayıcı bilgilerini değiştiren birine karşı veritabanı düzeyinde admin garantisi için giriş sistemini Firebase Authentication’a taşımak ve Firestore Security Rules ile `statistics_adjustments` okuma/yazmayı admin kimliğine bağlamak gerekir. Koleksiyon izinleri mevcut Firebase projesinde yönetilmelidir; bu değişiklik herhangi bir canlı Firebase kuralını veya veriyi değiştirmez.
+
+**Kurulum:** Arşivdeki `medya/index.html`, `js/statistics-core.js`, `js/statistics.js` ve `css/statistics.css` dosyalarını mevcut projenize aktarın. Diğer proje dosyaları da tam paket içinde korunmuştur.
+
+**Kontrol:** `node --test tests/*.test.js` ile adet, kişi eşleşmesi, ay/şirket filtreleri, geçmiş ek veri ve yıl geçişi hesapları test edilir.
