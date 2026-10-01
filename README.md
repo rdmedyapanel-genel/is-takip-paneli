@@ -94,3 +94,7 @@ Geçmiş bir ayda **Geçmiş Ay Verisi Ekle / Düzenle** bölümünden kişi ba�
 **Kurulum:** Arşivdeki `medya/index.html`, `js/statistics-core.js`, `js/statistics.js` ve `css/statistics.css` dosyalarını mevcut projenize aktarın. Diğer proje dosyaları da tam paket içinde korunmuştur.
 
 **Kontrol:** `node --test tests/*.test.js` ile adet, kişi eşleşmesi, ay/şirket filtreleri, geçmiş ek veri ve yıl geçişi hesapları test edilir.
+
+## iPhone/WhatsApp PDF önizlemesi
+
+Raporun **PDF / Yazdır** çıktısı hazırlanırken kapak logosu ve etkileşim halkası PNG olarak PDF'e yerleştirilir. Baskı stilinde yarı saydam büyük zeminler ve gölgeler opak renklere dönüştürülür. Böylece iPhone'da WhatsApp'ın PDF önizlemesinde görülebilen bloklu arka plan ve eksik logo çizimi azaltılır. Ekrandaki düzenleme/önizleme görünümü korunur. Değişikliğin uygulanması için raporu panelden yeniden PDF olarak kaydedip yeni dosyayı paylaşın; önceden üretilmiş PDF'ler değişmez. Logo dönüştürülemezse panel uyarı verir; firmaya PNG veya JPG logo yükleyip tekrar deneyin.

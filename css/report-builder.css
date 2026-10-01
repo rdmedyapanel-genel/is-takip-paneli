@@ -53,6 +53,37 @@
 .rb-meta-account>span { width:40px; height:40px; display:grid; place-items:center; border-radius:10px; background:linear-gradient(135deg,#7847e9,#e33c7d,#f4a138); color:#fff; font-size:18px; }
 .rb-meta-account>div { min-width:0; display:grid; gap:3px; }.rb-meta-account strong { overflow:hidden; font-size:10px; text-overflow:ellipsis; white-space:nowrap; }.rb-meta-account small { overflow:hidden; color:#8a939f; font-size:8px; text-overflow:ellipsis; white-space:nowrap; }.rb-meta-account>i { color:#8177df; font-size:10px; }
 
+/* PDF baskısı: iOS/WhatsApp önizlemesinde yarı saydam PDF katmanları
+   dikdörtgen bantlar olarak görünebildiği için baskı yüzeyleri opaktır. */
+.nr-cover-logo [data-rb-print-logo] { display:block; width:100%; height:100%; object-fit:contain; filter:none!important; }
+@media print {
+    .nr-page { --nr-safe-accent:var(--nr-print-accent,#343b93)!important; box-shadow:none!important; }
+    .nr-cover { background:var(--nr-print-cover,#343b93)!important; }
+    .nr-standard,.nr-performance-summary { background:#fff!important; }
+    .nr-cover:before,.nr-cover:after,.nr-standard:before,
+    .nr-performance-summary:after,.nr-summary-orb,.nr-summary-dots { display:none!important; }
+    .nr-cover-brand,.nr-cover-period { background:transparent!important; box-shadow:none!important; }
+    .nr-cover-brand { border-bottom-color:#a7add5!important; }
+    .nr-cover-period { border-color:#a7add5!important; }
+    .nr-cover-copy h1,.nr-cover-logo>span:not(.rb-tinted-logo) { text-shadow:none!important; }
+    .nr-cover-logo [data-rb-print-logo] { display:block; width:100%; height:100%; object-fit:contain; filter:none!important; }
+    .nr-summary-kpis article,.nr-summary-middle>article,.nr-best-row,
+    .nr-breakdown,.nr-notes,.nr-ad-card,.nr-profile-shot-live {
+        background:#fff!important; box-shadow:none!important; border-color:#e1e5ef!important;
+    }
+    .nr-summary-kpis i,.nr-summary-comment>i,.nr-best-row>b,
+    .nr-metric:before { background:var(--nr-print-accent,#343b93)!important; box-shadow:none!important; }
+    .nr-summary-donut { background-color:#fff!important; background-image:var(--nr-print-donut)!important; background-size:cover!important; }
+    .nr-summary-donut:before { box-shadow:none!important; }
+    .nr-summary-distribution p i { box-shadow:none!important; }
+    .nr-google-proof,.nr-google-kpis>article,.nr-google-campaigns article { box-shadow:none!important; }
+    .nr-metric,.nr-total-card,.nr-content-total {
+        background:#172238!important; box-shadow:none!important;
+    }
+    .nr-metric.light,.nr-google-secondary { background:#fff!important; color:#172137!important; box-shadow:none!important; }
+    .nr-page * { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; }
+}
+
 @media print {
     @page { size:A4 portrait; margin:0; }
     html,body { width:210mm; margin:0!important; padding:0!important; background:#fff!important; }

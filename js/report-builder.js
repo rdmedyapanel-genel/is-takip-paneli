@@ -577,11 +577,97 @@ function rbPdfDocumentTitle(company = rbCompany(), period = rbState?.period) {
     return `${companyName} ${year} - ${month} Ayı Aylık Rapor`;
 }
 
-function rbPrintReport() {
+function rbPrintRgb(value) {
+    const hex = String(value || '').trim();
+    const expanded = /^#[\da-f]{3}$/i.test(hex) ? `#${[...hex.slice(1)].map(c => c + c).join('')}` : hex;
+    if (!/^#[\da-f]{6}$/i.test(expanded)) return [54, 58, 168];
+    return [1, 3, 5].map(i => parseInt(expanded.slice(i, i + 2), 16));
+}
+
+function rbPrintMix(first, second, amount) {
+    return `rgb(${first.map((value, index) => Math.round(value * amount + second[index] * (1 - amount))).join(',')})`;
+}
+
+async function rbPreparePrintGraphics() {
+    const modal = document.getElementById('native-report-modal');
+    if (!modal) throw new Error('Rapor önizlemesi açık değil.');
+    const accent = rbPrintRgb(rbState?.accent || '#6c63ff');
+    modal.style.setProperty('--nr-print-accent', rbPrintMix(accent, [23, 35, 63], .67));
+    modal.style.setProperty('--nr-print-cover', rbPrintMix(accent, [16, 25, 41], .72));
+
+    // CSS mask, filter and conic-gradient sometimes become separate transparent
+    // PDF layers. iOS/WhatsApp viewers can miscompose those layers.
+    const cover = modal.querySelector('.nr-cover-logo');
+    const source = rbCompany().reportLogo || rbCompany().logo || rbState?.metaProfile?.profilePictureUrl;
+    if (cover && source && !cover.querySelector('[data-rb-print-logo]')) {
+        const picture = new Image();
+        picture.crossOrigin = 'anonymous';
+        picture.src = source;
+        let logoTimeout;
+        try {
+            await Promise.race([
+                picture.decode(),
+                new Promise((_, reject) => { logoTimeout = setTimeout(() => reject(new Error('Logo yüklenemedi.')), 12000); })
+            ]);
+        } finally {
+            clearTimeout(logoTimeout);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = 990; canvas.height = 810;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Logo dönüştürme desteklenmiyor.');
+        const scale = Math.min(canvas.width / picture.naturalWidth, canvas.height / picture.naturalHeight);
+        const width = picture.naturalWidth * scale, height = picture.naturalHeight * scale;
+        ctx.drawImage(picture, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const flattened = document.createElement('img');
+        flattened.src = canvas.toDataURL('image/png');
+        flattened.alt = `${rbCompany().name || 'Firma'} logosu`;
+        flattened.dataset.rbPrintLogo = 'true';
+        cover.replaceChildren(flattened);
+    }
+
+    const donut = modal.querySelector('.nr-summary-donut');
+    if (donut && !donut.style.getPropertyValue('--nr-print-donut')) {
+        const { rows, total } = rbInteractionDistribution();
+        const white = [255, 255, 255];
+        const colors = [rbPrintMix(accent, [13, 23, 40], .56), rbPrintMix(accent, accent, 1), rbPrintMix(accent, white, .24), rbPrintMix(accent, white, .62)];
+        const canvas = document.createElement('canvas');
+        canvas.width = canvas.height = 360;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+            let start = -Math.PI / 2;
+            rows.forEach((row, index) => {
+                const end = start + Math.PI * 2 * (total ? row.value / total : .25);
+                ctx.beginPath(); ctx.moveTo(180, 180); ctx.arc(180, 180, 180, start, end);
+                ctx.closePath(); ctx.fillStyle = colors[index]; ctx.fill(); start = end;
+            });
+            donut.style.setProperty('--nr-print-donut', `url("${canvas.toDataURL('image/png')}")`);
+        }
+    }
+    await document.fonts.ready;
+    await Promise.all(Array.from(modal.querySelectorAll('img')).map(image => image.decode().catch(() => {})));
+}
+
+let rbPrinting = false;
+async function rbPrintReport() {
+    if (rbPrinting) return;
+    rbPrinting = true;
     const previousTitle = document.title;
-    document.title = rbPdfDocumentTitle();
-    window.addEventListener('afterprint', () => { document.title = previousTitle; }, { once: true });
-    window.print();
+    try {
+        await rbPreparePrintGraphics();
+        document.title = rbPdfDocumentTitle();
+        window.addEventListener('afterprint', () => { document.title = previousTitle; }, { once: true });
+        window.print();
+    } catch (error) {
+        document.title = previousTitle;
+        console.error('PDF hazırlama hatası:', error);
+        alert('PDF için logo hazırlanamadı. Logoyu PNG veya JPG olarak yeniden yükleyip tekrar deneyin.');
+    } finally {
+        rbPrinting = false;
+    }
 }
 
 function rbToggleGoogleAds(enabled) {
