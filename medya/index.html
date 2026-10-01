@@ -20,6 +20,7 @@
 
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/report-builder.css">
+    <link rel="stylesheet" href="../css/statistics.css?v=2">
     <style>
         .reklam-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 1000px; font-size: 10px; }
         .reklam-table th { background: #f8fafc; color: #64748b; padding: 8px 4px; text-align: center; border-bottom: 2px solid #e2e8f0; font-weight: 600; font-size: 10px; text-transform: uppercase; letter-spacing: 0.2px; }
@@ -61,6 +62,8 @@
 
 <script src="../js/firebase-config.js"></script>
 <script src="../js/report-builder.js"></script>
+<script src="../js/statistics-core.js?v=2"></script>
+<script src="../js/statistics.js?v=2"></script>
 <script>
     let dbUsers = []; let dbTasks = []; let dbShoots = []; let dbAgenda = []; let dbCompanies = []; let dbReportCompanies = []; let dbGenelAgenda = []; let dbPersonalAgenda = []; let dbAds = []; let dbEquipments = []; let dbSpecialDays = [];
     let currentUser = null; let currentCompany = "RDGRUP MEDYA"; 
@@ -141,9 +144,10 @@
 
     function loadSidebarMenu() {
         const sidebarMenu = document.getElementById('sidebar-menu'); sidebarMenu.innerHTML = ''; 
-        const items = [{ icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' }, { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' }, { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' }, { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' }, { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, { icon: 'fa-bullhorn', name: 'Reklamlar' }, { icon: 'fa-chart-line', name: 'Raporlar', label: 'Rapor Oluştur' }];
+        const items = [{ icon: 'fa-house', name: 'Anasayfa' }, { icon: 'fa-clipboard-user', name: 'Kendi İşlerim' }, { icon: 'fa-calendar-days', name: 'Genel Takvim' }, { icon: 'fa-users', name: 'Paylaşım Takvimi' }, { icon: 'fa-camera', name: 'Çekim Takvimi' }, { icon: 'fa-building', name: 'Firmalar' }, { icon: 'fa-list-check', name: 'Checklist' }, { icon: 'fa-book', name: 'Genel Ajanda' }, { icon: 'fa-book-open', name: 'Kişisel Ajanda' }, { icon: 'fa-bullhorn', name: 'Reklamlar' }, { icon: 'fa-chart-line', name: 'Raporlar', label: 'Rapor Oluştur' }, { icon: 'fa-chart-simple', name: 'İstatistik' }];
         const role = (currentUser.role || "").toLowerCase(); const isAdminOrYonetici = role === 'admin' || role === 'yönetici' || currentUser.id === 'alperen';
         items.forEach((item) => {
+            if (item.name === 'İstatistik' && !isStatisticsAdmin()) return;
             if ((item.name === 'Raporlar' || item.name === 'Reklamlar') && !isAdminOrYonetici) return; 
             const li = document.createElement('li'); li.className = 'menu-item';
             if (sidebarMenu.children.length === 0) li.classList.add('active'); 
@@ -160,8 +164,9 @@
     }
 
     function loadPageView(pageName) {
+        if (pageName === 'İstatistik' && !isStatisticsAdmin()) { alert('Bu sayfaya yalnızca admin erişebilir.'); return; }
         activePage = pageName; const mainContent = document.getElementById('main-content');
-        if (pageName === 'Raporlar') { reportDate = new Date(); loadRaporlarPage(); } else if (pageName === 'Reklamlar') { reklamDate = new Date(); loadReklamlarPage(); } else if (pageName === 'Firmalar') loadFirmalarPage(); else if (pageName === 'Checklist') loadChecklistPage(currentChecklistDate); else if (pageName === 'Genel Ajanda') loadGenelAgenda(); else if (pageName === 'Kişisel Ajanda') loadPersonalAgenda(); else if (pageName === 'Anasayfa' || pageName === 'Kendi İşlerim') mainContent.innerHTML = renderDashboardHome(pageName); else if (pageName.includes('Takvim')) { mainContent.innerHTML = renderCalendarView(pageName); initCalendar(); }
+        if (pageName === 'İstatistik') { loadStatisticsPage(); } else if (pageName === 'Raporlar') { reportDate = new Date(); loadRaporlarPage(); } else if (pageName === 'Reklamlar') { reklamDate = new Date(); loadReklamlarPage(); } else if (pageName === 'Firmalar') loadFirmalarPage(); else if (pageName === 'Checklist') loadChecklistPage(currentChecklistDate); else if (pageName === 'Genel Ajanda') loadGenelAgenda(); else if (pageName === 'Kişisel Ajanda') loadPersonalAgenda(); else if (pageName === 'Anasayfa' || pageName === 'Kendi İşlerim') mainContent.innerHTML = renderDashboardHome(pageName); else if (pageName.includes('Takvim')) { mainContent.innerHTML = renderCalendarView(pageName); initCalendar(); }
     }
 
     function loadEkipmanlarPage() {
