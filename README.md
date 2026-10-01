@@ -77,7 +77,7 @@ Kapakta soldaki dikey şerit kullanılmaz. Kapağın tamamı firma renginden ür
 
 ## İstatistik sayfası
 
-Medya menüsüne **İstatistik** eklendi. Menü ve sayfa erişimi, `users` koleksiyonundan yüklenen rolü `admin` olan kullanıcılarla sınırlıdır (büyük/küçük harf fark etmez). Yönetici rolü bu sayfayı açamaz. Yerel oturumdaki rol yerine veritabanından yüklenen kullanıcı rolü esas alınır.
+Medya menüsüne **İstatistik** eklendi. Menü ve sayfa erişimi, `users` koleksiyonundan yüklenen rolü `admin` olan kullanıcılarla sınırlıdır (büyük/küçük harf fark etmez). Mevcut paneldeki özel admin hesabı `alperen` de erişebilir. Diğer yönetici hesapları bu sayfayı açamaz. Yerel oturumdaki rol yerine veritabanından yüklenen kullanıcı rolü esas alınır.
 
 Ay seçici, önceki/sonraki ay düğmeleri ve **Bu Ay** ile geçmiş dönemler görüntülenebilir. Üstte dört toplam, altta personel bazında döküm bulunur:
 
