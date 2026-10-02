@@ -98,3 +98,11 @@ Geçmiş bir ayda **Geçmiş Ay Verisi Ekle / Düzenle** bölümünden kişi ba�
 ## iPhone/WhatsApp PDF önizlemesi
 
 Raporun **PDF / Yazdır** çıktısı hazırlanırken kapak logosu ve etkileşim halkası PNG olarak PDF'e yerleştirilir. Baskı stilinde yarı saydam büyük zeminler ve gölgeler opak renklere dönüştürülür. Böylece iPhone'da WhatsApp'ın PDF önizlemesinde görülebilen bloklu arka plan ve eksik logo çizimi azaltılır. Ekrandaki düzenleme/önizleme görünümü korunur. Değişikliğin uygulanması için raporu panelden yeniden PDF olarak kaydedip yeni dosyayı paylaşın; önceden üretilmiş PDF'ler değişmez. Logo dönüştürülemezse panel uyarı verir; firmaya PNG veya JPG logo yükleyip tekrar deneyin.
+
+## Ödemeler sayfası
+
+Medya panelinde admin menüsünde **Ödemeler** sayfası bulunur. Firma adları **Firmalar** listesinden otomatik alınır; ad değişse bile kayıtlar firma kimliğine bağlı kalır. Üstteki ay seçici ve ileri/geri düğmeleriyle geçmiş ve gelecek aylar açılabilir.
+
+Her ay ve firma için ödeme tutarı, isteğe bağlı **+%20 KDV**, fatura var mı, rapor iletildi, ödeme/fatura iletildi, ödeme geldi ve manuel geçmiş kalan borç ayrı ayrı kaydedilir. KDV açıkken ödeme toplamı tutarın %20 fazlası olarak gösterilir; geçmiş borç ayrıca tutulur ve sonraki aya otomatik aktarılmaz. Alanlardaki değişiklikler `payment_tracking` koleksiyonuna otomatik kaydedilir; satırda kayıt durumu görünür. Sayfanın üstünde seçili ayın ödeme ve borç toplamları bulunur.
+
+Erişim, İstatistik sayfasındaki veritabanı kaynaklı admin kontrolünü kullanır. Mevcut giriş sisteminin güvenlik sınırı ve Firestore kurallarıyla ilgili açıklama yukarıdaki **Erişim sınırı** bölümünde geçerlidir. Tam ZIP'i açıp içindeki güncel proje dosyalarını GitHub deposuna yükleyin; eski ZIP dosyasını ayrıca yüklemeyin.
