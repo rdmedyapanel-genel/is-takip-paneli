@@ -105,4 +105,6 @@ Medya panelinde admin menüsünde **Ödemeler** sayfası bulunur. Firma adları 
 
 Her ay ve firma için ödeme tutarı, isteğe bağlı **+%20 KDV**, fatura var mı, rapor iletildi, ödeme/fatura iletildi, ödeme geldi ve manuel geçmiş kalan borç ayrı ayrı kaydedilir. KDV açıkken ödeme toplamı tutarın %20 fazlası olarak gösterilir; geçmiş borç ayrıca tutulur ve sonraki aya otomatik aktarılmaz. Alanlardaki değişiklikler `payment_tracking` koleksiyonuna otomatik kaydedilir; satırda kayıt durumu görünür. Sayfanın üstünde seçili ayın ödeme ve borç toplamları bulunur.
 
+**Firmaları Düzenle** bölümünde tabloda görünecek firmalar seçilir. Seçim `payment_settings/visible_companies` kaydında saklanır ve bütün aylarda uygulanır. Gizlemek eski ödeme kayıtlarını silmez; yeni açılan firmalar varsayılan olarak görünür. Fatura, rapor, ödeme/fatura iletimi ve ödeme geldi kutularının dördü de işaretlenince satır yeşile döner; işaretlerden biri kaldırılınca normal görünüme döner.
+
 Erişim, İstatistik sayfasındaki veritabanı kaynaklı admin kontrolünü kullanır. Mevcut giriş sisteminin güvenlik sınırı ve Firestore kurallarıyla ilgili açıklama yukarıdaki **Erişim sınırı** bölümünde geçerlidir. Tam ZIP'i açıp içindeki güncel proje dosyalarını GitHub deposuna yükleyin; eski ZIP dosyasını ayrıca yüklemeyin.
