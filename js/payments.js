@@ -44,9 +44,10 @@ function paymentsRow(company, record) {
     const amount = record?.amount ?? '';
     const debt = record?.pastDebt ?? '';
     const vat = record?.vat === true;
+    const invoiceEnabled = record?.hasInvoice === true;
     const check = (key, label) => `<td class="payments-check"><label><input type="checkbox" data-field="${key}" aria-label="${name}: ${label}" ${record?.[key] === true ? 'checked' : ''}></label></td>`;
     const completed = Payments.completed(record);
-    return `<tr data-company-id="${id}" class="${completed ? 'is-complete' : ''}"><th scope="row">${name}<span class="payments-complete-label" ${completed ? '' : 'hidden'}>Tamamlandı</span><small class="payments-row-status" role="status"></small></th><td><div class="payments-amount"><input data-field="amount" type="number" min="0" max="1000000000000" step="0.01" inputmode="decimal" value="${Payments.escape(amount)}" aria-label="${name}: Ödeme Tutarı" placeholder="0,00"><div class="payments-vat-options" role="group" aria-label="${name}: KDV seçimi"><button type="button" data-action="vat-included" class="payments-vat ${vat ? '' : 'is-active'}" aria-pressed="${!vat}" aria-label="${name}: KDV Dahil">KDV Dahil</button><button type="button" data-action="vat" class="payments-vat ${vat ? 'is-active' : ''}" aria-pressed="${vat}" aria-label="${name}: + %20 KDV">+ %20 KDV</button></div></div><small class="payments-total">${amount === '' ? 'Toplam: —' : `Toplam: ${Payments.currency(Payments.total(amount, vat))}`}</small></td>${check('hasInvoice', 'Fatura var mı')}${check('reportSent', 'Rapor İletildi')}${check('paymentOrInvoiceSent', 'Ödeme/Fatura İletildi')}${check('paymentReceived', 'Ödeme geldi')}<td><input data-field="pastDebt" type="number" min="0" max="1000000000000" step="0.01" inputmode="decimal" value="${Payments.escape(debt)}" aria-label="${name}: Geçmiş kalan borç" placeholder="0,00"></td></tr>`;
+    return `<tr data-company-id="${id}" class="${completed ? 'is-complete' : ''}"><th scope="row">${name}<span class="payments-complete-label" ${completed ? '' : 'hidden'}>Tamamlandı</span><small class="payments-row-status" role="status"></small></th><td><div class="payments-amount"><input data-field="amount" type="number" min="0" max="1000000000000" step="0.01" inputmode="decimal" value="${Payments.escape(amount)}" aria-label="${name}: Ödeme Tutarı" placeholder="0,00"><div class="payments-vat-options" role="group" aria-label="${name}: KDV seçimi" title="${invoiceEnabled ? 'KDV seçimi' : 'KDV seçmek için önce Fatura var mı alanını işaretleyin.'}"><button type="button" data-action="vat-included" ${invoiceEnabled ? '' : 'disabled'} class="payments-vat ${vat ? '' : 'is-active'}" aria-pressed="${!vat}" aria-label="${name}: KDV Dahil">KDV Dahil</button><button type="button" data-action="vat" ${invoiceEnabled ? '' : 'disabled'} class="payments-vat ${vat ? 'is-active' : ''}" aria-pressed="${vat}" aria-label="${name}: + %20 KDV">+ %20 KDV</button></div></div><small class="payments-total">${amount === '' ? 'Toplam: —' : `Toplam: ${Payments.currency(Payments.total(amount, vat))}`}</small></td>${check('hasInvoice', 'Fatura var mı')}${check('reportSent', 'Rapor İletildi')}${check('paymentOrInvoiceSent', 'Ödeme/Fatura İletildi')}${check('paymentReceived', 'Ödeme geldi')}<td><input data-field="pastDebt" type="number" min="0" max="1000000000000" step="0.01" inputmode="decimal" value="${Payments.escape(debt)}" aria-label="${name}: Geçmiş kalan borç" placeholder="0,00"></td></tr>`;
 }
 
 function paymentsCompanyEditor() {
@@ -112,7 +113,7 @@ async function loadPaymentsPage() {
         const table = container.querySelector('.payments-table');
         table.addEventListener('click', event => {
             const button = event.target.closest('[data-action="vat"], [data-action="vat-included"]');
-            if (!button) return;
+            if (!button || button.disabled) return;
             if (button.getAttribute('aria-pressed') === 'true') return;
             const row = button.closest('tr');
             const enabled = button.dataset.action === 'vat';
@@ -136,6 +137,9 @@ async function loadPaymentsPage() {
 
 function updatePaymentsRowState(row) {
     if (!row) return;
+    const invoiceEnabled = row.querySelector('[data-field="hasInvoice"]').checked;
+    row.querySelectorAll('.payments-vat').forEach(button => { button.disabled = !invoiceEnabled; });
+    row.querySelector('.payments-vat-options').title = invoiceEnabled ? 'KDV seçimi' : 'KDV seçmek için önce Fatura var mı alanını işaretleyin.';
     const complete = ['hasInvoice', 'reportSent', 'paymentOrInvoiceSent', 'paymentReceived'].every(key => row.querySelector(`[data-field="${key}"]`).checked);
     row.classList.toggle('is-complete', complete);
     row.querySelector('.payments-complete-label').hidden = !complete;

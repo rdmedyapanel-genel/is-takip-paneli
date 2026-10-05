@@ -135,3 +135,6 @@
     .payments-heading { padding: 7px; }
     .payments-heading-actions .login-btn { white-space: normal; font-size: 10px; padding: 5px; }
 }
+
+/* Invoice controls only availability; stored VAT choice and amounts are retained. */
+.payments-page .payments-vat:disabled { cursor: not-allowed; opacity: .45; box-shadow: none; }

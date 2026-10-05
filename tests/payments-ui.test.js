@@ -103,9 +103,40 @@ test('all four checked stages mark a row complete, undoing one removes green sta
     assert.equal(payments.completed(complete), false);
     const classes = new Set(['is-complete']);
     const label = { hidden: false };
-    const row = { classList: { toggle(name, active) { if (active) classes.add(name); else classes.delete(name); } },
-        querySelector(selector) { return selector === '.payments-complete-label' ? label : { checked: complete[selector.match(/data-field="([^"]+)"/)[1]] }; } };
+    const row = { querySelectorAll: () => [], classList: { toggle(name, active) { if (active) classes.add(name); else classes.delete(name); } },
+        querySelector(selector) { if (selector === '.payments-vat-options') return {}; return selector === '.payments-complete-label' ? label : { checked: complete[selector.match(/data-field="([^"]+)"/)[1]] }; } };
     app.context.updatePaymentsRowState(row);
     assert.equal(classes.has('is-complete'), false);
     assert.equal(label.hidden, true);
+});
+
+
+test('VAT choices require an invoice and retain the stored choice when disabled', () => {
+    const app = setup();
+    for (const hasInvoice of [false, true]) {
+        const html = app.context.paymentsRow({ docId: 'firm-2', name: 'Firma B' }, { amount: 1000, vat: true, hasInvoice });
+        for (const action of ['vat-included', 'vat']) {
+            const button = html.match(new RegExp(`<button[^>]*data-action="${action}"[^>]*>`))[0];
+            assert.equal(/ disabled/.test(button), !hasInvoice);
+        }
+        assert.match(html, /aria-pressed="true" aria-label="Firma B: \+ %20 KDV"/);
+        assert.match(html, /value="1000"/);
+        assert.match(html, /1\.200,00/);
+    }
+    const fields = { hasInvoice: { checked: true }, reportSent: { checked: false }, paymentOrInvoiceSent: { checked: false }, paymentReceived: { checked: false } };
+    const buttons = [{ disabled: true, selected: false }, { disabled: true, selected: true }];
+    const group = {}, label = {};
+    const row = { classList: { toggle() {} }, querySelectorAll: () => buttons,
+        querySelector(selector) {
+            if (selector === '.payments-vat-options') return group;
+            if (selector === '.payments-complete-label') return label;
+            return fields[selector.match(/data-field="([^"]+)"/)[1]];
+        }
+    };
+    app.context.updatePaymentsRowState(row);
+    assert.ok(buttons.every(button => !button.disabled));
+    fields.hasInvoice.checked = false;
+    app.context.updatePaymentsRowState(row);
+    assert.ok(buttons.every(button => button.disabled));
+    assert.equal(buttons[1].selected, true);
 });
