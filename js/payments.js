@@ -27,12 +27,54 @@ let paymentsRequest = 0;
 let paymentsHiddenCompanies = [];
 const paymentsSaveQueues = new Map();
 
+let paymentsRoles = [];
+
+function paymentsRoleAllows(user, roles = paymentsRoles) {
+    if (!user) return false;
+    if (statisticsUserIsAdmin(user)) return true;
+    const roleName = String(user.role || '').trim().toLocaleLowerCase('tr-TR');
+    if (!roleName) return false;
+    return roles.some(role => String(role.name || '').trim().toLocaleLowerCase('tr-TR') === roleName
+        && Array.isArray(role.pages) && role.pages.includes('Ödemeler'));
+}
+
+function hasPaymentsAccess() {
+    if (!currentUser) return false;
+    const user = dbUsers.find(u => u.id === currentUser.id && (!currentUser.docId || u.docId === currentUser.docId));
+    return paymentsRoleAllows(user);
+}
+
+async function fetchPaymentsRoles() {
+    paymentsRoles = [];
+    try {
+        const snapshot = await db.collection('roles').get();
+        snapshot.forEach(doc => paymentsRoles.push({ ...doc.data(), docId: doc.id }));
+    } catch (error) {
+        console.error('Ödemeler unvan yetkileri alınamadı:', error);
+    }
+}
+
+// Check the stored user and current role permission again before reading or saving payments.
+async function verifyPaymentsAccess() {
+    const user = currentUser && dbUsers.find(u => u.id === currentUser.id && (!currentUser.docId || u.docId === currentUser.docId));
+    if (!user?.docId) throw new Error('Kullanıcı kaydı bulunamadı');
+    const snapshot = await db.collection('users').doc(user.docId).get();
+    if (!snapshot.exists || snapshot.data().id !== currentUser.id) throw new Error('Kullanıcı kaydı doğrulanamadı');
+    const storedUser = snapshot.data();
+    if (statisticsUserIsAdmin(storedUser)) return;
+    const rolesSnapshot = await db.collection('roles').get();
+    const roles = [];
+    rolesSnapshot.forEach(doc => roles.push(doc.data()));
+    if (!paymentsRoleAllows(storedUser, roles)) throw new Error('Ödemeler sayfası yetkisi bulunamadı');
+}
+
+
 function paymentsControls() {
     return `<div class="payments-toolbar"><div class="payments-title-group"><span class="payments-title-icon" aria-hidden="true"><i class="fa-solid fa-money-bill-transfer"></i></span><div><h2 class="content-title">Ödemeler</h2><p>Aylık ödeme ve evrak takibi</p></div></div><div class="payments-toolbar-actions" data-html2canvas-ignore><div class="payments-month-controls"><button type="button" class="action-btn" onclick="changePaymentsMonth(-1)" aria-label="Önceki ay"><i class="fa-solid fa-chevron-left"></i></button><label class="payments-sr-only" for="payments-month">Dönem</label><input id="payments-month" type="month" min="1000-01" max="9999-12" value="${paymentsMonth}" onchange="setPaymentsMonth(this.value)"><button type="button" class="action-btn" onclick="changePaymentsMonth(1)" aria-label="Sonraki ay"><i class="fa-solid fa-chevron-right"></i></button><button type="button" class="login-btn btn-light" onclick="setPaymentsMonth(Payments.monthKey())">Bu Ay</button></div><button type="button" id="payments-export" class="login-btn payments-export-btn" onclick="downloadPaymentsJpg()" disabled><i class="fa-solid fa-download"></i> JPG olarak indir</button></div></div>`;
 }
 
 function setPaymentsMonth(month) {
-    if (!isStatisticsAdmin() || !Payments.validMonth(month)) return;
+    if (!hasPaymentsAccess() || !Payments.validMonth(month)) return;
     paymentsMonth = month;
     loadPaymentsPage();
 }
@@ -65,7 +107,7 @@ function togglePaymentsCompanyEditor() {
 }
 
 async function savePaymentsCompanies() {
-    if (!isStatisticsAdmin() || activePage !== 'Ödemeler') return;
+    if (!hasPaymentsAccess() || activePage !== 'Ödemeler') return;
     const editor = document.getElementById('payments-company-editor');
     if (!editor) return;
     const checked = new Set([...editor.querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value));
@@ -75,10 +117,7 @@ async function savePaymentsCompanies() {
     const month = paymentsMonth;
     button.disabled = true; status.textContent = 'Kaydediliyor...';
     try {
-        const admin = dbUsers.find(u => u.id === currentUser.id && (!currentUser.docId || u.docId === currentUser.docId));
-        if (!admin?.docId) throw new Error('Admin kaydı bulunamadı');
-        const userSnapshot = await db.collection('users').doc(admin.docId).get();
-        if (!userSnapshot.exists || !statisticsUserIsAdmin(userSnapshot.data())) throw new Error('Admin yetkisi bulunamadı');
+        await verifyPaymentsAccess();
         await db.collection('payment_settings').doc('visible_companies').set({ hiddenCompanyIds: hidden, updatedAt: new Date().toISOString(), updatedBy: currentUser.id });
         paymentsHiddenCompanies = hidden;
         if (activePage === 'Ödemeler' && paymentsMonth === month) await loadPaymentsPage();
@@ -90,17 +129,18 @@ async function savePaymentsCompanies() {
 }
 
 async function loadPaymentsPage() {
-    if (!isStatisticsAdmin()) return;
+    if (!hasPaymentsAccess()) return;
     const request = ++paymentsRequest;
     const month = paymentsMonth;
     const container = document.getElementById('main-content');
     container.innerHTML = `<section class="content-card payments-page">${paymentsControls()}<div class="payments-message" role="status">Ödemeler yükleniyor...</div></section>`;
     try {
+        await verifyPaymentsAccess();
         const [snapshot, settings] = await Promise.all([
             db.collection('payment_tracking').where('month', '==', month).get(),
             db.collection('payment_settings').doc('visible_companies').get()
         ]);
-        if (request !== paymentsRequest || activePage !== 'Ödemeler' || !isStatisticsAdmin()) return;
+        if (request !== paymentsRequest || activePage !== 'Ödemeler' || !hasPaymentsAccess()) return;
         paymentsHiddenCompanies = settings.exists && Array.isArray(settings.data().hiddenCompanyIds) ? settings.data().hiddenCompanyIds : [];
         const hidden = new Set(paymentsHiddenCompanies);
         const records = new Map();
@@ -152,7 +192,7 @@ function paymentValues(row) {
 }
 
 function savePaymentRow(row) {
-    if (!row || !isStatisticsAdmin() || activePage !== 'Ödemeler') return;
+    if (!row || !hasPaymentsAccess() || activePage !== 'Ödemeler') return;
     const status = row.querySelector('.payments-row-status');
     let values;
     try { values = paymentValues(row); }
@@ -165,10 +205,7 @@ function savePaymentRow(row) {
     status.textContent = 'Kaydediliyor...'; status.className = 'payments-row-status';
     const previous = paymentsSaveQueues.get(docId) || Promise.resolve();
     const save = previous.catch(() => {}).then(async () => {
-        const admin = dbUsers.find(u => u.id === currentUser.id && (!currentUser.docId || u.docId === currentUser.docId));
-        if (!admin?.docId) throw new Error('Admin kaydı bulunamadı');
-        const userSnapshot = await db.collection('users').doc(admin.docId).get();
-        if (!userSnapshot.exists || !statisticsUserIsAdmin(userSnapshot.data())) throw new Error('Admin yetkisi bulunamadı');
+        await verifyPaymentsAccess();
         await db.collection('payment_tracking').doc(docId).set(data);
     });
     paymentsSaveQueues.set(docId, save);
@@ -182,7 +219,7 @@ function savePaymentRow(row) {
 
 // Export a detached snapshot so the visible form and saved values never change.
 async function downloadPaymentsJpg() {
-    if (!isStatisticsAdmin() || activePage !== 'Ödemeler') return;
+    if (!hasPaymentsAccess() || activePage !== 'Ödemeler') return;
     const page = document.querySelector('.payments-page');
     const button = document.getElementById('payments-export');
     const status = document.getElementById('payments-export-status');

@@ -101,10 +101,12 @@ Raporun **PDF / Yazdır** çıktısı hazırlanırken kapak logosu ve etkileşim
 
 ## Ödemeler sayfası
 
-Medya panelinde admin menüsünde **Ödemeler** sayfası bulunur. Firma adları **Firmalar** listesinden otomatik alınır; ad değişse bile kayıtlar firma kimliğine bağlı kalır. Üstteki ay seçici ve ileri/geri düğmeleriyle geçmiş ve gelecek aylar açılabilir.
+**Admin → Unvan / Sayfa Yetkileri → Medya sayfaları** bölümündeki **Ödemeler** seçeneğiyle bir unvana erişim verilir. Admin ve mevcut özel admin hesabı erişimini korur. Diğer unvanlar yalnızca kayıtlı sayfa listelerinde Ödemeler seçiliyse menüyü görebilir, sayfayı açabilir, ödeme kayıtlarını ve firma görünürlüğünü düzenleyebilir, JPG indirebilir. İstatistik yetkisi ayrı kalır. Yetki değişikliğinden sonra ilgili kullanıcı paneli yenilemelidir.
 
-Her ay ve firma için ödeme tutarı, isteğe bağlı **+%20 KDV**, fatura var mı, rapor iletildi, ödeme/fatura iletildi, ödeme geldi ve manuel geçmiş kalan borç ayrı ayrı kaydedilir. KDV açıkken ödeme toplamı tutarın %20 fazlası olarak gösterilir; geçmiş borç ayrıca tutulur ve sonraki aya otomatik aktarılmaz. Alanlardaki değişiklikler `payment_tracking` koleksiyonuna otomatik kaydedilir; satırda kayıt durumu görünür. Sayfanın üstünde seçili ayın ödeme ve borç toplamları bulunur.
+Kullanıcının unvanı veritabanındaki kullanıcı kaydından alınır. Ödeme sayfası açılırken ve kayıt yazılmadan önce güncel kullanıcı ve unvan yetkisi tekrar doğrulanır; yerel oturumdaki unvan tek başına erişim sağlamaz. Mevcut giriş sisteminin güvenlik sınırı ve Firestore kurallarıyla ilgili yukarıdaki **Erişim sınırı** açıklaması geçerlidir.
 
-**Firmaları Düzenle** bölümünde tabloda görünecek firmalar seçilir. Seçim `payment_settings/visible_companies` kaydında saklanır ve bütün aylarda uygulanır. Gizlemek eski ödeme kayıtlarını silmez; yeni açılan firmalar varsayılan olarak görünür. Fatura, rapor, ödeme/fatura iletimi ve ödeme geldi kutularının dördü de işaretlenince satır yeşile döner; işaretlerden biri kaldırılınca normal görünüme döner.
+Firma adları **Firmalar** listesinden alınır. Kayıtlar firma kimliği ve ay bazında `payment_tracking` koleksiyonunda saklanır. Ödeme tutarı, KDV seçimi, evrak işaretleri ve geçmiş borç ayrı alanlardır. **KDV Dahil** ve **+ %20 KDV** butonları yalnızca **Fatura var mı** işaretliyken kullanılabilir. Fatura işaretini kaldırmak mevcut tutarı veya KDV seçimini değiştirmez. Üst özet kutuları ve satır toplamları gösterilmez.
 
-Erişim, İstatistik sayfasındaki veritabanı kaynaklı admin kontrolünü kullanır. Mevcut giriş sisteminin güvenlik sınırı ve Firestore kurallarıyla ilgili açıklama yukarıdaki **Erişim sınırı** bölümünde geçerlidir. Tam ZIP'i açıp içindeki güncel proje dosyalarını GitHub deposuna yükleyin; eski ZIP dosyasını ayrıca yüklemeyin.
+**Ödeme geldi** işaretlenince satır **Tamamlandı** olarak silik gösterilir; işaret kaldırılınca normal görünümüne döner. Değişiklikler otomatik kaydedilir. **Firmaları Düzenle** seçimi `payment_settings/visible_companies` kaydında tüm aylara uygulanır; firma gizlemek eski kayıtlarını silmez. Geçmiş borç manuel tutulur ve sonraki aya otomatik aktarılmaz.
+
+**JPG olarak indir** seçili ayı, Ödemeler başlığını ve tüm firma satırlarını içeren görsel üretir. ZIP'i tamamen ayıklayın; proje klasörünün içindeki dosya ve klasörleri GitHub deposunun köküne yükleyin. İç içe ZIP dosyası yoktur.
