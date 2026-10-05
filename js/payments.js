@@ -17,7 +17,7 @@ const Payments = {
         return amount;
     },
     total(amount, vat) { return amount === null ? null : Math.round(amount * (vat ? 120 : 100)) / 100; },
-    completed(record) { return ['hasInvoice', 'reportSent', 'paymentOrInvoiceSent', 'paymentReceived'].every(key => record?.[key] === true); },
+    completed(record) { return record?.paymentReceived === true; },
     currency(value) { return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(value); },
     escape(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char])); }
 };
@@ -47,7 +47,7 @@ function paymentsRow(company, record) {
     const invoiceEnabled = record?.hasInvoice === true;
     const check = (key, label) => `<td class="payments-check"><label><input type="checkbox" data-field="${key}" aria-label="${name}: ${label}" ${record?.[key] === true ? 'checked' : ''}></label></td>`;
     const completed = Payments.completed(record);
-    return `<tr data-company-id="${id}" class="${completed ? 'is-complete' : ''}"><th scope="row">${name}<span class="payments-complete-label" ${completed ? '' : 'hidden'}>Tamamlandı</span><small class="payments-row-status" role="status"></small></th><td><div class="payments-amount"><input data-field="amount" type="number" min="0" max="1000000000000" step="0.01" inputmode="decimal" value="${Payments.escape(amount)}" aria-label="${name}: Ödeme Tutarı" placeholder="0,00"><div class="payments-vat-options" role="group" aria-label="${name}: KDV seçimi" title="${invoiceEnabled ? 'KDV seçimi' : 'KDV seçmek için önce Fatura var mı alanını işaretleyin.'}"><button type="button" data-action="vat-included" ${invoiceEnabled ? '' : 'disabled'} class="payments-vat ${vat ? '' : 'is-active'}" aria-pressed="${!vat}" aria-label="${name}: KDV Dahil">KDV Dahil</button><button type="button" data-action="vat" ${invoiceEnabled ? '' : 'disabled'} class="payments-vat ${vat ? 'is-active' : ''}" aria-pressed="${vat}" aria-label="${name}: + %20 KDV">+ %20 KDV</button></div></div><small class="payments-total">${amount === '' ? 'Toplam: —' : `Toplam: ${Payments.currency(Payments.total(amount, vat))}`}</small></td>${check('hasInvoice', 'Fatura var mı')}${check('reportSent', 'Rapor İletildi')}${check('paymentOrInvoiceSent', 'Ödeme/Fatura İletildi')}${check('paymentReceived', 'Ödeme geldi')}<td><input data-field="pastDebt" type="number" min="0" max="1000000000000" step="0.01" inputmode="decimal" value="${Payments.escape(debt)}" aria-label="${name}: Geçmiş kalan borç" placeholder="0,00"></td></tr>`;
+    return `<tr data-company-id="${id}" class="${completed ? 'is-complete' : ''}"><th scope="row">${name}<span class="payments-complete-label" ${completed ? '' : 'hidden'}>Tamamlandı</span><small class="payments-row-status" role="status"></small></th><td><div class="payments-amount"><input data-field="amount" type="number" min="0" max="1000000000000" step="0.01" inputmode="decimal" value="${Payments.escape(amount)}" aria-label="${name}: Ödeme Tutarı" placeholder="0,00"><div class="payments-vat-options" role="group" aria-label="${name}: KDV seçimi" title="${invoiceEnabled ? 'KDV seçimi' : 'KDV seçmek için önce Fatura var mı alanını işaretleyin.'}"><button type="button" data-action="vat-included" ${invoiceEnabled ? '' : 'disabled'} class="payments-vat ${vat ? '' : 'is-active'}" aria-pressed="${!vat}" aria-label="${name}: KDV Dahil">KDV Dahil</button><button type="button" data-action="vat" ${invoiceEnabled ? '' : 'disabled'} class="payments-vat ${vat ? 'is-active' : ''}" aria-pressed="${vat}" aria-label="${name}: + %20 KDV">+ %20 KDV</button></div></div></td>${check('hasInvoice', 'Fatura var mı')}${check('reportSent', 'Rapor İletildi')}${check('paymentOrInvoiceSent', 'Ödeme/Fatura İletildi')}${check('paymentReceived', 'Ödeme geldi')}<td><input data-field="pastDebt" type="number" min="0" max="1000000000000" step="0.01" inputmode="decimal" value="${Payments.escape(debt)}" aria-label="${name}: Geçmiş kalan borç" placeholder="0,00"></td></tr>`;
 }
 
 function paymentsCompanyEditor() {
@@ -107,7 +107,7 @@ async function loadPaymentsPage() {
         snapshot.forEach(doc => { const entry = doc.data(); if (entry.companyId) records.set(String(entry.companyId), entry); });
         const label = new Date(Number(month.slice(0, 4)), Number(month.slice(5)) - 1, 1).toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
         const rows = dbCompanies.filter(c => c.docId && !hidden.has(c.docId)).map(c => paymentsRow(c, records.get(c.docId))).join('');
-        container.innerHTML = `<section class="content-card payments-page">${paymentsControls()}<div class="payments-heading"><h3>${Payments.escape(label)}</h3><div class="payments-heading-actions" data-html2canvas-ignore><button type="button" class="login-btn btn-light" id="payments-company-toggle" aria-controls="payments-company-editor" aria-expanded="false" onclick="togglePaymentsCompanyEditor()"><i class="fa-solid fa-pen-to-square"></i> Firmaları Düzenle</button><button type="button" class="login-btn btn-light" onclick="loadPaymentsPage()"><i class="fa-solid fa-rotate"></i> Yenile</button></div></div>${paymentsCompanyEditor()}<div class="payments-summary" id="payments-summary"></div><div class="payments-table-scroll"><table class="payments-table"><thead><tr><th scope="col">Firma İsmi</th><th scope="col" class="payments-col-amount">Ödeme Tutarı</th><th scope="col">Fatura var mı</th><th scope="col">Rapor İletildi</th><th scope="col">Ödeme/Fatura İletildi</th><th scope="col" class="payments-col-received">Ödeme geldi</th><th scope="col" class="payments-col-debt">Geçmiş kalan borç</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="payments-message">Görünür firma yok. “Firmaları Düzenle” ile seçim yapabilirsiniz.</td></tr>'}</tbody></table></div><p class="payments-hint"><span><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Değişiklikler otomatik kaydedilir.</span><span>KDV Dahil: tutar değişmez · + %20 KDV: toplama eklenir · Geçmiş borç ayrıdır.</span></p><p id="payments-export-status" class="payments-export-status" role="status" data-html2canvas-ignore></p></section>`;
+        container.innerHTML = `<section class="content-card payments-page">${paymentsControls()}<div class="payments-heading"><h3>${Payments.escape(label)}</h3><div class="payments-heading-actions" data-html2canvas-ignore><button type="button" class="login-btn btn-light" id="payments-company-toggle" aria-controls="payments-company-editor" aria-expanded="false" onclick="togglePaymentsCompanyEditor()"><i class="fa-solid fa-pen-to-square"></i> Firmaları Düzenle</button><button type="button" class="login-btn btn-light" onclick="loadPaymentsPage()"><i class="fa-solid fa-rotate"></i> Yenile</button></div></div>${paymentsCompanyEditor()}<div class="payments-table-scroll"><table class="payments-table"><thead><tr><th scope="col">Firma İsmi</th><th scope="col" class="payments-col-amount">Ödeme Tutarı</th><th scope="col">Fatura var mı</th><th scope="col">Rapor İletildi</th><th scope="col">Ödeme/Fatura İletildi</th><th scope="col" class="payments-col-received">Ödeme geldi</th><th scope="col" class="payments-col-debt">Geçmiş kalan borç</th></tr></thead><tbody>${rows || '<tr><td colspan="7" class="payments-message">Görünür firma yok. “Firmaları Düzenle” ile seçim yapabilirsiniz.</td></tr>'}</tbody></table></div><p class="payments-hint"><span><i class="fa-solid fa-circle-check" aria-hidden="true"></i> Değişiklikler otomatik kaydedilir.</span><span>KDV seçimi için fatura işaretli olmalı · Geçmiş borç ayrıdır.</span></p><p id="payments-export-status" class="payments-export-status" role="status" data-html2canvas-ignore></p></section>`;
         const exportButton = document.getElementById('payments-export');
         if (exportButton) exportButton.disabled = false;
         const table = container.querySelector('.payments-table');
@@ -122,12 +122,9 @@ async function loadPaymentsPage() {
                 option.setAttribute('aria-pressed', String(selected));
                 option.classList.toggle('is-active', selected);
             }
-            updatePaymentsSummary();
             savePaymentRow(row);
         });
-        table.addEventListener('input', event => { if (event.target.matches('input[data-field]')) updatePaymentsSummary(); });
-        table.addEventListener('change', event => { if (event.target.matches('input[data-field]')) { const row = event.target.closest('tr'); updatePaymentsRowState(row); updatePaymentsSummary(); savePaymentRow(row); } });
-        updatePaymentsSummary();
+        table.addEventListener('change', event => { if (event.target.matches('input[data-field]')) { const row = event.target.closest('tr'); updatePaymentsRowState(row); savePaymentRow(row); } });
     } catch (error) {
         if (request !== paymentsRequest || activePage !== 'Ödemeler') return;
         console.error('Ödemeler yükleme hatası:', error);
@@ -140,7 +137,7 @@ function updatePaymentsRowState(row) {
     const invoiceEnabled = row.querySelector('[data-field="hasInvoice"]').checked;
     row.querySelectorAll('.payments-vat').forEach(button => { button.disabled = !invoiceEnabled; });
     row.querySelector('.payments-vat-options').title = invoiceEnabled ? 'KDV seçimi' : 'KDV seçmek için önce Fatura var mı alanını işaretleyin.';
-    const complete = ['hasInvoice', 'reportSent', 'paymentOrInvoiceSent', 'paymentReceived'].every(key => row.querySelector(`[data-field="${key}"]`).checked);
+    const complete = row.querySelector('[data-field="paymentReceived"]').checked;
     row.classList.toggle('is-complete', complete);
     row.querySelector('.payments-complete-label').hidden = !complete;
 }
@@ -152,26 +149,6 @@ function paymentValues(row) {
     return { amount, pastDebt, vat: row.querySelector('[data-action="vat"]').getAttribute('aria-pressed') === 'true',
         hasInvoice: input('hasInvoice').checked, reportSent: input('reportSent').checked,
         paymentOrInvoiceSent: input('paymentOrInvoiceSent').checked, paymentReceived: input('paymentReceived').checked };
-}
-
-function updatePaymentsSummary() {
-    const summary = document.getElementById('payments-summary');
-    if (!summary) return;
-    const rows = [...document.querySelectorAll('.payments-table tbody tr[data-company-id]')];
-    let total = 0, received = 0, debt = 0;
-    for (const row of rows) {
-        const amountInput = row.querySelector('[data-field="amount"]');
-        const debtInput = row.querySelector('[data-field="pastDebt"]');
-        const vat = row.querySelector('[data-action="vat"]').getAttribute('aria-pressed') === 'true';
-        let amount = null;
-        try { amount = Payments.parseAmount(amountInput.value); } catch (_) { /* Keep the last valid summary until the input is fixed. */ }
-        const rowTotal = Payments.total(amount, vat);
-        row.querySelector('.payments-total').textContent = `Toplam: ${rowTotal === null ? '—' : Payments.currency(rowTotal)}`;
-        total += rowTotal || 0;
-        try { debt += Payments.parseAmount(debtInput.value) || 0; } catch (_) { /* Invalid values are rejected on save. */ }
-        if (row.querySelector('[data-field="paymentReceived"]').checked) received++;
-    }
-    summary.innerHTML = `<div class="payments-stat"><span class="payments-stat-icon" aria-hidden="true"><i class="fa-solid fa-building"></i></span><div><span>Takip edilen firma</span><strong>${rows.length} <small>firma</small></strong></div></div><div class="payments-stat is-blue"><span class="payments-stat-icon" aria-hidden="true"><i class="fa-solid fa-wallet"></i></span><div><span>Aylık toplam</span><strong>${Payments.currency(total)}</strong></div></div><div class="payments-stat is-green"><span class="payments-stat-icon" aria-hidden="true"><i class="fa-solid fa-circle-check"></i></span><div><span>Ödemesi gelen</span><strong>${received} <small>/ ${rows.length} firma</small></strong></div></div><div class="payments-stat is-orange"><span class="payments-stat-icon" aria-hidden="true"><i class="fa-solid fa-clock-rotate-left"></i></span><div><span>Geçmiş kalan borç</span><strong>${Payments.currency(debt)}</strong></div></div>`;
 }
 
 function savePaymentRow(row) {

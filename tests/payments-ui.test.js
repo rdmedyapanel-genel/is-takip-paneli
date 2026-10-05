@@ -93,10 +93,10 @@ test('Firmaları Düzenle hides selected firms across months without deleting pa
     assert.doesNotMatch(app.main.innerHTML, /data-company-id="firm-2"/);
 });
 
-test('all four checked stages mark a row complete, undoing one removes green state', () => {
+test('payment received alone marks a row complete and unchecking it restores the active state', () => {
     const app = setup();
     const payments = vm.runInContext('Payments', app.context);
-    const complete = { hasInvoice: true, reportSent: true, paymentOrInvoiceSent: true, paymentReceived: true };
+    const complete = { hasInvoice: false, reportSent: false, paymentOrInvoiceSent: false, paymentReceived: true };
     assert.equal(payments.completed(complete), true);
     assert.match(app.context.paymentsRow({ docId: 'firm-2', name: 'Firma B' }, complete), /class="is-complete"/);
     complete.paymentReceived = false;
@@ -121,7 +121,7 @@ test('VAT choices require an invoice and retain the stored choice when disabled'
         }
         assert.match(html, /aria-pressed="true" aria-label="Firma B: \+ %20 KDV"/);
         assert.match(html, /value="1000"/);
-        assert.match(html, /1\.200,00/);
+        assert.doesNotMatch(html, /payments-total|Toplam:/);
     }
     const fields = { hasInvoice: { checked: true }, reportSent: { checked: false }, paymentOrInvoiceSent: { checked: false }, paymentReceived: { checked: false } };
     const buttons = [{ disabled: true, selected: false }, { disabled: true, selected: true }];
@@ -139,4 +139,12 @@ test('VAT choices require an invoice and retain the stored choice when disabled'
     app.context.updatePaymentsRowState(row);
     assert.ok(buttons.every(button => button.disabled));
     assert.equal(buttons[1].selected, true);
+});
+
+
+test('payments screen omits summary cards and row totals', async () => {
+    const app = setup();
+    await app.context.loadPaymentsPage();
+    assert.doesNotMatch(app.main.innerHTML, /payments-summary|payments-stat|payments-total|Aylık toplam/);
+    assert.match(app.main.innerHTML, /JPG olarak indir/);
 });
